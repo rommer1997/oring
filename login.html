@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar — Elena Salon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,300;0,400;1,300&family=Work+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #062d32;
+      --rose:   #c9a9b5;
+      --white:  #ffffff;
+      --gray:   #767676;
+      --carbon: #000000;
+      --serif:  'EB Garamond', Georgia, serif;
+      --sans:   'Work Sans', system-ui, sans-serif;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--rose);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--serif);
+      color: var(--ink);
+    }
+
+    /* ── wordmark ── */
+    .wordmark {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 300;
+      font-style: italic;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    /* ── card ── */
+    .card {
+      background: var(--white);
+      width: min(420px, calc(100vw - 40px));
+      padding: 48px 44px 40px;
+    }
+
+    .card__heading {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 300;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .card__sub {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      color: var(--gray);
+      margin-bottom: 36px;
+    }
+
+    /* ── fields ── */
+    .field { margin-bottom: 28px; }
+
+    .field__label {
+      display: block;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      color: var(--carbon);
+      margin-bottom: 8px;
+    }
+
+    .field__input {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--gray);
+      padding: 6px 0 10px;
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 300;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field__input:focus { border-bottom-color: var(--ink); }
+
+    /* ── forgot ── */
+    .forgot {
+      display: block;
+      text-align: right;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      color: var(--gray);
+      text-decoration: none;
+      margin-top: -18px;
+      margin-bottom: 36px;
+    }
+    .forgot:hover { color: var(--ink); }
+
+    /* ── submit ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px 0;
+      background: transparent;
+      border: 1px solid var(--carbon);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      color: var(--carbon);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--white); }
+
+    /* ── register link ── */
+    .register {
+      margin-top: 24px;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      color: var(--gray);
+      text-align: center;
+    }
+    .register a { color: var(--ink); text-decoration: none; }
+    .register a:hover { text-decoration: underline; }
+
+    /* ── footer ── */
+    .back {
+      margin-top: 40px;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      color: var(--ink);
+      text-decoration: none;
+      opacity: 0.6;
+    }
+    .back:hover { opacity: 1; }
+
+    /* ── error ── */
+    .error {
+      display: none;
+      font-family: var(--sans);
+      font-size: 12px;
+      color: #8b0000;
+      text-transform: uppercase;
+      letter-spacing: 0.042em;
+      margin-bottom: 20px;
+    }
+    .error--visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="wordmark">Elena Salon</div>
+
+  <div class="card">
+    <h1 class="card__heading">Bienvenida de nuevo</h1>
+    <p class="card__sub">Entra en tu salón</p>
+
+    <p class="error" id="error-msg">El email o la contraseña no son correctos</p>
+
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label class="field__label" for="email">Tu email</label>
+        <input class="field__input" id="email" type="email" autocomplete="email" required />
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="password">Contraseña</label>
+        <input class="field__input" id="password" type="password" autocomplete="current-password" required />
+      </div>
+
+      <a class="forgot" href="#">¿La olvidaste?</a>
+
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+
+    <p class="register">¿Todavía no tienes cuenta? <a href="#contact">Pruébalo gratis</a></p>
+  </div>
+
+  <a class="back" href="index.html">← Volver a la web</a>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const pass  = document.getElementById('password').value;
+      const err   = document.getElementById('error-msg');
+      // ponytail: demo redirect — replace with real auth when backend exists
+      if (email && pass) {
+        window.location.href = 'dashboard.html';
+      } else {
+        err.classList.add('error--visible');
+      }
+    });
+  </script>
+
+</body>
+</html>
