@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elena Salon — Gestión que retiene, agenda que crece</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Work+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ─── NAV ─── -->
+  <nav class="nav">
+    <span class="nav__wordmark">Elena Salon</span>
+    <ul class="nav__links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#stylists">Stylists</a></li>
+      <li><a href="#price-list">Price List</a></li>
+      <li><a href="#portfolio">Portfolio</a></li>
+      <li><a href="#simulator">Bookings</a></li>
+      <li><a href="#vouchers">Vouchers</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── HERO (Dusty Rose) ─── -->
+  <section class="hero" id="hero">
+    <div class="hero__illustration">
+      <svg viewBox="0 0 900 480" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Salón Elena — escena editorial">
+        <!-- Fachada principal -->
+        <rect x="180" y="200" width="540" height="260" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- División interior izquierda / centro / derecha -->
+        <line x1="390" y1="200" x2="390" y2="460" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="560" y1="200" x2="560" y2="460" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Techo superior -->
+        <rect x="180" y="185" width="540" height="18" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Cornisa -->
+        <line x1="170" y1="200" x2="730" y2="200" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Zócalo inferior -->
+        <rect x="180" y="430" width="540" height="30" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Patrón zócalo izq -->
+        <line x1="200" y1="430" x2="200" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="220" y1="430" x2="220" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="240" y1="430" x2="240" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="260" y1="430" x2="260" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="280" y1="430" x2="280" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="300" y1="430" x2="300" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="320" y1="430" x2="320" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="340" y1="430" x2="340" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="360" y1="430" x2="360" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="580" y1="430" x2="580" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="600" y1="430" x2="600" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="620" y1="430" x2="620" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="640" y1="430" x2="640" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="660" y1="430" x2="660" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="680" y1="430" x2="680" y2="460" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="700" y1="430" x2="700" y2="460" stroke="#062d32" stroke-width="0.8"/>
+
+        <!-- ── ZONA IZQ: Estilista + silla ── -->
+        <!-- Espejo redondo -->
+        <circle cx="295" cy="295" r="48" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <line x1="295" y1="247" x2="295" y2="240" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Marco espejo -->
+        <rect x="270" y="235" width="50" height="8" rx="0" stroke="#062d32" stroke-width="1.2" fill="none"/>
+
+        <!-- Silla de peluquería -->
+        <rect x="255" y="350" width="80" height="60" rx="0" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Respaldo rayas -->
+        <line x1="265" y1="355" x2="265" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="275" y1="355" x2="275" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="285" y1="355" x2="285" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="295" y1="355" x2="295" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="305" y1="355" x2="305" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="315" y1="355" x2="315" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="325" y1="355" x2="325" y2="405" stroke="#062d32" stroke-width="0.7"/>
+        <!-- Base silla -->
+        <line x1="285" y1="410" x2="285" y2="430" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="305" y1="410" x2="305" y2="430" stroke="#062d32" stroke-width="1.5"/>
+        <rect x="265" y="430" width="60" height="6" stroke="#062d32" stroke-width="1.2" fill="none"/>
+
+        <!-- Estilista (figura) -->
+        <!-- Cabeza -->
+        <circle cx="330" cy="272" r="14" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Pelo recogido -->
+        <path d="M320 262 Q330 252 340 262" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <circle cx="330" cy="256" r="5" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Cuerpo -->
+        <line x1="330" y1="286" x2="330" y2="360" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Brazos -->
+        <line x1="330" y1="305" x2="300" y2="325" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="330" y1="305" x2="358" y2="318" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Piernas -->
+        <line x1="330" y1="360" x2="318" y2="420" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="330" y1="360" x2="342" y2="420" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Secador en mano izq -->
+        <rect x="282" y="318" width="22" height="12" rx="0" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="282" y1="324" x2="272" y2="320" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Plancha en mano derecha -->
+        <rect x="354" y="312" width="8" height="22" rx="0" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="358" y1="312" x2="358" y2="304" stroke="#062d32" stroke-width="1"/>
+
+        <!-- Estantes con productos (fondo izq) -->
+        <line x1="192" y1="240" x2="240" y2="240" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="192" y1="265" x2="240" y2="265" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="192" y1="290" x2="240" y2="290" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Botes en estantes -->
+        <rect x="196" y="230" width="8" height="10" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="207" y="230" width="8" height="10" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="218" y="230" width="8" height="10" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="196" y="255" width="8" height="10" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="207" y="255" width="8" height="10" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="218" y="252" width="6" height="13" stroke="#062d32" stroke-width="1" fill="none"/>
+
+        <!-- Plantas decorativas izq -->
+        <line x1="350" y1="430" x2="350" y2="400" stroke="#062d32" stroke-width="1.2"/>
+        <path d="M350 415 Q340 405 332 410" stroke="#062d32" stroke-width="1" fill="none"/>
+        <path d="M350 408 Q360 398 368 404" stroke="#062d32" stroke-width="1" fill="none"/>
+        <path d="M350 420 Q342 412 336 418" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="340" y="428" width="20" height="12" stroke="#062d32" stroke-width="1.2" fill="none"/>
+
+        <!-- ── ZONA CENTRO: Puerta ── -->
+        <!-- Puerta principal -->
+        <rect x="432" y="290" width="85" height="140" rx="0" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Texto Elena en puerta -->
+        <text x="474" y="348" text-anchor="middle" font-family="EB Garamond, serif" font-size="16" font-style="italic" fill="#062d32" letter-spacing="2">Elena</text>
+        <text x="474" y="400" text-anchor="middle" font-family="EB Garamond, serif" font-size="10" fill="#062d32" letter-spacing="3">SALON</text>
+        <!-- Manilla puerta -->
+        <circle cx="510" cy="365" r="4" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Dintel arco -->
+        <path d="M432 290 Q474 258 517 290" stroke="#062d32" stroke-width="1.5" fill="none"/>
+
+        <!-- Perro en la puerta -->
+        <!-- Cuerpo perro -->
+        <ellipse cx="470" cy="430" rx="30" ry="14" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Cabeza perro -->
+        <circle cx="498" cy="422" r="12" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Orejas -->
+        <path d="M492 412 Q488 402 494 400" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Hocico -->
+        <path d="M506 424 Q512 426 510 430" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Cola -->
+        <path d="M440 428 Q428 420 432 410" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Patas -->
+        <line x1="455" y1="444" x2="453" y2="460" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="465" y1="444" x2="463" y2="460" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="478" y1="444" x2="476" y2="460" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="488" y1="444" x2="490" y2="460" stroke="#062d32" stroke-width="1.2"/>
+
+        <!-- Macetas frente a puerta -->
+        <rect x="394" y="415" width="18" height="20" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="403" y1="415" x2="403" y2="395" stroke="#062d32" stroke-width="1.2"/>
+        <path d="M403 402 Q394 394 388 398" stroke="#062d32" stroke-width="1" fill="none"/>
+        <path d="M403 396 Q412 388 418 394" stroke="#062d32" stroke-width="1" fill="none"/>
+
+        <!-- ── ZONA DER: Manicura ── -->
+        <!-- Estante esmaltes arriba -->
+        <line x1="568" y1="238" x2="720" y2="238" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Botes de esmalte en fila -->
+        <rect x="572" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="580" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="588" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="596" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="604" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="612" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="620" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="628" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="636" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="644" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="652" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="660" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="668" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="676" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="684" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="692" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="700" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <rect x="708" y="218" width="5" height="20" stroke="#062d32" stroke-width="0.8" fill="none"/>
+
+        <!-- Mesa de manicura -->
+        <rect x="590" y="340" width="110" height="8" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <line x1="600" y1="348" x2="600" y2="420" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="690" y1="348" x2="690" y2="420" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Lámpara UV sobre mesa -->
+        <rect x="620" y="310" width="50" height="22" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="645" y1="310" x2="645" y2="296" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Silla manicura -->
+        <rect x="615" y="370" width="60" height="40" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="620" y1="410" x2="618" y2="430" stroke="#062d32" stroke-width="1.2"/>
+        <line x1="670" y1="410" x2="672" y2="430" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Útiles en mesa -->
+        <line x1="635" y1="340" x2="633" y2="330" stroke="#062d32" stroke-width="1"/>
+        <line x1="642" y1="340" x2="641" y2="328" stroke="#062d32" stroke-width="1"/>
+        <line x1="649" y1="340" x2="650" y2="327" stroke="#062d32" stroke-width="1"/>
+        <!-- Planta der -->
+        <rect x="686" y="402" width="18" height="22" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="695" y1="402" x2="695" y2="376" stroke="#062d32" stroke-width="1.2"/>
+        <path d="M695 388 Q685 378 678 384" stroke="#062d32" stroke-width="1" fill="none"/>
+        <path d="M695 382 Q705 372 712 380" stroke="#062d32" stroke-width="1" fill="none"/>
+
+        <!-- ── SOBRE EL TEJADO: persona leyendo ── -->
+        <!-- Tejado -->
+        <rect x="180" y="158" width="540" height="30" stroke="#062d32" stroke-width="1" fill="none"/>
+        <!-- Silueta recostada -->
+        <!-- Cuerpo -->
+        <ellipse cx="700" cy="162" rx="38" ry="10" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Cabeza -->
+        <circle cx="736" cy="150" r="11" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Gafas -->
+        <line x1="728" y1="149" x2="744" y2="149" stroke="#062d32" stroke-width="0.8"/>
+        <circle cx="730" cy="149" r="4" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <circle cx="742" cy="149" r="4" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <!-- Libro -->
+        <rect x="700" y="146" width="26" height="20" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <line x1="713" y1="146" x2="713" y2="166" stroke="#062d32" stroke-width="0.8"/>
+        <!-- Laptop debajo -->
+        <rect x="648" y="152" width="40" height="26" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <rect x="640" y="178" width="56" height="4" stroke="#062d32" stroke-width="1" fill="none"/>
+        <!-- Copa vino -->
+        <path d="M762 145 Q758 155 762 165" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <path d="M762 165 Q766 165 768 165" stroke="#062d32" stroke-width="1" fill="none"/>
+        <line x1="765" y1="165" x2="765" y2="180" stroke="#062d32" stroke-width="1"/>
+        <line x1="760" y1="180" x2="770" y2="180" stroke="#062d32" stroke-width="1"/>
+        <!-- Tarro crema -->
+        <rect x="774" y="168" width="14" height="10" stroke="#062d32" stroke-width="1" fill="none"/>
+        <rect x="776" y="164" width="10" height="5" stroke="#062d32" stroke-width="0.8" fill="none"/>
+
+        <!-- ── BICI (izq) ── -->
+        <!-- Rueda trasera -->
+        <circle cx="148" cy="430" r="36" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Rueda delantera -->
+        <circle cx="80" cy="430" r="36" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Cuadro -->
+        <line x1="148" y1="430" x2="128" y2="394" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="128" y1="394" x2="108" y2="394" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="128" y1="394" x2="80" y2="430" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="108" y1="394" x2="80" y2="430" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Sillín -->
+        <line x1="148" y1="394" x2="148" y2="380" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="140" y1="380" x2="158" y2="380" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Manillar -->
+        <line x1="108" y1="394" x2="108" y2="375" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="100" y1="375" x2="108" y2="375" stroke="#062d32" stroke-width="1.2"/>
+        <!-- Rayos -->
+        <line x1="148" y1="394" x2="148" y2="466" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="112" y1="430" x2="184" y2="430" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="122" y1="404" x2="174" y2="456" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="174" y1="404" x2="122" y2="456" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="44" y1="430" x2="116" y2="430" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="80" y1="394" x2="80" y2="466" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="54" y1="404" x2="106" y2="456" stroke="#062d32" stroke-width="0.7"/>
+        <line x1="106" y1="404" x2="54" y2="456" stroke="#062d32" stroke-width="0.7"/>
+
+        <!-- Persona junto a la bici -->
+        <circle cx="170" cy="335" r="13" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Moño -->
+        <path d="M162 327 Q170 318 178 327" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <circle cx="170" cy="321" r="4" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Cuerpo -->
+        <line x1="170" y1="348" x2="170" y2="410" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Brazo saludando -->
+        <line x1="170" y1="365" x2="192" y2="348" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="192" y1="348" x2="198" y2="338" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Mano (fingers) -->
+        <line x1="198" y1="338" x2="202" y2="333" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="198" y1="338" x2="204" y2="336" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="198" y1="338" x2="203" y2="340" stroke="#062d32" stroke-width="0.8"/>
+        <!-- Otro brazo -->
+        <line x1="170" y1="365" x2="155" y2="388" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Piernas -->
+        <line x1="170" y1="410" x2="158" y2="455" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="170" y1="410" x2="180" y2="455" stroke="#062d32" stroke-width="1.5"/>
+
+        <!-- ── Pareja paseando (der) ── -->
+        <!-- Figura femenina -->
+        <circle cx="808" cy="345" r="12" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <!-- Pelo corto -->
+        <path d="M800 340 Q808 332 816 340" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <line x1="808" y1="357" x2="808" y2="415" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Brazo con bolsa -->
+        <line x1="808" y1="375" x2="828" y2="395" stroke="#062d32" stroke-width="1.5"/>
+        <rect x="828" y="395" width="18" height="22" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Flor en bolsa -->
+        <circle cx="837" cy="407" r="4" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <line x1="837" y1="403" x2="837" y2="399" stroke="#062d32" stroke-width="0.8"/>
+        <!-- Otro brazo -->
+        <line x1="808" y1="375" x2="790" y2="388" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Piernas -->
+        <line x1="808" y1="415" x2="796" y2="460" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="808" y1="415" x2="820" y2="460" stroke="#062d32" stroke-width="1.5"/>
+
+        <!-- Figura masculina -->
+        <circle cx="858" cy="330" r="13" stroke="#062d32" stroke-width="1.5" fill="none"/>
+        <line x1="858" y1="343" x2="858" y2="410" stroke="#062d32" stroke-width="1.5"/>
+        <!-- Chaqueta -->
+        <rect x="845" y="348" width="26" height="40" stroke="#062d32" stroke-width="1" fill="none"/>
+        <!-- Solapa -->
+        <line x1="858" y1="348" x2="850" y2="358" stroke="#062d32" stroke-width="0.8"/>
+        <line x1="858" y1="348" x2="866" y2="358" stroke="#062d32" stroke-width="0.8"/>
+        <!-- Brazo con bolsa -->
+        <line x1="858" y1="370" x2="878" y2="390" stroke="#062d32" stroke-width="1.5"/>
+        <rect x="878" y="390" width="20" height="26" stroke="#062d32" stroke-width="1.2" fill="none"/>
+        <!-- Asas bolsa -->
+        <path d="M882 390 Q884 382 888 390" stroke="#062d32" stroke-width="0.8" fill="none"/>
+        <!-- Piernas -->
+        <line x1="858" y1="410" x2="846" y2="460" stroke="#062d32" stroke-width="1.5"/>
+        <line x1="858" y1="410" x2="870" y2="460" stroke="#062d32" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ─── ABOUT (Paper White) ─── -->
+  <section class="about" id="about">
+    <div class="about__inner">
+      <p class="about__body">
+        Elena es el sistema de gestión que transforma la agenda de tu salón en el activo más rentable
+        de tu negocio. Construido para estilistas que entienden que la fidelidad no es un accidente —
+        es arquitectura.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── SIMULADOR (Mustard Olive) ─── -->
+  <section class="simulator" id="simulator">
+    <div class="simulator__inner">
+
+      <h2 class="simulator__heading">Cuánto vale recuperar<br>cada cliente perdido</h2>
+
+      <p class="simulator__intro">
+        Cada cliente que no vuelve no es solo una cita cancelada. Es un ingreso recurrente que
+        silenciosamente deja de existir. Calcula el impacto real de recuperar solo una fracción de los
+        que se van.
+      </p>
+
+      <div class="simulator__grid">
+
+        <!-- ── Columna inputs ── -->
+        <div class="simulator__inputs">
+
+          <div class="field">
+            <label class="field__label" for="lost-clients">Clientes perdidos al mes</label>
+            <input class="field__input" id="lost-clients" type="number" min="1" max="500" value="20" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="avg-ticket">Ticket medio por visita (€)</label>
+            <input class="field__input" id="avg-ticket" type="number" min="10" max="500" value="65" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="visits-year">Visitas al año por cliente</label>
+            <input class="field__input" id="visits-year" type="number" min="1" max="24" value="8" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="recovery-rate">
+              Tasa de recuperación con Elena&nbsp;
+              <span class="field__label-note" id="recovery-pct">35%</span>
+            </label>
+            <div class="field__slider-wrap">
+              <input class="field__slider" id="recovery-rate" type="range" min="5" max="70" value="35" step="5" />
+              <div class="slider__track-labels">
+                <span>5%</span><span>70%</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Columna resultados ── -->
+        <div class="simulator__results">
+
+          <div class="result-card">
+            <span class="result-card__label">Clientes recuperados / mes</span>
+            <span class="result-card__value" id="res-recovered">7</span>
+          </div>
+
+          <div class="result-card result-card--accent">
+            <span class="result-card__label">Ingreso adicional / mes</span>
+            <span class="result-card__value" id="res-monthly">€ 2.275</span>
+          </div>
+
+          <div class="result-card result-card--large">
+            <span class="result-card__label">Ingreso adicional / año</span>
+            <span class="result-card__value" id="res-annual">€ 27.300</span>
+          </div>
+
+          <div class="result-card">
+            <span class="result-card__label">ROI estimado sobre Elena</span>
+            <span class="result-card__value" id="res-roi">18×</span>
+          </div>
+
+          <p class="result-disclaimer">
+            Basado en datos medios del sector. Tus resultados dependen del tipo de salón,
+            frecuencia real de visita y calidad de la estrategia de retención.
+          </p>
+
+        </div>
+      </div>
+
+      <!-- Barra de impacto visual -->
+      <div class="impact-bar" aria-hidden="true">
+        <div class="impact-bar__label">Clientes perdidos</div>
+        <div class="impact-bar__track">
+          <div class="impact-bar__fill impact-bar__fill--lost" id="bar-lost"></div>
+          <div class="impact-bar__fill impact-bar__fill--recovered" id="bar-recovered"></div>
+        </div>
+        <div class="impact-bar__legend">
+          <span class="legend__item legend__item--lost">Sin Elena</span>
+          <span class="legend__item legend__item--recovered">Recuperados con Elena</span>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="simulator__cta-wrap">
+        <a href="#contact" class="btn-outline">Empieza a recuperar clientes</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── SERVICES (Paper White) ─── -->
+  <section class="services" id="services">
+    <div class="services__inner">
+      <h2 class="section-heading">Lo que hace Elena</h2>
+      <div class="services__list">
+        <div class="service-item">
+          <span class="service-item__num">01</span>
+          <div>
+            <h3 class="service-item__title">Agenda inteligente</h3>
+            <p class="service-item__desc">Reservas en línea, recordatorios automáticos y gestión de huecos de última hora que convierten cancelaciones en ingresos.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <span class="service-item__num">02</span>
+          <div>
+            <h3 class="service-item__title">Retención activa</h3>
+            <p class="service-item__desc">Detecta clientes que llevan más de N semanas sin cita y activa campañas personalizadas para recuperarlos antes de que se pierdan.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <span class="service-item__num">03</span>
+          <div>
+            <h3 class="service-item__title">Historial de cliente</h3>
+            <p class="service-item__desc">Fórmulas, preferencias y notas de cada visita accesibles al instante. El cliente no repite lo que le quedó mal, el estilista tampoco.</p>
+          </div>
+        </div>
+        <div class="service-item">
+          <span class="service-item__num">04</span>
+          <div>
+            <h3 class="service-item__title">Informes de negocio</h3>
+            <p class="service-item__desc">Ticket medio, tasa de retención, servicios más rentables. Los números que necesitas para tomar decisiones, no solo para reportarlas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── BOOKING FORM (Mustard Olive) ─── -->
+  <section class="booking" id="contact">
+    <div class="booking__inner">
+      <h2 class="booking__heading">Agenda una demo</h2>
+      <form class="booking__form" novalidate>
+        <div class="field">
+          <label class="field__label" for="b-name">Nombre del salón</label>
+          <input class="field__input" id="b-name" type="text" autocomplete="organization" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="b-email">Email de contacto</label>
+          <input class="field__input" id="b-email" type="email" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="b-phone">Teléfono</label>
+          <input class="field__input" id="b-phone" type="tel" autocomplete="tel" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="b-size">Número de estilistas</label>
+          <input class="field__input" id="b-size" type="number" min="1" max="100" />
+        </div>
+        <div class="field field--full">
+          <label class="field__label" for="b-note">¿Cuál es tu mayor reto ahora mismo?</label>
+          <input class="field__input" id="b-note" type="text" />
+        </div>
+        <div class="field field--full field--submit">
+          <button class="btn-outline" type="submit">Solicitar demo gratuita</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER (Dusty Rose) ─── -->
+  <footer class="footer" id="contact-footer">
+    <div class="footer__inner">
+      <div class="footer__top">
+        <span class="footer__wordmark">Elena Salon</span>
+        <nav class="footer__nav">
+          <a href="#about">About</a>
+          <a href="#services">Services</a>
+          <a href="#simulator">Bookings</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </div>
+      <!-- Mini ilustración footer -->
+      <div class="footer__illustration">
+        <svg viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="120" y="30" width="160" height="80" stroke="#062d32" stroke-width="1.2" fill="none"/>
+          <line x1="200" y1="30" x2="200" y2="110" stroke="#062d32" stroke-width="1.2"/>
+          <rect x="165" y="52" width="70" height="58" stroke="#062d32" stroke-width="1.2" fill="none"/>
+          <text x="200" y="78" text-anchor="middle" font-family="EB Garamond, serif" font-size="11" font-style="italic" fill="#062d32" letter-spacing="2">Elena</text>
+          <text x="200" y="97" text-anchor="middle" font-family="EB Garamond, serif" font-size="7" fill="#062d32" letter-spacing="3">SALON</text>
+          <!-- esmaltes footer -->
+          <line x1="122" y1="50" x2="162" y2="50" stroke="#062d32" stroke-width="1"/>
+          <rect x="126" y="36" width="4" height="14" stroke="#062d32" stroke-width="0.8" fill="none"/>
+          <rect x="133" y="36" width="4" height="14" stroke="#062d32" stroke-width="0.8" fill="none"/>
+          <rect x="140" y="36" width="4" height="14" stroke="#062d32" stroke-width="0.8" fill="none"/>
+          <rect x="147" y="36" width="4" height="14" stroke="#062d32" stroke-width="0.8" fill="none"/>
+          <rect x="154" y="36" width="4" height="14" stroke="#062d32" stroke-width="0.8" fill="none"/>
+          <!-- figura peq -->
+          <circle cx="90" cy="68" r="8" stroke="#062d32" stroke-width="1.2" fill="none"/>
+          <line x1="90" y1="76" x2="90" y2="108" stroke="#062d32" stroke-width="1.2"/>
+          <line x1="90" y1="88" x2="78" y2="98" stroke="#062d32" stroke-width="1.2"/>
+          <line x1="90" y1="88" x2="102" y2="98" stroke="#062d32" stroke-width="1.2"/>
+          <line x1="90" y1="108" x2="80" y2="118" stroke="#062d32" stroke-width="1.2"/>
+          <line x1="90" y1="108" x2="100" y2="118" stroke="#062d32" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <div class="footer__bottom">
+        <span class="footer__copy">© 2025 Elena Salon — Todos los derechos reservados</span>
+        <span class="footer__tagline">Gestión que retiene. Agenda que crece.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="simulator.js"></script>
+</body>
+</html>
