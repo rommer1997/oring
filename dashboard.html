@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elena Salon — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@300;400&family=Work+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <span class="sidebar__wordmark">Elena</span>
+      <button class="sidebar__close" id="sidebar-close" aria-label="Cerrar menú">✕</button>
+    </div>
+
+    <nav class="sidebar__nav">
+      <a href="#" class="sidebar__link sidebar__link--active">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><line x1="4" y1="16" x2="4" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="16" x2="8" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="16" x2="12" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="16" y1="16" x2="16" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ingresos</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.2"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Retención</span>
+      </a>
+    </nav>
+
+    <div class="sidebar__bottom">
+      <a href="index.html" class="sidebar__link sidebar__link--secondary">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><path d="M10 2L2 8v10h5v-5h6v5h5V8L10 2z" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Web pública</span>
+      </a>
+      <a href="#" class="sidebar__link sidebar__link--secondary">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ajustes</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ─── OVERLAY (mobile) ─── -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ─── MAIN SHELL ─── -->
+  <div class="shell">
+
+    <!-- Header -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu" id="menu-btn" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+        <span class="topbar__title">Resumen — <time>Lunes 16 Jun 2025</time></span>
+      </div>
+      <div class="topbar__right">
+        <span class="topbar__salon">Salón Goya</span>
+        <div class="topbar__avatar">LG</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+
+      <!-- KPI cards -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-card__label">Citas hoy</span>
+          <span class="kpi-card__value">12</span>
+          <span class="kpi-card__delta kpi-card__delta--up">+2 vs ayer</span>
+        </div>
+        <div class="kpi-card kpi-card--accent">
+          <span class="kpi-card__label">Ingresos este mes</span>
+          <span class="kpi-card__value">€ 8.420</span>
+          <span class="kpi-card__delta kpi-card__delta--up">+14% vs mes anterior</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Clientes activos</span>
+          <span class="kpi-card__value">347</span>
+          <span class="kpi-card__delta kpi-card__delta--up">+12 este mes</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-card__label">Tasa de retención</span>
+          <span class="kpi-card__value">84%</span>
+          <span class="kpi-card__delta kpi-card__delta--up">+3pp vs trimestre ant.</span>
+        </div>
+      </section>
+
+      <!-- Two-col layout -->
+      <div class="content__cols">
+
+        <!-- Agenda hoy -->
+        <section class="panel">
+          <div class="panel__header">
+            <h2 class="panel__title">Agenda de hoy</h2>
+            <span class="panel__count">12 citas</span>
+          </div>
+          <div class="agenda">
+
+            <div class="apt apt--done">
+              <span class="apt__time">09:00</span>
+              <div class="apt__info">
+                <span class="apt__client">Ana Martínez</span>
+                <span class="apt__service">Corte + color</span>
+              </div>
+              <span class="apt__stylist">Lucía</span>
+              <span class="apt__status apt__status--done">✓</span>
+            </div>
+
+            <div class="apt apt--done">
+              <span class="apt__time">09:30</span>
+              <div class="apt__info">
+                <span class="apt__client">María José P.</span>
+                <span class="apt__service">Manicura</span>
+              </div>
+              <span class="apt__stylist">Carmen</span>
+              <span class="apt__status apt__status--done">✓</span>
+            </div>
+
+            <div class="apt apt--active">
+              <span class="apt__time">10:00</span>
+              <div class="apt__info">
+                <span class="apt__client">Laura García</span>
+                <span class="apt__service">Keratina</span>
+              </div>
+              <span class="apt__stylist">Lucía</span>
+              <span class="apt__status apt__status--active">●</span>
+            </div>
+
+            <div class="apt apt--active">
+              <span class="apt__time">10:30</span>
+              <div class="apt__info">
+                <span class="apt__client">Sofía Ramírez</span>
+                <span class="apt__service">Corte</span>
+              </div>
+              <span class="apt__stylist">Elena</span>
+              <span class="apt__status apt__status--active">●</span>
+            </div>
+
+            <div class="apt">
+              <span class="apt__time">11:00</span>
+              <div class="apt__info">
+                <span class="apt__client">Carmen Díaz</span>
+                <span class="apt__service">Mechas</span>
+              </div>
+              <span class="apt__stylist">Lucía</span>
+              <span class="apt__status">○</span>
+            </div>
+
+            <div class="apt">
+              <span class="apt__time">11:30</span>
+              <div class="apt__info">
+                <span class="apt__client">Isabel Vega</span>
+                <span class="apt__service">Pedicura</span>
+              </div>
+              <span class="apt__stylist">Carmen</span>
+              <span class="apt__status">○</span>
+            </div>
+
+            <div class="apt">
+              <span class="apt__time">12:00</span>
+              <div class="apt__info">
+                <span class="apt__client">Rosa Morales</span>
+                <span class="apt__service">Corte + peinado</span>
+              </div>
+              <span class="apt__stylist">Elena</span>
+              <span class="apt__status">○</span>
+            </div>
+
+            <div class="apt">
+              <span class="apt__time">13:00</span>
+              <div class="apt__info">
+                <span class="apt__client">Pilar Herrera</span>
+                <span class="apt__service">Balayage</span>
+              </div>
+              <span class="apt__stylist">Lucía</span>
+              <span class="apt__status">○</span>
+            </div>
+
+            <a href="#" class="agenda__more">Ver todas las citas →</a>
+          </div>
+        </section>
+
+        <!-- Column derecha -->
+        <div class="right-col">
+
+          <!-- Alertas retención -->
+          <section class="panel">
+            <div class="panel__header">
+              <h2 class="panel__title">Alertas de retención</h2>
+              <span class="panel__count panel__count--alert">3</span>
+            </div>
+            <div class="alerts">
+              <div class="alert-item">
+                <div class="alert-item__info">
+                  <span class="alert-item__name">Marta Solís</span>
+                  <span class="alert-item__detail">Sin cita desde hace 8 semanas</span>
+                </div>
+                <button class="alert-item__btn">Contactar</button>
+              </div>
+              <div class="alert-item">
+                <div class="alert-item__info">
+                  <span class="alert-item__name">Pilar González</span>
+                  <span class="alert-item__detail">Sin cita desde hace 10 semanas</span>
+                </div>
+                <button class="alert-item__btn">Contactar</button>
+              </div>
+              <div class="alert-item">
+                <div class="alert-item__info">
+                  <span class="alert-item__name">Ana Belén R.</span>
+                  <span class="alert-item__detail">Sin cita desde hace 6 semanas</span>
+                </div>
+                <button class="alert-item__btn">Contactar</button>
+              </div>
+              <a href="#" class="agenda__more">Ver todos los clientes en riesgo →</a>
+            </div>
+          </section>
+
+          <!-- Ticket medio -->
+          <section class="panel">
+            <div class="panel__header">
+              <h2 class="panel__title">Rendimiento semanal</h2>
+            </div>
+            <div class="weekly-bars">
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill" style="height:55%"></div></div>
+                <span class="week-bar__label">L</span>
+              </div>
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill" style="height:80%"></div></div>
+                <span class="week-bar__label">M</span>
+              </div>
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill" style="height:65%"></div></div>
+                <span class="week-bar__label">X</span>
+              </div>
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill" style="height:90%"></div></div>
+                <span class="week-bar__label">J</span>
+              </div>
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill week-bar__fill--today" style="height:70%"></div></div>
+                <span class="week-bar__label week-bar__label--today">V</span>
+              </div>
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill week-bar__fill--dim" style="height:0%"></div></div>
+                <span class="week-bar__label">S</span>
+              </div>
+              <div class="week-bar">
+                <div class="week-bar__track"><div class="week-bar__fill week-bar__fill--dim" style="height:0%"></div></div>
+                <span class="week-bar__label">D</span>
+              </div>
+            </div>
+            <div class="weekly-stats">
+              <div class="wstat">
+                <span class="wstat__label">Ticket medio</span>
+                <span class="wstat__value">€ 68</span>
+              </div>
+              <div class="wstat">
+                <span class="wstat__label">Citas semana</span>
+                <span class="wstat__value">47</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav">
+      <a href="#" class="bottom-nav__item bottom-nav__item--active">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><line x1="4" y1="16" x2="4" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="16" x2="8" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="16" x2="12" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="16" y1="16" x2="16" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ingresos</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ajustes</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const menuBtn = document.getElementById('menu-btn');
+    const closeBtn = document.getElementById('sidebar-close');
+    const open  = () => { sidebar.classList.add('sidebar--open'); overlay.classList.add('overlay--visible'); };
+    const close = () => { sidebar.classList.remove('sidebar--open'); overlay.classList.remove('overlay--visible'); };
+    menuBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+  </script>
+</body>
+</html>
