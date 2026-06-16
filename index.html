@@ -15,14 +15,11 @@
   <nav class="nav">
     <span class="nav__wordmark">Elena Salon</span>
     <ul class="nav__links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#services">Services</a></li>
-      <li><a href="#stylists">Stylists</a></li>
-      <li><a href="#price-list">Price List</a></li>
-      <li><a href="#portfolio">Portfolio</a></li>
-      <li><a href="#simulator">Bookings</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#contact">Contact</a></li>
+      <li><a href="#about">Qué es</a></li>
+      <li><a href="#services">Para qué sirve</a></li>
+      <li><a href="#simulator">La calculadora</a></li>
+      <li><a href="#pricing">Precios</a></li>
+      <li><a href="#contact">Pruébalo</a></li>
     </ul>
   </nav>
 
@@ -314,9 +311,8 @@
   <section class="about" id="about">
     <div class="about__inner">
       <p class="about__body">
-        Elena es el sistema de gestión que transforma la agenda de tu salón en el activo más rentable
-        de tu negocio. Construido para estilistas que entienden que la fidelidad no es un accidente —
-        es arquitectura.
+        Elena es el programa que te ayuda a no perder clientas.
+        Para que la que vino una vez, vuelva siempre.
       </p>
     </div>
   </section>
@@ -325,12 +321,11 @@
   <section class="simulator" id="simulator">
     <div class="simulator__inner">
 
-      <h2 class="simulator__heading">Cuánto vale recuperar<br>cada cliente perdido</h2>
+      <h2 class="simulator__heading">¿Cuánto pierdes cuando<br>una clienta no vuelve?</h2>
 
       <p class="simulator__intro">
-        Cada cliente que no vuelve no es solo una cita cancelada. Es un ingreso recurrente que
-        silenciosamente deja de existir. Calcula el impacto real de recuperar solo una fracción de los
-        que se van.
+        No es solo una cita que se pierde. Es esa clienta que venía cada mes, que traía a su hija,
+        que te recomendaba a sus amigas. Mira lo que supone en dinero real.
       </p>
 
       <div class="simulator__grid">
@@ -339,23 +334,23 @@
         <div class="simulator__inputs">
 
           <div class="field">
-            <label class="field__label" for="lost-clients">Clientes perdidos al mes</label>
+            <label class="field__label" for="lost-clients">Clientas que se van al mes</label>
             <input class="field__input" id="lost-clients" type="number" min="1" max="500" value="20" />
           </div>
 
           <div class="field">
-            <label class="field__label" for="avg-ticket">Ticket medio por visita (€)</label>
+            <label class="field__label" for="avg-ticket">Lo que gasta cada vez que viene (€)</label>
             <input class="field__input" id="avg-ticket" type="number" min="10" max="500" value="65" />
           </div>
 
           <div class="field">
-            <label class="field__label" for="visits-year">Visitas al año por cliente</label>
+            <label class="field__label" for="visits-year">Veces que viene al año</label>
             <input class="field__input" id="visits-year" type="number" min="1" max="24" value="8" />
           </div>
 
           <div class="field">
             <label class="field__label" for="recovery-rate">
-              Tasa de recuperación con Elena&nbsp;
+              Clientas que vuelven con Elena&nbsp;
               <span class="field__label-note" id="recovery-pct">35%</span>
             </label>
             <div class="field__slider-wrap">
@@ -372,28 +367,28 @@
         <div class="simulator__results">
 
           <div class="result-card">
-            <span class="result-card__label">Clientes recuperados / mes</span>
+            <span class="result-card__label">Clientas que vuelven cada mes</span>
             <span class="result-card__value" id="res-recovered">7</span>
           </div>
 
           <div class="result-card result-card--accent">
-            <span class="result-card__label">Ingreso adicional / mes</span>
+            <span class="result-card__label">Ganas de más al mes</span>
             <span class="result-card__value" id="res-monthly">€ 2.275</span>
           </div>
 
           <div class="result-card result-card--large">
-            <span class="result-card__label">Ingreso adicional / año</span>
+            <span class="result-card__label">Ganas de más al año</span>
             <span class="result-card__value" id="res-annual">€ 27.300</span>
           </div>
 
           <div class="result-card">
-            <span class="result-card__label">ROI estimado sobre Elena</span>
+            <span class="result-card__label">Lo que te sale a cuenta</span>
             <span class="result-card__value" id="res-roi">18×</span>
           </div>
 
           <p class="result-disclaimer">
-            Basado en datos medios del sector. Tus resultados dependen del tipo de salón,
-            frecuencia real de visita y calidad de la estrategia de retención.
+            Son estimaciones orientativas. Cada salón es distinto, pero la idea es siempre
+            la misma: una clienta que no vuelve cuesta más de lo que parece.
           </p>
 
         </div>
@@ -401,14 +396,14 @@
 
       <!-- Barra de impacto visual -->
       <div class="impact-bar" aria-hidden="true">
-        <div class="impact-bar__label">Clientes perdidos</div>
+        <div class="impact-bar__label">Las que se van cada mes</div>
         <div class="impact-bar__track">
           <div class="impact-bar__fill impact-bar__fill--lost" id="bar-lost"></div>
           <div class="impact-bar__fill impact-bar__fill--recovered" id="bar-recovered"></div>
         </div>
         <div class="impact-bar__legend">
           <span class="legend__item legend__item--lost">Sin Elena</span>
-          <span class="legend__item legend__item--recovered">Recuperados con Elena</span>
+          <span class="legend__item legend__item--recovered">Las que vuelven con Elena</span>
         </div>
       </div>
 
@@ -423,34 +418,34 @@
   <!-- ─── SERVICES (Paper White) ─── -->
   <section class="services" id="services">
     <div class="services__inner">
-      <h2 class="section-heading">Lo que hace Elena</h2>
+      <h2 class="section-heading">¿Para qué sirve Elena?</h2>
       <div class="services__list">
         <div class="service-item">
           <span class="service-item__num">01</span>
           <div>
-            <h3 class="service-item__title">Agenda inteligente</h3>
-            <p class="service-item__desc">Reservas en línea, recordatorios automáticos y gestión de huecos de última hora que convierten cancelaciones en ingresos.</p>
+            <h3 class="service-item__title">La agenda sin llamadas</h3>
+            <p class="service-item__desc">Tus clientas reservan solas desde el móvil, a la hora que quieran. Elena les recuerda la cita y tú no tienes que estar pendiente del teléfono.</p>
           </div>
         </div>
         <div class="service-item">
           <span class="service-item__num">02</span>
           <div>
-            <h3 class="service-item__title">Retención activa</h3>
-            <p class="service-item__desc">Detecta clientes que llevan más de N semanas sin cita y activa campañas personalizadas para recuperarlos antes de que se pierdan.</p>
+            <h3 class="service-item__title">Avisa cuando alguien no vuelve</h3>
+            <p class="service-item__desc">Elena se fija en quién lleva semanas sin venir y te lo dice. Así puedes llamarla tú antes de que se vaya a otra peluquería.</p>
           </div>
         </div>
         <div class="service-item">
           <span class="service-item__num">03</span>
           <div>
-            <h3 class="service-item__title">Historial de cliente</h3>
-            <p class="service-item__desc">Fórmulas, preferencias y notas de cada visita accesibles al instante. El cliente no repite lo que le quedó mal, el estilista tampoco.</p>
+            <h3 class="service-item__title">La ficha de cada clienta</h3>
+            <p class="service-item__desc">El tinte que usaste, lo que le gustó, lo que no. Todo guardado. Que entres en el salón cualquier peluquera y sepa exactamente cómo atenderla.</p>
           </div>
         </div>
         <div class="service-item">
           <span class="service-item__num">04</span>
           <div>
-            <h3 class="service-item__title">Informes de negocio</h3>
-            <p class="service-item__desc">Ticket medio, tasa de retención, servicios más rentables. Los números que necesitas para tomar decisiones, no solo para reportarlas.</p>
+            <h3 class="service-item__title">Cómo va el negocio</h3>
+            <p class="service-item__desc">Lo que entra cada mes, qué días son los más llenos, qué servicios gustan más. Sin complicaciones, en una pantalla.</p>
           </div>
         </div>
       </div>
@@ -460,98 +455,98 @@
   <!-- ─── PRICING (Paper White) ─── -->
   <section class="pricing" id="pricing">
     <div class="pricing__inner">
-      <h2 class="section-heading">Un precio. Todo incluido.</h2>
-      <p class="pricing__sub">Sin módulos de pago extra. Sin sorpresas en la factura.</p>
+      <h2 class="section-heading">Lo que cuesta. Sin letra pequeña.</h2>
+      <p class="pricing__sub">Un precio fijo al mes. Todo incluido. Sin extras ni sorpresas.</p>
       <div class="pricing__grid">
 
         <div class="pricing__plan">
           <div class="pricing__plan-header">
-            <span class="pricing__tier">Estudio</span>
+            <span class="pricing__tier">Pequeña</span>
             <div class="pricing__amount">
               <span class="pricing__currency">€</span><span class="pricing__number">89</span>
               <span class="pricing__period">/ mes</span>
             </div>
-            <p class="pricing__tagline">Para salones de hasta 3 estilistas</p>
+            <p class="pricing__tagline">Hasta 3 peluqueras en el salón</p>
           </div>
           <ul class="pricing__features">
-            <li>Agenda en línea + recordatorios</li>
-            <li>Historial de cliente ilimitado</li>
-            <li>Retención automática</li>
-            <li>Informes mensuales</li>
-            <li>Soporte por email</li>
+            <li>Reservas por móvil + avisos automáticos</li>
+            <li>Ficha de clienta sin límite</li>
+            <li>Aviso cuando alguien no vuelve</li>
+            <li>Resumen mensual del negocio</li>
+            <li>Ayuda por email</li>
           </ul>
-          <a href="#contact" class="btn-outline pricing__cta">Solicitar demo</a>
+          <a href="#contact" class="btn-outline pricing__cta">Quiero probarlo</a>
         </div>
 
         <div class="pricing__plan pricing__plan--featured">
           <div class="pricing__plan-header">
-            <span class="pricing__tier">Salón</span>
+            <span class="pricing__tier">Mediana</span>
             <div class="pricing__amount">
               <span class="pricing__currency">€</span><span class="pricing__number">129</span>
               <span class="pricing__period">/ mes</span>
             </div>
-            <p class="pricing__tagline">Para equipos de 4 a 10 estilistas</p>
+            <p class="pricing__tagline">De 4 a 10 peluqueras</p>
           </div>
           <ul class="pricing__features">
-            <li>Todo lo de Estudio</li>
-            <li>Campañas de recuperación personalizadas</li>
-            <li>Multi-estilista con permisos</li>
-            <li>Integración con Google Calendar</li>
-            <li>Soporte prioritario</li>
+            <li>Todo lo del plan Pequeña</li>
+            <li>Mensajes personalizados a clientas</li>
+            <li>Cada peluquera con su acceso</li>
+            <li>Se conecta con Google Calendar</li>
+            <li>Ayuda rápida cuando la necesitas</li>
           </ul>
-          <a href="#contact" class="btn-outline pricing__cta">Solicitar demo</a>
+          <a href="#contact" class="btn-outline pricing__cta">Quiero probarlo</a>
         </div>
 
         <div class="pricing__plan">
           <div class="pricing__plan-header">
-            <span class="pricing__tier">Cadena</span>
+            <span class="pricing__tier">Varios centros</span>
             <div class="pricing__amount">
-              <span class="pricing__number">A medida</span>
+              <span class="pricing__number">A tu medida</span>
             </div>
-            <p class="pricing__tagline">Para grupos con múltiples centros</p>
+            <p class="pricing__tagline">Más de un local o franquicia</p>
           </div>
           <ul class="pricing__features">
-            <li>Todo lo de Salón</li>
-            <li>Panel de gestión multi-centro</li>
-            <li>API + integraciones propias</li>
-            <li>SLA garantizado</li>
-            <li>Account manager dedicado</li>
+            <li>Todo lo del plan Mediana</li>
+            <li>Gestión de todos tus locales a la vez</li>
+            <li>Lo adaptamos a lo que necesites</li>
+            <li>Te garantizamos que funciona siempre</li>
+            <li>Una persona de contacto solo para ti</li>
           </ul>
-          <a href="#contact" class="btn-outline pricing__cta">Contactar</a>
+          <a href="#contact" class="btn-outline pricing__cta">Hablamos</a>
         </div>
 
       </div>
-      <p class="pricing__note">Todos los planes incluyen 30 días de prueba gratuita. Sin tarjeta de crédito.</p>
+      <p class="pricing__note">Pruébalo 30 días gratis. Sin poner la tarjeta.</p>
     </div>
   </section>
 
   <!-- ─── BOOKING FORM (Mustard Olive) ─── -->
   <section class="booking" id="contact">
     <div class="booking__inner">
-      <h2 class="booking__heading">Agenda una demo</h2>
+      <h2 class="booking__heading">Pruébalo gratis</h2>
       <form class="booking__form" novalidate>
         <div class="field">
-          <label class="field__label" for="b-name">Nombre del salón</label>
+          <label class="field__label" for="b-name">Cómo se llama tu salón</label>
           <input class="field__input" id="b-name" type="text" autocomplete="organization" />
         </div>
         <div class="field">
-          <label class="field__label" for="b-email">Email de contacto</label>
+          <label class="field__label" for="b-email">Tu email</label>
           <input class="field__input" id="b-email" type="email" autocomplete="email" />
         </div>
         <div class="field">
-          <label class="field__label" for="b-phone">Teléfono</label>
+          <label class="field__label" for="b-phone">Tu teléfono</label>
           <input class="field__input" id="b-phone" type="tel" autocomplete="tel" />
         </div>
         <div class="field">
-          <label class="field__label" for="b-size">Número de estilistas</label>
+          <label class="field__label" for="b-size">Cuántas peluqueras trabajáis</label>
           <input class="field__input" id="b-size" type="number" min="1" max="100" />
         </div>
         <div class="field field--full">
-          <label class="field__label" for="b-note">¿Cuál es tu mayor reto ahora mismo?</label>
+          <label class="field__label" for="b-note">¿Qué es lo que más te cuesta del día a día?</label>
           <input class="field__input" id="b-note" type="text" />
         </div>
         <div class="field field--full field--submit">
-          <button class="btn-outline" type="submit">Solicitar demo gratuita</button>
+          <button class="btn-outline" type="submit">Quiero que mis clientas vuelvan</button>
         </div>
       </form>
     </div>
@@ -563,10 +558,10 @@
       <div class="footer__top">
         <span class="footer__wordmark">Elena Salon</span>
         <nav class="footer__nav">
-          <a href="#about">About</a>
-          <a href="#services">Services</a>
-          <a href="#simulator">Bookings</a>
-          <a href="#contact">Contact</a>
+          <a href="#about">Qué es</a>
+          <a href="#services">Para qué sirve</a>
+          <a href="#simulator">La calculadora</a>
+          <a href="#contact">Pruébalo</a>
         </nav>
       </div>
       <!-- Mini ilustración footer -->
@@ -595,7 +590,7 @@
       </div>
       <div class="footer__bottom">
         <span class="footer__copy">© 2025 Elena Salon — Todos los derechos reservados</span>
-        <span class="footer__tagline">Gestión que retiene. Agenda que crece.</span>
+        <span class="footer__tagline">Para que la que vino una vez, vuelva siempre.</span>
       </div>
     </div>
   </footer>
