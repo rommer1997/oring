@@ -507,6 +507,124 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
+   PRICING — Paper White
+   ============================================================ */
+.pricing {
+  background: var(--color-paper-white);
+  padding: var(--section-gap) var(--spacing-40);
+}
+.pricing__inner {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+.pricing__sub {
+  font-size: var(--text-subheading);
+  line-height: 1.5;
+  color: var(--color-slate-teal);
+  text-align: center;
+  margin-top: calc(-1 * var(--spacing-40));
+  margin-bottom: var(--spacing-68);
+}
+.pricing__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-40);
+  margin-bottom: var(--spacing-68);
+}
+.pricing__plan {
+  border: 1px solid var(--color-warm-bone);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+}
+.pricing__plan--featured {
+  border-color: var(--color-ink-teal);
+}
+.pricing__plan-header {
+  border-bottom: 1px solid var(--color-warm-bone);
+  padding-bottom: var(--spacing-20);
+  margin-bottom: var(--spacing-20);
+}
+.pricing__plan--featured .pricing__plan-header {
+  border-bottom-color: var(--color-ink-teal);
+}
+.pricing__tier {
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-stamp);
+  text-transform: uppercase;
+  color: var(--color-mid-gray);
+  display: block;
+  margin-bottom: var(--spacing-20);
+}
+.pricing__plan--featured .pricing__tier {
+  color: var(--color-ink-teal);
+}
+.pricing__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: var(--spacing-8);
+}
+.pricing__currency {
+  font-family: var(--font-serif);
+  font-size: var(--text-subheading);
+  font-weight: var(--font-weight-light);
+  color: var(--color-ink-teal);
+}
+.pricing__number {
+  font-family: var(--font-serif);
+  font-size: clamp(36px, 4vw, var(--text-display));
+  font-weight: var(--font-weight-light);
+  line-height: 1;
+  color: var(--color-carbon);
+  letter-spacing: var(--tracking-tight);
+}
+.pricing__period {
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-stamp);
+  text-transform: uppercase;
+  color: var(--color-mid-gray);
+}
+.pricing__tagline {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-slate-teal);
+  font-style: italic;
+}
+.pricing__features {
+  list-style: none;
+  flex: 1;
+  margin-bottom: var(--spacing-40);
+}
+.pricing__features li {
+  font-size: var(--text-subheading);
+  font-weight: var(--font-weight-light);
+  line-height: 1.6;
+  color: var(--color-ink-teal);
+  padding: var(--spacing-8) 0;
+  border-bottom: 1px solid var(--color-warm-bone);
+}
+.pricing__features li:first-child {
+  border-top: 1px solid var(--color-warm-bone);
+}
+.pricing__cta {
+  display: block;
+  text-align: center;
+}
+.pricing__note {
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-stamp);
+  text-transform: uppercase;
+  color: var(--color-mid-gray);
+  text-align: center;
+}
+
+/* ============================================================
    BOOKING FORM — Mustard Olive
    ============================================================ */
 .booking {
@@ -634,6 +752,7 @@ a { color: inherit; text-decoration: none; }
 
   .simulator__grid  { grid-template-columns: 1fr; gap: var(--spacing-40); }
   .services__list   { grid-template-columns: 1fr; }
+  .pricing__grid    { grid-template-columns: 1fr; }
   .booking__form    { grid-template-columns: 1fr; }
 
   .footer__top    { flex-direction: column; gap: var(--spacing-20); text-align: center; }
