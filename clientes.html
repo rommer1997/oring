@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes — Elena Salon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@300;400&family=Work+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    /* ── Search & toolbar ── */
+    .clients-toolbar {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-12);
+      padding: var(--sp-20) var(--sp-24);
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--color-mid-gray);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--color-mid-gray);
+      padding: 6px 0 10px 22px;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      outline: none;
+    }
+    .search-input::placeholder { color: var(--color-mid-gray); font-style: italic; }
+    .search-input:focus { border-bottom-color: var(--color-ink-teal); }
+
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-8);
+      background: var(--color-ink-teal);
+      color: var(--color-paper-white);
+      border: none;
+      padding: 10px 18px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-add:hover { opacity: 0.85; }
+    .btn-add svg { width: 14px; height: 14px; }
+
+    /* ── Filter tabs ── */
+    .filter-bar {
+      display: flex;
+      gap: 0;
+      padding: 0 var(--sp-24);
+      border-bottom: 1px solid var(--color-warm-bone);
+      background: var(--color-paper-white);
+    }
+    .filter-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: var(--sp-8) var(--sp-16);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .filter-tab:hover { color: var(--color-ink-teal); }
+    .filter-tab--active { color: var(--color-ink-teal); border-bottom-color: var(--color-ink-teal); }
+
+    /* ── Client table ── */
+    .clients-list {
+      padding: var(--sp-20) var(--sp-24);
+    }
+
+    .client-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--color-paper-white);
+      border: 1px solid var(--color-warm-bone);
+    }
+    .client-table th {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+      font-weight: 300;
+      text-align: left;
+      padding: var(--sp-12) var(--sp-20);
+      border-bottom: 1px solid var(--color-warm-bone);
+      white-space: nowrap;
+    }
+    .client-table td {
+      padding: var(--sp-16) var(--sp-20);
+      border-bottom: 1px solid var(--color-warm-bone);
+      vertical-align: middle;
+    }
+    .client-table tr:last-child td { border-bottom: none; }
+    .client-table tbody tr {
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .client-table tbody tr:hover { background: var(--color-warm-bone); }
+
+    .client-avatar {
+      width: 32px;
+      height: 32px;
+      background: var(--color-ink-teal);
+      color: var(--color-paper-white);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .client-name-cell {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-12);
+    }
+    .client-name {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--color-ink-teal);
+    }
+    .client-phone {
+      font-size: 11px;
+      letter-spacing: 0.03em;
+      color: var(--color-mid-gray);
+      margin-top: 2px;
+    }
+    .client-date {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+    }
+    .client-visits {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+    }
+    .client-spend {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+    }
+
+    /* status badge */
+    .badge {
+      display: inline-block;
+      font-family: var(--font-sans);
+      font-size: 9px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border: 1px solid currentColor;
+      white-space: nowrap;
+    }
+    .badge--ok       { color: #4a7c59; }
+    .badge--warning  { color: var(--color-mustard-olive, #aa9e54); }
+    .badge--risk     { color: #8b4a4a; }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      display: flex;
+      gap: 0;
+      background: var(--color-paper-white);
+      border: 1px solid var(--color-warm-bone);
+      margin-bottom: var(--sp-16);
+    }
+    .summary-stat {
+      flex: 1;
+      padding: var(--sp-16) var(--sp-20);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      border-right: 1px solid var(--color-warm-bone);
+    }
+    .summary-stat:last-child { border-right: none; }
+    .summary-stat__label {
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+    }
+    .summary-stat__value {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      line-height: 1;
+    }
+
+    /* ── Detail panel (slide-in) ── */
+    .detail-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6,45,50,0.4);
+      z-index: 300;
+    }
+    .detail-backdrop--open { display: block; }
+    .detail-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(480px, 100vw);
+      background: var(--color-paper-white);
+      border-left: 1px solid var(--color-warm-bone);
+      z-index: 301;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      overflow-y: auto;
+    }
+    .detail-backdrop--open .detail-panel {
+      transform: translateX(0);
+    }
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-16);
+      padding: var(--sp-20) var(--sp-24);
+      border-bottom: 1px solid var(--color-warm-bone);
+      position: sticky;
+      top: 0;
+      background: var(--color-paper-white);
+      z-index: 1;
+    }
+    .detail-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--color-mid-gray);
+      line-height: 1;
+      cursor: pointer;
+      padding: var(--sp-4);
+    }
+    .detail-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--color-ink-teal);
+      color: var(--color-paper-white);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .detail-identity { flex: 1; }
+    .detail-name {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      line-height: 1.2;
+    }
+    .detail-phone {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: var(--color-mid-gray);
+      margin-top: 3px;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: var(--sp-8);
+      padding: var(--sp-16) var(--sp-24);
+      border-bottom: 1px solid var(--color-warm-bone);
+    }
+    .btn-action {
+      flex: 1;
+      padding: 9px 0;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-action--primary {
+      background: var(--color-ink-teal);
+      color: var(--color-paper-white);
+      border: 1px solid var(--color-ink-teal);
+    }
+    .btn-action--primary:hover { opacity: 0.85; }
+    .btn-action--ghost {
+      background: transparent;
+      color: var(--color-ink-teal);
+      border: 1px solid var(--color-ink-teal);
+    }
+    .btn-action--ghost:hover { background: var(--color-warm-bone); }
+
+    .detail-stats {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      border-bottom: 1px solid var(--color-warm-bone);
+    }
+    .detail-stat {
+      padding: var(--sp-16) var(--sp-20);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-4);
+      border-right: 1px solid var(--color-warm-bone);
+    }
+    .detail-stat:last-child { border-right: none; }
+    .detail-stat__label {
+      font-size: 10px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+    }
+    .detail-stat__value {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+    }
+
+    .detail-section {
+      padding: var(--sp-20) var(--sp-24);
+      border-bottom: 1px solid var(--color-warm-bone);
+    }
+    .detail-section__title {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+      margin-bottom: var(--sp-12);
+    }
+    .detail-note {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* history rows */
+    .history-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: var(--sp-12);
+      padding: var(--sp-12) 0;
+      border-bottom: 1px solid var(--color-warm-bone);
+    }
+    .history-row:last-child { border-bottom: none; }
+    .history-row__service {
+      font-size: 14px;
+      color: var(--color-ink-teal);
+    }
+    .history-row__date {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+    }
+    .history-row__price {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      color: var(--color-ink-teal);
+    }
+
+    /* ── Empty search ── */
+    .empty {
+      text-align: center;
+      padding: 64px var(--sp-24);
+    }
+    .empty__text {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      opacity: 0.4;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .clients-toolbar { padding: var(--sp-16); }
+      .clients-list { padding: var(--sp-16); }
+      .filter-bar { padding: 0 var(--sp-16); }
+      .client-table th:nth-child(3),
+      .client-table td:nth-child(3),
+      .client-table th:nth-child(5),
+      .client-table td:nth-child(5) { display: none; }
+      .summary-bar { flex-wrap: wrap; }
+      .summary-stat { min-width: 50%; }
+    }
+    @media (max-width: 480px) {
+      .client-table th:nth-child(4),
+      .client-table td:nth-child(4) { display: none; }
+      .detail-stats { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <span class="sidebar__wordmark">Elena</span>
+      <button class="sidebar__close" id="sidebar-close" aria-label="Cerrar menú">✕</button>
+    </div>
+    <nav class="sidebar__nav">
+      <a href="dashboard.html" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="agenda.html" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="clientes.html" class="sidebar__link sidebar__link--active">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><line x1="4" y1="16" x2="4" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="16" x2="8" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="16" x2="12" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="16" y1="16" x2="16" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ingresos</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.2"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Las que vuelven</span>
+      </a>
+    </nav>
+    <div class="sidebar__bottom">
+      <a href="login.html" class="sidebar__link sidebar__link--secondary">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><path d="M10 2L2 8v10h5v-5h6v5h5V8L10 2z" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Web pública</span>
+      </a>
+      <a href="#" class="sidebar__link sidebar__link--secondary">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ajustes</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ─── MAIN SHELL ─── -->
+  <div class="shell">
+
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu" id="menu-btn" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+        <span class="topbar__title">Clientes</span>
+      </div>
+      <div class="topbar__right">
+        <span class="topbar__salon">Salón Goya</span>
+        <div class="topbar__avatar">LG</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Toolbar -->
+      <div class="clients-toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.2"/><line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.2"/></svg>
+          <input class="search-input" id="search" type="search" placeholder="Buscar clienta…" autocomplete="off" />
+        </div>
+        <button class="btn-add" id="btn-add">
+          <svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1.5"/></svg>
+          Nueva clienta
+        </button>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filter-bar">
+        <button class="filter-tab filter-tab--active" data-filter="all">Todas</button>
+        <button class="filter-tab" data-filter="ok">Vienen bien</button>
+        <button class="filter-tab" data-filter="warning">Hace tiempo</button>
+        <button class="filter-tab" data-filter="risk">En riesgo</button>
+      </div>
+
+      <!-- Content -->
+      <div class="clients-list">
+
+        <!-- Summary -->
+        <div class="summary-bar" id="summary-bar">
+          <div class="summary-stat">
+            <span class="summary-stat__label">Total clientas</span>
+            <span class="summary-stat__value" id="sum-total">—</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-stat__label">Vienen bien</span>
+            <span class="summary-stat__value" id="sum-ok">—</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-stat__label">Hace tiempo</span>
+            <span class="summary-stat__value" id="sum-warning">—</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-stat__label">En riesgo</span>
+            <span class="summary-stat__value" id="sum-risk">—</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <table class="client-table" id="client-table">
+          <thead>
+            <tr>
+              <th>Clienta</th>
+              <th>Última visita</th>
+              <th>Semanas sin venir</th>
+              <th>Visitas totales</th>
+              <th>Gasto habitual</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="client-tbody"></tbody>
+        </table>
+
+        <div class="empty" id="empty-state" style="display:none">
+          <p class="empty__text">No hay clientas que coincidan</p>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="agenda.html" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="clientes.html" class="bottom-nav__item bottom-nav__item--active">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><line x1="4" y1="16" x2="4" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="16" x2="8" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="16" x2="12" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="16" y1="16" x2="16" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ingresos</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ajustes</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- ─── DETAIL PANEL ─── -->
+  <div class="detail-backdrop" id="detail-backdrop">
+    <div class="detail-panel" id="detail-panel">
+
+      <div class="detail-header">
+        <button class="detail-close" id="detail-close" aria-label="Cerrar">✕</button>
+        <div class="detail-avatar" id="d-avatar">AM</div>
+        <div class="detail-identity">
+          <div class="detail-name" id="d-name">Ana Martínez</div>
+          <div class="detail-phone" id="d-phone">+34 612 345 678</div>
+        </div>
+        <span class="badge" id="d-badge">Activa</span>
+      </div>
+
+      <div class="detail-actions">
+        <button class="btn-action btn-action--primary" id="d-book">Nueva cita</button>
+        <button class="btn-action btn-action--ghost" id="d-whatsapp">WhatsApp</button>
+        <button class="btn-action btn-action--ghost" id="d-call">Llamar</button>
+      </div>
+
+      <div class="detail-stats">
+        <div class="detail-stat">
+          <span class="detail-stat__label">Visitas</span>
+          <span class="detail-stat__value" id="d-visits">—</span>
+        </div>
+        <div class="detail-stat">
+          <span class="detail-stat__label">Gasto total</span>
+          <span class="detail-stat__value" id="d-total">—</span>
+        </div>
+        <div class="detail-stat">
+          <span class="detail-stat__label">Por visita</span>
+          <span class="detail-stat__value" id="d-avg">—</span>
+        </div>
+      </div>
+
+      <div class="detail-section" id="d-notes-section">
+        <div class="detail-section__title">Notas y preferencias</div>
+        <p class="detail-note" id="d-notes">—</p>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section__title">Historial de visitas</div>
+        <div id="d-history"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── Data ──
+    const clients = [
+      { id:1,  name:'Ana Martínez',     phone:'+34 612 345 678', weeksAgo:1,  visits:24, avgSpend:75,  notes:'Le gusta el tinte oscuro. Alérgica al amoniaco — usar sin amoniaco siempre.', history:[
+        { date:'10 jun 2025', service:'Corte + color',  price:75  },
+        { date:'13 may 2025', service:'Corte + color',  price:75  },
+        { date:'15 abr 2025', service:'Mechas',         price:110 },
+        { date:'11 mar 2025', service:'Corte + color',  price:75  },
+        { date:'04 feb 2025', service:'Tratamiento',    price:55  },
+      ]},
+      { id:2,  name:'María José P.',    phone:'+34 623 456 789', weeksAgo:2,  visits:18, avgSpend:28,  notes:'Solo manicura. Prefiere gel en tono nude o rosa palo.', history:[
+        { date:'03 jun 2025', service:'Manicura gel',   price:30  },
+        { date:'06 may 2025', service:'Manicura gel',   price:30  },
+        { date:'08 abr 2025', service:'Manicura',       price:25  },
+      ]},
+      { id:3,  name:'Laura García',     phone:'+34 634 567 890', weeksAgo:0,  visits:9,  avgSpend:120, notes:'Keratina cada 3 meses. No le gustan los flequillos.', history:[
+        { date:'17 jun 2025', service:'Keratina',       price:120 },
+        { date:'18 mar 2025', service:'Keratina',       price:120 },
+        { date:'17 dic 2024', service:'Keratina',       price:115 },
+      ]},
+      { id:4,  name:'Sofía Ramírez',    phone:'+34 645 678 901', weeksAgo:1,  visits:32, avgSpend:40,  notes:'Clienta fija desde 2019. Trae a su madre también.', history:[
+        { date:'17 jun 2025', service:'Corte',          price:35  },
+        { date:'20 may 2025', service:'Corte + peinado',price:50  },
+        { date:'22 abr 2025', service:'Corte',          price:35  },
+      ]},
+      { id:5,  name:'Carmen Díaz',      phone:'+34 656 789 012', weeksAgo:1,  visits:15, avgSpend:95,  notes:'Mechas rubias. Últimas veces tono 8.1.', history:[
+        { date:'17 jun 2025', service:'Mechas',         price:95  },
+        { date:'11 mar 2025', service:'Mechas',         price:90  },
+        { date:'10 dic 2024', service:'Mechas',         price:90  },
+      ]},
+      { id:6,  name:'Isabel Vega',      phone:'+34 667 890 123', weeksAgo:1,  visits:11, avgSpend:32,  notes:'Solo pedicura. Viene cada 6-8 semanas.', history:[
+        { date:'17 jun 2025', service:'Pedicura',       price:32  },
+        { date:'22 abr 2025', service:'Pedicura',       price:32  },
+        { date:'25 feb 2025', service:'Pedicura',       price:32  },
+      ]},
+      { id:7,  name:'Marta Solís',      phone:'+34 678 901 234', weeksAgo:8,  visits:14, avgSpend:65,  notes:'Venía cada mes a corte + color. Último tinte: rubio 7.3.', history:[
+        { date:'22 abr 2025', service:'Corte + color',  price:70  },
+        { date:'25 mar 2025', service:'Corte',          price:35  },
+        { date:'21 ene 2025', service:'Corte + color',  price:65  },
+      ]},
+      { id:8,  name:'Pilar González',   phone:'+34 689 012 345', weeksAgo:10, visits:8,  avgSpend:55,  notes:'', history:[
+        { date:'08 abr 2025', service:'Corte + peinado',price:55  },
+        { date:'04 feb 2025', service:'Corte',          price:35  },
+      ]},
+      { id:9,  name:'Ana Belén R.',     phone:'+34 690 123 456', weeksAgo:6,  visits:21, avgSpend:88,  notes:'Balayage cada 3 meses. Le gustan los tonos tierra.', history:[
+        { date:'06 may 2025', service:'Balayage',       price:130 },
+        { date:'04 feb 2025', service:'Balayage',       price:125 },
+        { date:'05 nov 2024', service:'Balayage + corte',price:145},
+      ]},
+      { id:10, name:'Rosa Morales',     phone:'+34 601 234 567', weeksAgo:1,  visits:6,  avgSpend:55,  notes:'Clienta nueva desde enero. Recomienda a amigas.', history:[
+        { date:'17 jun 2025', service:'Corte + peinado',price:55  },
+        { date:'15 abr 2025', service:'Corte',          price:35  },
+      ]},
+      { id:11, name:'Pilar Herrera',    phone:'+34 612 111 222', weeksAgo:1,  visits:5,  avgSpend:130, notes:'Balayage. Primera vez hoy. Vino por recomendación de Sofía.', history:[
+        { date:'17 jun 2025', service:'Balayage',       price:130 },
+      ]},
+      { id:12, name:'Teresa Ruiz',      phone:'+34 623 222 333', weeksAgo:1,  visits:19, avgSpend:35,  notes:'Corte recto, sin escalones. Muy puntual.', history:[
+        { date:'17 jun 2025', service:'Corte',          price:35  },
+        { date:'20 may 2025', service:'Corte',          price:35  },
+        { date:'22 abr 2025', service:'Corte',          price:35  },
+      ]},
+      { id:13, name:'Nuria Castillo',   phone:'+34 634 333 444', weeksAgo:5,  visits:7,  avgSpend:65,  notes:'', history:[
+        { date:'13 may 2025', service:'Color',          price:65  },
+        { date:'18 feb 2025', service:'Corte + color',  price:75  },
+      ]},
+      { id:14, name:'Beatriz Lara',     phone:'+34 645 444 555', weeksAgo:3,  visits:12, avgSpend:75,  notes:'Siempre con Lucía. Tinte castaño oscuro 4.0.', history:[
+        { date:'27 may 2025', service:'Corte + color',  price:75  },
+        { date:'25 mar 2025', service:'Corte + color',  price:75  },
+      ]},
+      { id:15, name:'Concha Serrano',   phone:'+34 656 555 666', weeksAgo:4,  visits:16, avgSpend:90,  notes:'Mechas frías, tono ceniza. Muy exigente con el resultado.', history:[
+        { date:'20 may 2025', service:'Mechas',         price:95  },
+        { date:'18 feb 2025', service:'Mechas',         price:90  },
+      ]},
+    ];
+
+    function getStatus(w) {
+      if (w <= 4)  return 'ok';
+      if (w <= 7)  return 'warning';
+      return 'risk';
+    }
+    function badgeText(s) {
+      return { ok:'Viene bien', warning:'Hace tiempo', risk:'En riesgo' }[s];
+    }
+    function badgeClass(s) {
+      return { ok:'badge--ok', warning:'badge--warning', risk:'badge--risk' }[s];
+    }
+    function initials(name) {
+      return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    }
+
+    // ── Render summary ──
+    function renderSummary(list) {
+      document.getElementById('sum-total').textContent   = list.length;
+      document.getElementById('sum-ok').textContent      = list.filter(c=>getStatus(c.weeksAgo)==='ok').length;
+      document.getElementById('sum-warning').textContent = list.filter(c=>getStatus(c.weeksAgo)==='warning').length;
+      document.getElementById('sum-risk').textContent    = list.filter(c=>getStatus(c.weeksAgo)==='risk').length;
+    }
+
+    // ── State ──
+    let activeFilter = 'all';
+    let searchQ = '';
+
+    function filteredClients() {
+      return clients.filter(c => {
+        const s = getStatus(c.weeksAgo);
+        const matchFilter = activeFilter === 'all' || s === activeFilter;
+        const matchSearch = c.name.toLowerCase().includes(searchQ.toLowerCase());
+        return matchFilter && matchSearch;
+      });
+    }
+
+    // ── Render table ──
+    function renderTable() {
+      const list = filteredClients();
+      const tbody = document.getElementById('client-tbody');
+      tbody.innerHTML = '';
+      document.getElementById('empty-state').style.display = list.length ? 'none' : 'block';
+
+      list.forEach(c => {
+        const s = getStatus(c.weeksAgo);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div class="client-name-cell">
+              <div class="client-avatar">${initials(c.name)}</div>
+              <div>
+                <div class="client-name">${c.name}</div>
+                <div class="client-phone">${c.phone}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="client-date">${c.history[0]?.date || '—'}</span></td>
+          <td><span class="client-visits">${c.weeksAgo === 0 ? 'Hoy' : c.weeksAgo === 1 ? '1 semana' : c.weeksAgo + ' semanas'}</span></td>
+          <td><span class="client-visits">${c.visits}</span></td>
+          <td><span class="client-spend">€ ${c.avgSpend}</span></td>
+          <td><span class="badge ${badgeClass(s)}">${badgeText(s)}</span></td>
+        `;
+        tr.addEventListener('click', () => openDetail(c));
+        tbody.appendChild(tr);
+      });
+
+      renderSummary(list);
+    }
+
+    // ── Filter tabs ──
+    document.querySelectorAll('.filter-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('filter-tab--active'));
+        btn.classList.add('filter-tab--active');
+        activeFilter = btn.dataset.filter;
+        renderTable();
+      });
+    });
+
+    // ── Search ──
+    document.getElementById('search').addEventListener('input', e => {
+      searchQ = e.target.value;
+      renderTable();
+    });
+
+    // ── Detail panel ──
+    function openDetail(c) {
+      const s = getStatus(c.weeksAgo);
+      document.getElementById('d-avatar').textContent = initials(c.name);
+      document.getElementById('d-name').textContent   = c.name;
+      document.getElementById('d-phone').textContent  = c.phone;
+      document.getElementById('d-badge').textContent  = badgeText(s);
+      document.getElementById('d-badge').className    = 'badge ' + badgeClass(s);
+      document.getElementById('d-visits').textContent = c.visits;
+      const total = c.history.reduce((sum, h) => sum + h.price, 0);
+      document.getElementById('d-total').textContent  = '€ ' + total;
+      document.getElementById('d-avg').textContent    = '€ ' + c.avgSpend;
+      document.getElementById('d-notes').textContent  = c.notes || 'Sin notas.';
+
+      const hist = document.getElementById('d-history');
+      hist.innerHTML = c.history.map(h => `
+        <div class="history-row">
+          <div>
+            <div class="history-row__service">${h.service}</div>
+            <div class="history-row__date">${h.date}</div>
+          </div>
+          <span class="history-row__price">€ ${h.price}</span>
+        </div>
+      `).join('');
+
+      // action buttons
+      document.getElementById('d-whatsapp').onclick = () =>
+        window.open('https://wa.me/' + c.phone.replace(/\s+/g,'').replace('+',''));
+      document.getElementById('d-call').onclick = () =>
+        window.open('tel:' + c.phone.replace(/\s+/g,''));
+
+      document.getElementById('detail-backdrop').classList.add('detail-backdrop--open');
+    }
+
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+    document.getElementById('detail-backdrop').addEventListener('click', e => {
+      if (e.target === document.getElementById('detail-backdrop')) closeDetail();
+    });
+    function closeDetail() {
+      document.getElementById('detail-backdrop').classList.remove('detail-backdrop--open');
+    }
+
+    // ── Sidebar ──
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const open  = () => { sidebar.classList.add('sidebar--open'); overlay.classList.add('overlay--visible'); };
+    const close = () => { sidebar.classList.remove('sidebar--open'); overlay.classList.remove('overlay--visible'); };
+    document.getElementById('menu-btn').addEventListener('click', open);
+    document.getElementById('sidebar-close').addEventListener('click', close);
+    overlay.addEventListener('click', close);
+
+    // ── Init ──
+    renderTable();
+  </script>
+
+</body>
+</html>
