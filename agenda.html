@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda — Elena Salon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@300;400&family=Work+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    /* ── Day strip ── */
+    .day-strip {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--color-paper-white);
+      border-bottom: 1px solid var(--color-warm-bone);
+      padding: 0 var(--sp-24);
+      overflow-x: auto;
+      scrollbar-width: none;
+      position: sticky;
+      top: var(--topbar-h);
+      z-index: 90;
+    }
+    .day-strip::-webkit-scrollbar { display: none; }
+
+    .day-nav {
+      background: none;
+      border: none;
+      color: var(--color-mid-gray);
+      font-size: 18px;
+      padding: var(--sp-12) var(--sp-8);
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .day-nav:hover { color: var(--color-ink-teal); }
+
+    .day-strip__days {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .day-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: var(--sp-12) var(--sp-16);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      min-width: 56px;
+      transition: border-color 0.1s;
+    }
+    .day-btn:hover { background: var(--color-warm-bone); }
+    .day-btn--active {
+      border-bottom-color: var(--color-ink-teal);
+      color: var(--color-ink-teal);
+    }
+    .day-btn__name {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+    }
+    .day-btn--active .day-btn__name { color: var(--color-ink-teal); }
+    .day-btn__num {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      line-height: 1;
+    }
+    .day-btn__dot {
+      width: 4px;
+      height: 4px;
+      background: var(--color-dusty-rose);
+      border-radius: 50%;
+      visibility: hidden;
+    }
+    .day-btn--has-apts .day-btn__dot { visibility: visible; }
+
+    /* ── Toolbar ── */
+    .agenda-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--sp-20) var(--sp-24);
+    }
+    .agenda-toolbar__heading {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+    }
+    .agenda-toolbar__heading span {
+      font-size: 14px;
+      font-family: var(--font-sans);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+      margin-left: var(--sp-12);
+      font-weight: 300;
+    }
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-8);
+      background: var(--color-ink-teal);
+      color: var(--color-paper-white);
+      border: none;
+      padding: 10px 18px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-add:hover { opacity: 0.85; }
+    .btn-add svg { width: 14px; height: 14px; }
+
+    /* ── Filter tabs ── */
+    .filter-bar {
+      display: flex;
+      gap: 0;
+      padding: 0 var(--sp-24);
+      border-bottom: 1px solid var(--color-warm-bone);
+      background: var(--color-paper-white);
+    }
+    .filter-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: var(--sp-8) var(--sp-16);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.1s, border-color 0.1s;
+    }
+    .filter-tab:hover { color: var(--color-ink-teal); }
+    .filter-tab--active { color: var(--color-ink-teal); border-bottom-color: var(--color-ink-teal); }
+
+    /* ── Full agenda list ── */
+    .agenda-list {
+      padding: 0 var(--sp-24) var(--sp-24);
+    }
+
+    /* ── Time slot group ── */
+    .slot-group { margin-top: var(--sp-20); }
+    .slot-group__hour {
+      font-family: var(--font-serif);
+      font-size: 13px;
+      color: var(--color-mid-gray);
+      letter-spacing: 0.04em;
+      padding: var(--sp-4) 0;
+      border-bottom: 1px solid var(--color-warm-bone);
+      margin-bottom: var(--sp-4);
+    }
+
+    /* ── Appointment card ── */
+    .apt-card {
+      display: grid;
+      grid-template-columns: 4px 1fr auto;
+      gap: 0;
+      background: var(--color-paper-white);
+      border: 1px solid var(--color-warm-bone);
+      margin-bottom: var(--sp-8);
+      transition: border-color 0.1s;
+    }
+    .apt-card:hover { border-color: var(--color-slate-teal); }
+    .apt-card__stripe { background: var(--color-warm-bone); }
+    .apt-card--active .apt-card__stripe { background: var(--color-dusty-rose); }
+    .apt-card--done .apt-card__stripe { background: #c9ddd1; }
+    .apt-card--cancelled .apt-card__stripe { background: var(--color-warm-bone); }
+
+    .apt-card__body {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      align-items: center;
+      gap: var(--sp-16);
+      padding: var(--sp-16) var(--sp-20);
+    }
+    .apt-card__time-block { display: flex; flex-direction: column; gap: 2px; }
+    .apt-card__time {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+    }
+    .apt-card__duration {
+      font-size: 10px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+    }
+    .apt-card__details { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+    .apt-card__client {
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--color-ink-teal);
+    }
+    .apt-card--done .apt-card__client { opacity: 0.5; }
+    .apt-card--cancelled .apt-card__client { opacity: 0.4; text-decoration: line-through; }
+    .apt-card__service {
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--color-slate-teal);
+    }
+    .apt-card__stylist {
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+    }
+    .apt-card__meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--sp-8);
+    }
+    .apt-card__status {
+      font-size: 10px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border: 1px solid currentColor;
+    }
+    .status--done    { color: #4a7c59; }
+    .status--active  { color: var(--color-dusty-rose); }
+    .status--pending { color: var(--color-mid-gray); }
+    .status--cancelled { color: #999; }
+    .apt-card__price {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      color: var(--color-ink-teal);
+    }
+    .apt-card--done .apt-card__price { opacity: 0.5; }
+
+    /* three-dot menu */
+    .apt-card__menu-btn {
+      background: none;
+      border: none;
+      color: var(--color-mid-gray);
+      font-size: 18px;
+      letter-spacing: 2px;
+      padding: var(--sp-16) var(--sp-12);
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .apt-card__menu-btn:hover { color: var(--color-ink-teal); }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 64px var(--sp-24);
+      color: var(--color-mid-gray);
+    }
+    .empty__icon { font-size: 32px; margin-bottom: var(--sp-16); opacity: 0.4; }
+    .empty__text {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      opacity: 0.5;
+    }
+
+    /* ── New appointment modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6,45,50,0.5);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-20);
+    }
+    .modal-backdrop--open { display: flex; }
+    .modal {
+      background: var(--color-paper-white);
+      width: min(500px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--sp-20) var(--sp-24);
+      border-bottom: 1px solid var(--color-warm-bone);
+    }
+    .modal__title {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-ink-teal);
+    }
+    .modal__close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--color-mid-gray);
+      line-height: 1;
+      cursor: pointer;
+    }
+    .modal__body { padding: var(--sp-24); }
+    .modal__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-20); }
+    .modal__grid .field--full { grid-column: 1 / -1; }
+
+    .field { display: flex; flex-direction: column; gap: var(--sp-8); }
+    .field__label {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-carbon);
+    }
+    .field__input, .field__select {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--color-mid-gray);
+      padding: 6px 0 10px;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--color-ink-teal);
+      outline: none;
+      appearance: none;
+    }
+    .field__input:focus, .field__select:focus { border-bottom-color: var(--color-ink-teal); }
+
+    .modal__footer {
+      display: flex;
+      gap: var(--sp-12);
+      justify-content: flex-end;
+      padding: var(--sp-20) var(--sp-24);
+      border-top: 1px solid var(--color-warm-bone);
+    }
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--color-warm-bone);
+      padding: 10px 20px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-mid-gray);
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--color-ink-teal);
+      border: 1px solid var(--color-ink-teal);
+      padding: 10px 20px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.042em;
+      text-transform: uppercase;
+      color: var(--color-paper-white);
+      cursor: pointer;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .agenda-toolbar { padding: var(--sp-16); }
+      .agenda-list { padding: 0 var(--sp-16) var(--sp-24); }
+      .filter-bar { padding: 0 var(--sp-16); }
+      .day-strip { padding: 0 var(--sp-8); }
+      .apt-card__body { grid-template-columns: 80px 1fr; gap: var(--sp-12); }
+      .apt-card__meta { display: none; }
+      .modal__grid { grid-template-columns: 1fr; }
+      .agenda-toolbar__heading span { display: none; }
+    }
+    @media (max-width: 480px) {
+      .apt-card__duration { display: none; }
+      .apt-card__stylist { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <span class="sidebar__wordmark">Elena</span>
+      <button class="sidebar__close" id="sidebar-close" aria-label="Cerrar menú">✕</button>
+    </div>
+    <nav class="sidebar__nav">
+      <a href="dashboard.html" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="agenda.html" class="sidebar__link sidebar__link--active">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><line x1="4" y1="16" x2="4" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="16" x2="8" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="16" x2="12" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="16" y1="16" x2="16" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ingresos</span>
+      </a>
+      <a href="#" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.2"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Las que vuelven</span>
+      </a>
+    </nav>
+    <div class="sidebar__bottom">
+      <a href="login.html" class="sidebar__link sidebar__link--secondary">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><path d="M10 2L2 8v10h5v-5h6v5h5V8L10 2z" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Web pública</span>
+      </a>
+      <a href="#" class="sidebar__link sidebar__link--secondary">
+        <svg class="sidebar__icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ajustes</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ─── MAIN SHELL ─── -->
+  <div class="shell">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="topbar__menu" id="menu-btn" aria-label="Abrir menú">
+          <span></span><span></span><span></span>
+        </button>
+        <span class="topbar__title">Agenda — <time id="topbar-date">Martes 17 Jun 2025</time></span>
+      </div>
+      <div class="topbar__right">
+        <span class="topbar__salon">Salón Goya</span>
+        <div class="topbar__avatar">LG</div>
+      </div>
+    </header>
+
+    <!-- Day strip -->
+    <div class="day-strip" id="day-strip">
+      <button class="day-nav" id="prev-week" aria-label="Semana anterior">‹</button>
+      <div class="day-strip__days" id="day-buttons"></div>
+      <button class="day-nav" id="next-week" aria-label="Semana siguiente">›</button>
+    </div>
+
+    <!-- Content -->
+    <main class="content">
+
+      <!-- Toolbar -->
+      <div class="agenda-toolbar">
+        <h1 class="agenda-toolbar__heading" id="agenda-heading">
+          Martes<span id="agenda-date-sub">17 de junio</span>
+        </h1>
+        <button class="btn-add" id="btn-add-apt">
+          <svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1.5"/></svg>
+          Nueva cita
+        </button>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filter-bar">
+        <button class="filter-tab filter-tab--active" data-filter="all">Todas</button>
+        <button class="filter-tab" data-filter="pending">Pendientes</button>
+        <button class="filter-tab" data-filter="active">En curso</button>
+        <button class="filter-tab" data-filter="done">Hechas</button>
+      </div>
+
+      <!-- Appointment list -->
+      <div class="agenda-list" id="agenda-list"></div>
+
+    </main>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="11" width="7" height="7" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="agenda.html" class="bottom-nav__item bottom-nav__item--active">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="8" x2="18" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="14" y1="2" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.2"/><path d="M3 18c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Clientes</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><line x1="4" y1="16" x2="4" y2="10" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="16" x2="8" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="16" x2="12" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="16" y1="16" x2="16" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ingresos</span>
+      </a>
+      <a href="#" class="bottom-nav__item">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.2"/></svg>
+        <span>Ajustes</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- ─── NUEVA CITA MODAL ─── -->
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal__header">
+        <span class="modal__title" id="modal-title">Nueva cita</span>
+        <button class="modal__close" id="modal-close" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="modal__grid">
+          <div class="field field--full">
+            <label class="field__label" for="m-client">Clienta</label>
+            <input class="field__input" id="m-client" type="text" placeholder="Nombre o buscar…" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="m-service">Servicio</label>
+            <select class="field__select" id="m-service">
+              <option>Corte</option>
+              <option>Corte + color</option>
+              <option>Mechas / Balayage</option>
+              <option>Keratina</option>
+              <option>Peinado</option>
+              <option>Manicura</option>
+              <option>Pedicura</option>
+              <option>Tratamiento</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="m-stylist">Peluquera</label>
+            <select class="field__select" id="m-stylist">
+              <option>Lucía</option>
+              <option>Carmen</option>
+              <option>Elena</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="m-date">Día</label>
+            <input class="field__input" id="m-date" type="date" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="m-time">Hora</label>
+            <input class="field__input" id="m-time" type="time" step="1800" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="m-duration">Duración</label>
+            <select class="field__select" id="m-duration">
+              <option value="30">30 min</option>
+              <option value="60" selected>1 hora</option>
+              <option value="90">1 h 30 min</option>
+              <option value="120">2 horas</option>
+              <option value="180">3 horas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="m-price">Precio (€)</label>
+            <input class="field__input" id="m-price" type="number" min="0" step="5" placeholder="0" />
+          </div>
+          <div class="field field--full">
+            <label class="field__label" for="m-note">Notas</label>
+            <input class="field__input" id="m-note" type="text" placeholder="Color anterior, preferencias…" />
+          </div>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-ghost" id="modal-cancel">Cancelar</button>
+        <button class="btn-primary" id="modal-save">Guardar cita</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Data: demo appointments keyed by ISO date ──
+    const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const DAY_NAMES_LONG = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+    const BASE = new Date('2025-06-17'); // today in demo
+
+    const apts = {
+      '2025-06-17': [
+        { time:'09:00', duration:60,  client:'Ana Martínez',   service:'Corte + color',  stylist:'Lucía',  price:75, status:'done'     },
+        { time:'09:30', duration:45,  client:'María José P.',  service:'Manicura',        stylist:'Carmen', price:28, status:'done'     },
+        { time:'10:00', duration:120, client:'Laura García',   service:'Keratina',        stylist:'Lucía',  price:120,status:'active'   },
+        { time:'10:30', duration:30,  client:'Sofía Ramírez',  service:'Corte',           stylist:'Elena',  price:35, status:'active'   },
+        { time:'11:00', duration:90,  client:'Carmen Díaz',    service:'Mechas',          stylist:'Lucía',  price:95, status:'pending'  },
+        { time:'11:30', duration:45,  client:'Isabel Vega',    service:'Pedicura',        stylist:'Carmen', price:32, status:'pending'  },
+        { time:'12:00', duration:60,  client:'Rosa Morales',   service:'Corte + peinado', stylist:'Elena',  price:55, status:'pending'  },
+        { time:'13:00', duration:120, client:'Pilar Herrera',  service:'Balayage',        stylist:'Lucía',  price:130,status:'pending'  },
+        { time:'16:00', duration:30,  client:'Teresa Ruiz',    service:'Corte',           stylist:'Carmen', price:30, status:'pending'  },
+        { time:'17:00', duration:60,  client:'Nuria Castillo', service:'Color',           stylist:'Elena',  price:65, status:'pending'  },
+      ],
+      '2025-06-18': [
+        { time:'10:00', duration:60,  client:'Beatriz Lara',   service:'Corte + color',  stylist:'Lucía',  price:75, status:'pending' },
+        { time:'11:30', duration:45,  client:'Amparo Vidal',   service:'Manicura',       stylist:'Carmen', price:28, status:'pending' },
+        { time:'16:00', duration:90,  client:'Concha Serrano', service:'Mechas',         stylist:'Lucía',  price:95, status:'pending' },
+      ],
+      '2025-06-19': [
+        { time:'09:00', duration:60,  client:'Rocío Jiménez',  service:'Corte',          stylist:'Elena',  price:35, status:'pending' },
+        { time:'11:00', duration:120, client:'Lola Fernández', service:'Keratina',       stylist:'Lucía',  price:120,status:'pending' },
+      ],
+    };
+
+    // ── State ──
+    let activeDate = '2025-06-17';
+    let activeFilter = 'all';
+    let weekOffset = 0;
+
+    // ── Date helpers ──
+    function toISO(d) {
+      return d.toISOString().slice(0,10);
+    }
+    function addDays(base, n) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+    function getWeekStart(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      const mon = new Date(d);
+      mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      return mon;
+    }
+
+    // ── Render day strip ──
+    function renderStrip() {
+      const container = document.getElementById('day-buttons');
+      container.innerHTML = '';
+      const base = getWeekStart(activeDate);
+      base.setDate(base.getDate() + weekOffset * 7);
+
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(base, i);
+        const iso = toISO(d);
+        const hasApts = (apts[iso] || []).length > 0;
+        const isActive = iso === activeDate;
+        const isToday  = iso === '2025-06-17';
+
+        const btn = document.createElement('button');
+        btn.className = 'day-btn' + (isActive ? ' day-btn--active' : '') + (hasApts ? ' day-btn--has-apts' : '');
+        btn.innerHTML = `
+          <span class="day-btn__name">${DAYS[d.getDay()]}</span>
+          <span class="day-btn__num" style="${isToday && !isActive ? 'color:var(--color-dusty-rose)' : ''}">${d.getDate()}</span>
+          <span class="day-btn__dot"></span>
+        `;
+        btn.addEventListener('click', () => { activeDate = iso; render(); });
+        container.appendChild(btn);
+      }
+    }
+
+    // ── Render appointments ──
+    function renderApts() {
+      const list = document.getElementById('agenda-list');
+      const d = new Date(activeDate + 'T12:00:00');
+      document.getElementById('agenda-heading').innerHTML =
+        `${DAY_NAMES_LONG[d.getDay()]}<span id="agenda-date-sub">${d.getDate()} de ${MONTHS[d.getMonth()]}</span>`;
+      document.getElementById('topbar-date').textContent =
+        `${DAY_NAMES_LONG[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3).charAt(0).toUpperCase() + MONTHS[d.getMonth()].slice(0,3).slice(1)} ${d.getFullYear()}`;
+
+      let items = apts[activeDate] || [];
+      if (activeFilter !== 'all') items = items.filter(a => a.status === activeFilter);
+
+      list.innerHTML = '';
+
+      if (!items.length) {
+        list.innerHTML = `<div class="empty"><div class="empty__icon">📅</div><p class="empty__text">No hay citas para este día</p></div>`;
+        return;
+      }
+
+      // Group by hour block
+      const groups = {};
+      items.forEach(a => {
+        const h = a.time.split(':')[0] + ':00';
+        if (!groups[h]) groups[h] = [];
+        groups[h].push(a);
+      });
+
+      const statusLabel = { done:'Hecha', active:'En curso', pending:'Pendiente', cancelled:'Cancelada' };
+
+      Object.entries(groups).forEach(([hour, group]) => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'slot-group';
+        groupEl.innerHTML = `<div class="slot-group__hour">${hour}</div>`;
+
+        group.forEach(a => {
+          const card = document.createElement('div');
+          card.className = `apt-card apt-card--${a.status}`;
+          card.innerHTML = `
+            <div class="apt-card__stripe"></div>
+            <div class="apt-card__body">
+              <div class="apt-card__time-block">
+                <span class="apt-card__time">${a.time}</span>
+                <span class="apt-card__duration">${a.duration} min</span>
+              </div>
+              <div class="apt-card__details">
+                <span class="apt-card__client">${a.client}</span>
+                <span class="apt-card__service">${a.service}</span>
+                <span class="apt-card__stylist">${a.stylist}</span>
+              </div>
+              <div class="apt-card__meta">
+                <span class="apt-card__status status--${a.status}">${statusLabel[a.status]}</span>
+                <span class="apt-card__price">€ ${a.price}</span>
+              </div>
+            </div>
+            <button class="apt-card__menu-btn" aria-label="Opciones">···</button>
+          `;
+          groupEl.appendChild(card);
+        });
+
+        list.appendChild(groupEl);
+      });
+    }
+
+    function render() {
+      renderStrip();
+      renderApts();
+    }
+
+    // ── Week navigation ──
+    document.getElementById('prev-week').addEventListener('click', () => { weekOffset--; renderStrip(); });
+    document.getElementById('next-week').addEventListener('click', () => { weekOffset++; renderStrip(); });
+
+    // ── Filter tabs ──
+    document.querySelectorAll('.filter-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('filter-tab--active'));
+        btn.classList.add('filter-tab--active');
+        activeFilter = btn.dataset.filter;
+        renderApts();
+      });
+    });
+
+    // ── Sidebar ──
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const open  = () => { sidebar.classList.add('sidebar--open'); overlay.classList.add('overlay--visible'); };
+    const close = () => { sidebar.classList.remove('sidebar--open'); overlay.classList.remove('overlay--visible'); };
+    document.getElementById('menu-btn').addEventListener('click', open);
+    document.getElementById('sidebar-close').addEventListener('click', close);
+    overlay.addEventListener('click', close);
+
+    // ── Modal ──
+    const modal = document.getElementById('modal');
+    const openModal  = () => {
+      document.getElementById('m-date').value = activeDate;
+      modal.classList.add('modal-backdrop--open');
+    };
+    const closeModal = () => modal.classList.remove('modal-backdrop--open');
+
+    document.getElementById('btn-add-apt').addEventListener('click', openModal);
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+    document.getElementById('modal-save').addEventListener('click', () => {
+      const client  = document.getElementById('m-client').value.trim();
+      const service = document.getElementById('m-service').value;
+      const stylist = document.getElementById('m-stylist').value;
+      const date    = document.getElementById('m-date').value;
+      const time    = document.getElementById('m-time').value;
+      const dur     = +document.getElementById('m-duration').value;
+      const price   = +document.getElementById('m-price').value || 0;
+      if (!client || !date || !time) return;
+      if (!apts[date]) apts[date] = [];
+      apts[date].push({ time, duration: dur, client, service, stylist, price, status: 'pending' });
+      apts[date].sort((a,b) => a.time.localeCompare(b.time));
+      activeDate = date;
+      closeModal();
+      render();
+    });
+
+    // ── Init ──
+    // Pre-fill modal time to next half-hour
+    const now = new Date();
+    const mins = now.getMinutes() < 30 ? '30' : '00';
+    const hrs  = String(now.getMinutes() < 30 ? now.getHours() : now.getHours() + 1).padStart(2,'0');
+    document.getElementById('m-time').value = `${hrs}:${mins}`;
+
+    render();
+  </script>
+
+</body>
+</html>
