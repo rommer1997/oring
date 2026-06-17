@@ -1,0 +1,410 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------
+    // GLOGAL SAFETY NET
+    // ----------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ----------------------------------------------------
+    // CONSTANTS & REUSABLE HARDENED INSTANCE HELPERS
+    // ----------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAccountOwner() {
+      return isSignedIn();
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Verifies that the authenticated user belongs to the requested salon tenant and is Active
+    function isUserOfTenant(tenantId) {
+      return isAccountOwner() 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && getUserData().tenantId == tenantId 
+        && getUserData().status == 'Activo';
+    }
+
+    // Verifies if the authenticated user has an executive role (Administrador or Propietaria)
+    function isManagerOrAdmin(tenantId) {
+      return isUserOfTenant(tenantId) 
+        && (getUserData().role == 'Administrador' || getUserData().role == 'Propietaria');
+    }
+
+    function isGlobalAdmin() {
+      return isAccountOwner()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && getUserData().role == 'Administrador'
+        && getUserData().globalAdmin == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ----------------------------------------------------
+    // SCHEMA TYPE CHANGER VALIDATION BLUEPRINTS
+    // ----------------------------------------------------
+    function isValidTenant(data) {
+      return data.keys().hasAll(['id', 'name', 'address', 'phone', 'city'])
+        && data.keys().hasOnly([
+          'id', 'name', 'address', 'phone', 'city', 'email',
+          'onboardingCompleted', 'createdAt', 'updatedAt',
+          'stripeCustomerId', 'stripeSubscriptionId',
+          'subscriptionStatus', 'trialEndsAt', 'subscriptionEndsAt',
+          'publicBookingEnabled', 'slug', 'bookingNoticeHours', 'bookingSlotMinutes'
+        ])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && data.address is string && data.address.size() <= 256
+        && data.phone is string && data.phone.size() <= 64
+        && data.city is string && data.city.size() <= 128
+        && (!('email' in data) || (data.email is string && data.email.size() <= 256))
+        && (!('onboardingCompleted' in data) || data.onboardingCompleted is bool)
+        && (!('stripeCustomerId' in data) || (data.stripeCustomerId is string && data.stripeCustomerId.size() <= 128))
+        && (!('stripeSubscriptionId' in data) || (data.stripeSubscriptionId is string && data.stripeSubscriptionId.size() <= 128))
+        && (!('subscriptionStatus' in data) || data.subscriptionStatus in ['active', 'trialing', 'canceled', 'past_due', 'unpaid'])
+        && (!('trialEndsAt' in data) || data.trialEndsAt is string)
+        && (!('subscriptionEndsAt' in data) || data.subscriptionEndsAt is string)
+        && (!('publicBookingEnabled' in data) || data.publicBookingEnabled is bool)
+        && (!('slug' in data) || (data.slug is string && data.slug.size() <= 128 && data.slug.matches('^[a-z0-9\\-]+$')))
+        && (!('bookingNoticeHours' in data) || (data.bookingNoticeHours is int && data.bookingNoticeHours >= 0 && data.bookingNoticeHours <= 720))
+        && (!('bookingSlotMinutes' in data) || data.bookingSlotMinutes in [15, 30, 60]);
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'name', 'role', 'tenantId', 'status', 'emailVerified', 'createdAt'])
+        && data.keys().hasOnly(['id', 'email', 'name', 'role', 'tenantId', 'status', 'emailVerified', 'createdAt', 'staffMemberId', 'onboardingCompleted', 'photoURL', 'lastLoginAt', 'globalAdmin'])
+        && data.id is string && data.id.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && data.name is string && data.name.size() <= 256
+        && data.role in ['Administrador', 'Estilista de autor', 'Recepcionista', 'Especialista Facial', 'Propietaria']
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.status in ['Activo', 'Inactivo']
+        && data.emailVerified is bool
+        && (!('onboardingCompleted' in data) || data.onboardingCompleted is bool)
+        && (!('globalAdmin' in data) || data.globalAdmin is bool)
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1024));
+    }
+
+    function isValidStaffMember(data) {
+      return data.keys().hasAll(['id', 'name', 'role', 'avatar', 'email', 'phone', 'specialty', 'tenantId'])
+        && data.keys().hasOnly(['id', 'name', 'role', 'avatar', 'email', 'phone', 'specialty', 'tenantId', 'visibleToClient', 'acceptsOnlineBookings', 'schedule'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && data.role is string && data.role.size() <= 128
+        && data.avatar is string && data.avatar.size() <= 1024
+        && data.email is string && data.email.size() <= 256
+        && data.phone is string && data.phone.size() <= 64
+        && data.specialty is string && data.specialty.size() <= 512
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && (!('visibleToClient' in data) || data.visibleToClient is bool)
+        && (!('acceptsOnlineBookings' in data) || data.acceptsOnlineBookings is bool);
+    }
+
+    function isValidClient(data) {
+      return data.keys().hasAll(['id', 'name', 'phoneNumber', 'email', 'riskLevel', 'riskDays', 'spendingLtv', 'totalVisits', 'tenantId'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && data.phoneNumber is string && data.phoneNumber.size() <= 64
+        && data.email is string && data.email.size() <= 256
+        && data.riskLevel in ['Alta', 'Media', 'Baja', 'Crítico', 'Alto', 'Medio', 'Bajo']
+        && data.riskDays is int && data.riskDays >= 0
+        && data.spendingLtv is number && data.spendingLtv >= 0
+        && data.totalVisits is int && data.totalVisits >= 0
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && (!('contactConsent' in data) || data.contactConsent is bool)
+        && (!('contactConsentAt' in data) || data.contactConsentAt is string)
+        && (!('marketingOptOut' in data) || data.marketingOptOut is bool);
+    }
+
+    function isValidService(data) {
+      return data.keys().hasAll(['id', 'name', 'category', 'price', 'durationMinutes'])
+        && data.keys().hasOnly(['id', 'name', 'category', 'price', 'durationMinutes', 'tenantId'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && data.category in ['Cabello', 'Uñas', 'Facial', 'Masaje']
+        && data.price is number && data.price >= 0
+        && data.durationMinutes is int && data.durationMinutes > 0
+        && (!('tenantId' in data) || (data.tenantId is string && data.tenantId.size() <= 128));
+    }
+
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['id', 'clientId', 'clientName', 'serviceId', 'serviceName', 'staffId', 'staffName', 'date', 'time', 'price', 'status', 'tenantId'])
+        && data.keys().hasOnly(['id', 'clientId', 'clientName', 'serviceId', 'serviceName', 'staffId', 'staffName', 'date', 'time', 'price', 'status', 'tenantId', 'source', 'clientEmail', 'clientPhone'])
+        && data.id is string && data.id.size() <= 128
+        && data.clientId is string && data.clientId.size() <= 128
+        && data.clientName is string && data.clientName.size() <= 256
+        && data.serviceId is string && data.serviceId.size() <= 128
+        && data.serviceName is string && data.serviceName.size() <= 256
+        && data.staffId is string && data.staffId.size() <= 128
+        && data.staffName is string && data.staffName.size() <= 256
+        && data.date is string && data.date.size() <= 64
+        && data.time is string && data.time.size() <= 32
+        && data.price is number && data.price >= 0
+        && data.status in ['Pagado', 'Reservado', 'Cancelado']
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && (!('source' in data) || data.source in ['manual', 'online'])
+        && (!('clientEmail' in data) || (data.clientEmail is string && data.clientEmail.size() <= 256))
+        && (!('clientPhone' in data) || (data.clientPhone is string && data.clientPhone.size() <= 64));
+    }
+
+    function isValidRetentionScore(data) {
+      return data.keys().hasAll(['id', 'clientId', 'tenantId', 'score', 'riskLevel', 'riskDays', 'calculatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.clientId is string && data.clientId.size() <= 128
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.score is int && data.score >= 0 && data.score <= 100
+        && data.riskLevel in ['Alta', 'Media', 'Baja', 'Crítico', 'Alto', 'Medio', 'Bajo']
+        && data.riskDays is int && data.riskDays >= 0;
+    }
+
+    function isValidMessageDraft(data) {
+      return data.keys().hasAll(['id', 'clientId', 'tenantId', 'content', 'tone', 'suggestedOfferTitle', 'status', 'createdBy', 'createdAt'])
+        && data.keys().hasOnly(['id', 'clientId', 'tenantId', 'content', 'versions', 'tone', 'suggestedOfferTitle', 'status', 'createdBy', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.clientId is string && data.clientId.size() <= 128
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.content is string && data.content.size() <= 2048
+        && data.tone in ['Cercano', 'Profesional', 'Elegante']
+        && data.suggestedOfferTitle is string && data.suggestedOfferTitle.size() <= 256
+        && data.status in ['pendiente', 'aprobado', 'enviado', 'descartado']
+        && data.createdBy is string && data.createdBy.size() <= 128;
+    }
+
+    function isValidMessageEvent(data) {
+      return data.keys().hasAll(['id', 'clientId', 'tenantId', 'sender', 'text', 'timestamp', 'status', 'channel'])
+        && data.keys().size() == 8
+        && data.id is string && data.id.size() <= 128
+        && data.clientId is string && data.clientId.size() <= 128
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.sender in ['client', 'ai_auto', 'user']
+        && data.text is string && data.text.size() <= 4096
+        && data.status in ['sent', 'delivered', 'read', 'failed']
+        && data.channel in ['whatsapp', 'email', 'system'];
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['id', 'tenantId', 'userId', 'userEmail', 'action', 'entityType', 'entityId', 'details', 'timestamp'])
+        && data.keys().size() == 9
+        && data.id is string && data.id.size() <= 128
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.userEmail is string && data.userEmail.size() <= 256
+        && data.action is string && data.action.size() <= 128
+        && data.entityType in ['appointments', 'clients', 'services', 'staff_members', 'tenants', 'settings', 'users']
+        && data.entityId is string && data.entityId.size() <= 128
+        && data.details is string && data.details.size() <= 4096;
+    }
+
+    function isValidInventoryItem(data) {
+      return data.keys().hasAll(['id', 'name', 'category', 'unit', 'currentStock', 'minStock', 'costPrice', 'tenantId'])
+        && data.keys().hasOnly(['id', 'name', 'brand', 'category', 'unit', 'currentStock', 'minStock', 'costPrice', 'supplier', 'notes', 'tenantId', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && (!('brand' in data) || (data.brand is string && data.brand.size() <= 128))
+        && data.category in ['Coloración', 'Tratamiento', 'Uñas', 'Facial', 'Limpieza', 'Herramientas', 'Otro']
+        && data.unit is string && data.unit.size() <= 64
+        && data.currentStock is number && data.currentStock >= 0
+        && data.minStock is number && data.minStock >= 0
+        && data.costPrice is number && data.costPrice >= 0
+        && (!('supplier' in data) || (data.supplier is string && data.supplier.size() <= 256))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1024))
+        && data.tenantId is string && data.tenantId.size() <= 128
+        && (!('updatedAt' in data) || data.updatedAt is string);
+    }
+
+
+    // ----------------------------------------------------
+    // TENANTS RULES
+    // ----------------------------------------------------
+    match /tenants/{tenantId} {
+      allow read: if isUserOfTenant(tenantId) || isGlobalAdmin();
+      allow create: if isAccountOwner() && isValidId(tenantId) && isValidTenant(incoming());
+      allow update: if (isManagerOrAdmin(tenantId) || isGlobalAdmin()) && isValidTenant(incoming())
+        && incoming().id == existing().id;
+      allow delete: if false; // Salons can't be deleted entirely from client-sdk
+    }
+
+    // ----------------------------------------------------
+    // USERS RULES (Private PII profiles - Split Strategy)
+    // ----------------------------------------------------
+    match /users/{userId} {
+      allow read: if isAccountOwner() && (request.auth.uid == userId || getUserData().role == 'Administrador');
+      // A user is created during sign up, role defaults to stylist or is approved
+      allow create: if isAccountOwner() && request.auth.uid == userId && isValidUser(incoming())
+        && (!('globalAdmin' in incoming()) || incoming().globalAdmin == false);
+      allow update: if isAccountOwner() 
+        && (
+          // Allow admins to update all properties (e.g. status, role change)
+          (getUserData().role == 'Administrador' && isValidUser(incoming()))
+          || 
+          // Regular users can only update their own non-RBAC fields (like name)
+          (request.auth.uid == userId 
+            && isValidUser(incoming())
+            && incoming().role == existing().role
+            && incoming().status == existing().status
+            && incoming().tenantId == existing().tenantId
+            && incoming().id == existing().id
+            && (
+              (!('globalAdmin' in incoming()) && !('globalAdmin' in existing()))
+              || (
+                ('globalAdmin' in incoming())
+                && ('globalAdmin' in existing())
+                && incoming().globalAdmin == existing().globalAdmin
+              )
+            )
+          )
+        );
+      allow delete: if false;
+    }
+
+    // ----------------------------------------------------
+    // SALON SUB-RESOURCES (Tenants relational children)
+    // ----------------------------------------------------
+    
+    // STAFF MEMBERS
+    match /tenants/{tenantId}/staff_members/{staffId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isManagerOrAdmin(tenantId) && isValidId(staffId) && isValidStaffMember(incoming()) && incoming().tenantId == tenantId;
+      allow update: if isManagerOrAdmin(tenantId) && isValidStaffMember(incoming()) 
+        && incoming().id == existing().id
+        && incoming().tenantId == existing().tenantId;
+      allow delete: if isManagerOrAdmin(tenantId);
+    }
+
+    // CLIENTS
+    match /tenants/{tenantId}/clients/{clientId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(clientId) && isValidClient(incoming()) && incoming().tenantId == tenantId;
+      allow update: if isUserOfTenant(tenantId) && isValidClient(incoming())
+        && incoming().id == existing().id
+        && incoming().tenantId == existing().tenantId
+        && (
+          // Ensure non-admins cannot change immutable identity keys
+          isManagerOrAdmin(tenantId)
+          ||
+          (
+            incoming().email == existing().email
+            && incoming().phoneNumber == existing().phoneNumber
+            && incoming().spendingLtv == existing().spendingLtv 
+          )
+        );
+      // Soft-deletion only, prevent destructive hard delete from client
+      allow delete: if isManagerOrAdmin(tenantId); 
+    }
+
+    // SERVICES
+    match /tenants/{tenantId}/services/{serviceId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isManagerOrAdmin(tenantId) && isValidId(serviceId) && isValidService(incoming()) && (!('tenantId' in incoming()) || incoming().tenantId == tenantId);
+      allow update: if isManagerOrAdmin(tenantId) && isValidService(incoming()) 
+        && incoming().id == existing().id;
+      allow delete: if isManagerOrAdmin(tenantId);
+    }
+
+    // APPOINTMENTS
+    match /tenants/{tenantId}/appointments/{appointmentId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(appointmentId) && isValidAppointment(incoming()) && incoming().tenantId == tenantId;
+      // Standard action-based transitions
+      allow update: if isUserOfTenant(tenantId) && isValidAppointment(incoming())
+        && incoming().id == existing().id
+        && incoming().tenantId == existing().tenantId
+        && (
+          isManagerOrAdmin(tenantId)
+          ||
+          (
+            // Stylists can only toggle booking status (Reservado -> Pagado or Cancelado)
+            incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+          )
+        );
+      allow delete: if isManagerOrAdmin(tenantId);
+    }
+
+    // RETENTION SCORES
+    match /tenants/{tenantId}/clients/{clientId}/retention_scores/{scoreId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(scoreId) && isValidRetentionScore(incoming()) && incoming().tenantId == tenantId;
+      allow update, delete: if false; // Scores are append-only time series logs
+    }
+
+    // MESSAGE DRAFTS
+    match /tenants/{tenantId}/message_drafts/{draftId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(draftId) && isValidMessageDraft(incoming()) 
+        && incoming().tenantId == tenantId;
+      allow update: if isUserOfTenant(tenantId) && isValidMessageDraft(incoming())
+        && incoming().id == existing().id
+        && incoming().tenantId == existing().tenantId;
+      allow delete: if isManagerOrAdmin(tenantId);
+    }
+
+    match /tenants/{tenantId}/clients/{clientId}/message_drafts/{draftId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(draftId) && isValidMessageDraft(incoming()) 
+        && incoming().tenantId == tenantId
+        && incoming().clientId == clientId;
+      allow update: if isUserOfTenant(tenantId) && isValidMessageDraft(incoming())
+        && incoming().id == existing().id
+        && incoming().tenantId == existing().tenantId
+        && incoming().clientId == existing().clientId
+        && (
+          // Action: Approve Draft (status must be approved/enviado)
+          existing().status == 'pendiente' && (incoming().status == 'aprobado' || incoming().status == 'descartado' || incoming().status == 'enviado')
+        );
+      allow delete: if isUserOfTenant(tenantId);
+    }
+
+    // MESSAGE EVENTS
+    match /tenants/{tenantId}/clients/{clientId}/message_events/{eventId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(eventId) && isValidMessageEvent(incoming()) 
+        && incoming().tenantId == tenantId
+        && incoming().clientId == clientId;
+      allow update, delete: if false; // Communication event log records are strictly immutable
+    }
+
+    // AUDIT LOGS
+    match /tenants/{tenantId}/audit_logs/{logId} {
+      allow read: if isManagerOrAdmin(tenantId);
+      allow create: if isUserOfTenant(tenantId) && isValidId(logId) && isValidAuditLog(incoming()) && incoming().tenantId == tenantId;
+      allow update, delete: if false; // Audit logs must be strictly append-only & immutable
+    }
+
+    match /tenants/{tenantId}/settings/{settingId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create, update: if isManagerOrAdmin(tenantId) && incoming().tenantId == tenantId;
+      allow delete: if false;
+    }
+
+    match /tenants/{tenantId}/inventario/{itemId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create: if isManagerOrAdmin(tenantId) && isValidId(itemId) && isValidInventoryItem(incoming()) && incoming().tenantId == tenantId;
+      allow update: if isManagerOrAdmin(tenantId) && isValidInventoryItem(incoming())
+        && incoming().id == existing().id
+        && incoming().tenantId == existing().tenantId;
+      allow delete: if isManagerOrAdmin(tenantId);
+    }
+
+  }
+}
