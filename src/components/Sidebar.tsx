@@ -165,40 +165,7 @@ export default function Sidebar({
             })}
           </nav>
 
-          {/* Secondary Locked Items in Beginner Mode */}
-          {isBeginnerMode && (
-            <div className="mt-6 pt-4 border-t border-border/60">
-              {!isCollapsed && (
-                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest px-3.5 mb-2 flex items-center gap-1">
-                  <span>Explorar Suite Elena</span>
-                  <span className="material-symbols-outlined text-xs text-primary animate-pulse">auto_awesome</span>
-                </p>
-              )}
-              <div className="flex flex-col gap-1.5 font-sans">
-                {secondaryItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setShowUnlockModal(true)}
-                    title={isCollapsed ? `${item.label} (Suite Completa)` : undefined}
-                    className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-muted-foreground/50 hover:bg-secondary/20 hover:text-primary transition-all w-full text-left cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xl relative">
-                      {item.icon}
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary/20 rounded-full flex items-center justify-center border border-white" style={{ fontSize: '6px' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '6px', fontWeight: 'bold' }}>lock</span>
-                      </span>
-                    </span>
-                    {!isCollapsed && (
-                      <span className="text-xs font-semibold flex items-center justify-between flex-1">
-                        <span>{item.label}</span>
-                        <span className="text-[8px] uppercase tracking-wider font-bold bg-primary/5 text-primary/70 px-1.5 py-0.5 rounded border border-primary/10">Suite</span>
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* ponytail: teaser "Explorar Suite Elena" oculto (era un paywall sin función real). */}
         </div>
 
         {/* Bottom items: Settings, Feedbacks, and Logout */}
