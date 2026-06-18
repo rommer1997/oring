@@ -113,6 +113,10 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   <span className="material-symbols-outlined text-secondary font-bold text-lg">check_circle</span>
                   Cuenta individual sin tarjeta
                 </span>
+                <span className="text-sm font-semibold text-outline-variant flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary font-bold text-lg">shield</span>
+                  Cumple el RGPD — tus datos y los de tus clientas, protegidos
+                </span>
               </div>
             </div>
 
@@ -208,7 +212,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   <div className="h-px w-full bg-white/10 my-5"></div>
                   
                   <p className="text-sm leading-relaxed mb-6">
-                    Elena recupera un <strong className="text-tertiary-fixed font-semibold">40%</strong> de forma automática, permitiéndote recuperar unos <strong className="text-tertiary-fixed font-bold">{targetRecovered.toLocaleString('es-ES')}€</strong> cada mes.
+                    Si reactivas a tiempo a tus clientas ausentes, podrías recuperar hasta <strong className="text-tertiary-fixed font-bold">{targetRecovered.toLocaleString('es-ES')}€</strong> al mes. <span className="text-primary-fixed-dim">(Estimación sobre reactivar un 40% de ellas.)</span>
                   </p>
                 </div>
                 
@@ -324,10 +328,10 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           <div className="max-w-[1280px] mx-auto">
             <div className="text-center mb-16">
               <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary mb-4 text-center">
-                Recuperación en piloto automático
+                Recuperar clientas, en un clic
               </h2>
               <p className="text-base text-on-surface-variant max-w-2xl mx-auto font-sans">
-                Un flujo de trabajo elegante y silencioso que trabaja en segundo plano mientras tú te enfocas en tu arte.
+                Elena detecta quién está a punto de irse y te prepara el mensaje. Tú solo lo revisas y lo envías por WhatsApp con un clic.
               </p>
             </div>
 
