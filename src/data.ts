@@ -278,6 +278,39 @@ export const INITIAL_CLIENTS: ClientProfile[] = [
   }
 ];
 
+// ponytail: fallback real cuando Gemini no está disponible. Interpola nombre/servicio/oferta
+// reales de la clienta en vez de las 3 plantillas demo fijas (que decían "Marta"/"manicura" para todas).
+export function buildFallbackTemplates(
+  fullName: string,
+  lastService: string,
+  riskDays: number,
+  offer: string,
+): { Cercano: string; Profesional: string; Elegante: string } {
+  const name = (fullName || 'cliente').trim().split(/\s+/)[0];
+  const service = (lastService || 'tu último servicio').toLowerCase();
+  const meses = riskDays >= 30 ? `${Math.round(riskDays / 30)} ${Math.round(riskDays / 30) === 1 ? 'mes' : 'meses'}` : `${riskDays} días`;
+  const regalo = offer || 'un detalle de autor';
+  return {
+    Cercano: `¡Hola ${name}! Espero que estés muy bien.
+
+He visto que ya hace ${meses} de tu ${service} y me acordé de ti. Como te echamos de menos por el salón, si reservas esta semana te invito a ${regalo} para consentirte.
+
+¿Te busco un huequito?`,
+    Profesional: `¡Hola ${name}! Un saludo del equipo.
+
+Al revisar la agenda vimos que han pasado ${meses} desde tu ${service}. Nos encantaría volver a verte y mantener el resultado impecable. Si reservas esta semana, te obsequiamos ${regalo}.
+
+¿Te reservamos un hueco?`,
+    Elegante: `Estimada ${name},
+
+Confiamos en que te encuentres de maravilla. Ha transcurrido un tiempo (${meses}) desde tu ${service} y deseamos invitarte a renovarlo para preservar su esplendor.
+
+Como cortesía por tu fidelidad, nos complacerá ofrecerte ${regalo} en tu próxima visita.
+
+Quedamos a tu disposición para asignarte tu cita.`,
+  };
+}
+
 export const TEMPLATES_BY_TONE = {
   carmen: {
     Cercano: `¡Hola Carmen! Esperamos que estés súper bien. 
