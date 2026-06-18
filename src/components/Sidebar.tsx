@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AppView, AppConfig } from '../types';
 
 interface SidebarProps {
@@ -32,7 +32,6 @@ export default function Sidebar({
   isBeginnerMode = true,
   onUpdateConfig
 }: SidebarProps) {
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
 
   const baseItems = [
     { id: 'dashboard' as AppView, label: 'Panel', icon: 'dashboard' },
@@ -240,16 +239,7 @@ export default function Sidebar({
                 </button>
               );
             })}
-            <button
-              onClick={() => setShowUnlockModal(true)}
-              className="flex flex-col items-center justify-center p-1 w-14 rounded-xl text-muted-foreground hover:text-primary transition-all duration-200 cursor-pointer"
-              style={{ minHeight: '44px' }}
-            >
-              <span className="material-symbols-outlined text-2xl text-primary animate-pulse">auto_awesome</span>
-              <span className="text-[10px] mt-0.5 font-sans font-semibold text-primary truncate max-w-full">
-                Suite ✦
-              </span>
-            </button>
+            {/* ponytail: botón "Suite ✦" eliminado. La activación vive en Configuración → "Suite Completa". */}
           </>
         ) : (
           [...baseItems, ...secondaryItems].map((item) => {
@@ -278,82 +268,6 @@ export default function Sidebar({
           })
         )}
       </nav>
-
-      {/* Premium Unlock Modal */}
-      {showUnlockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in text-left">
-          <div className="absolute inset-0 bg-[#4A2C40]/40 backdrop-blur-sm shadow-inner" onClick={() => setShowUnlockModal(false)}></div>
-          <div className="bg-[#fdf6ec] max-w-lg w-full rounded-3xl p-8 relative z-10 shadow-2xl border border-[#bfa982]/32 font-sans">
-            <button 
-              className="absolute top-5 right-5 text-[#4A2C40] hover:scale-110 transition-all cursor-pointer"
-              onClick={() => setShowUnlockModal(false)}
-            >
-              <span className="material-symbols-outlined text-2xl font-bold">close</span>
-            </button>
-
-            <div className="flex items-center gap-3.5 mb-6 text-[#4A2C40]">
-              <div className="w-12 h-12 rounded-2xl bg-secondary/80 flex items-center justify-center text-primary shadow-inner border border-primary/5">
-                <span className="material-symbols-outlined font-bold text-2xl">auto_awesome</span>
-              </div>
-              <div>
-                <h3 className="font-serif text-2xl font-bold">Activar la Suite Completa</h3>
-                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-0.5">Estrategia de crecimiento gradual</p>
-              </div>
-            </div>
-            
-            <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">
-              Elena te acompaña a tu propio ritmo. La estrategia de <strong>La Cebolla</strong> te permite desplegar herramientas avanzadas a medida que las necesitas, evitando distracciones y reduciendo tu carga cognitiva.
-            </p>
-
-            <div className="space-y-4 mb-8">
-              <div className="p-4 bg-white rounded-2xl border border-muted flex items-start gap-3.5 shadow-sm">
-                <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-xl text-base font-bold shrink-0">check_circle</span>
-                <div>
-                  <h4 className="text-xs font-bold text-primary">Fase 1: Tu Espacio Zen Digital (Activa)</h4>
-                  <p className="text-[11.5px] text-on-surface-variant leading-normal mt-0.5">Gestión de la agenda de citas y Monitor de Mimo para recuperar clientas con IA.</p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-white rounded-2xl border border-muted flex items-start gap-3.5 shadow-sm">
-                <span className="material-symbols-outlined text-primary bg-secondary/30 p-1.5 rounded-xl text-base font-bold shrink-0">inventory_2</span>
-                <div>
-                  <h4 className="text-xs font-bold text-primary">Fase 2: Activación Progresiva (Disponible)</h4>
-                  <p className="text-[11.5px] text-on-surface-variant leading-normal mt-0.5">Habilita el control de stock, consumos técnicos de cabina y facturación mensual del salón.</p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-white rounded-2xl border border-muted flex items-start gap-3.5 shadow-sm">
-                <span className="material-symbols-outlined text-primary bg-secondary/30 p-1.5 rounded-xl text-base font-bold shrink-0">query_stats</span>
-                <div>
-                  <h4 className="text-xs font-bold text-primary">Fase 3: Madurez y Optimización (Disponible)</h4>
-                  <p className="text-[11.5px] text-on-surface-variant leading-normal mt-0.5">Analíticas de rendimiento avanzadas, consola de equipo y Privacidad Elegante (RGPD).</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 justify-end">
-              <button
-                className="px-5 py-2.5 text-xs font-bold text-[#4A2C40] hover:underline cursor-pointer"
-                onClick={() => setShowUnlockModal(false)}
-              >
-                Mantener Modo Enfoque
-              </button>
-              <button
-                className="px-6 py-3 bg-[#4A2C40] text-[#fdf6ec] text-xs font-bold rounded-xl hover:bg-[#2E1927] transition-all cursor-pointer shadow-md"
-                onClick={() => {
-                  if (onUpdateConfig) {
-                    onUpdateConfig({ isBeginnerMode: false });
-                  }
-                  setShowUnlockModal(false);
-                  onToastMessage('✓ ¡Felicidades! Has activado la Suite Completa de Elena. Todas las herramientas están disponibles.');
-                }}
-              >
-                Activar Suite Completa ✨
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
