@@ -56,6 +56,7 @@ export function useAuth(triggerToast: (msg: string) => void): UseAuthReturn {
 
   // Handle Google redirect result on mount
   useEffect(() => {
+    if (!auth) return;
     getRedirectResult(auth).catch((err) => {
       console.error(err);
       triggerToast('No se pudo completar el inicio de sesión con Google.');
@@ -64,6 +65,12 @@ export function useAuth(triggerToast: (msg: string) => void): UseAuthReturn {
 
   // Firebase auth state listener & first workspace provisioning
   useEffect(() => {
+    if (!auth) {
+      // ponytail: sin Firebase la app sigue usable (landing + demo); solo se desactiva el login real.
+      console.error('Firebase no configurado: falta VITE_FIREBASE_API_KEY. Login deshabilitado.');
+      setIsAuthLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
