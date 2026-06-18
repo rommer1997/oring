@@ -86,6 +86,7 @@ export default function App() {
   const [selectedClientId, setSelectedClientId] = useState<string>('carmen-ruiz');
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState<boolean>(false);
+  const [showPaywall, setShowPaywall] = useState<boolean>(false);
 
   // ─── Config ──────────────────────────────────────────────────────────────
   const [config, setConfig] = useState<AppConfig>({
@@ -501,8 +502,8 @@ export default function App() {
     );
   }
 
-  // ─── Paywall Blocked ──────────────────────────────────────────────────────
-  if (isPaywallBlocked) {
+  // ─── Paywall (bloqueado al expirar, o voluntario desde el aviso de trial) ──
+  if (isPaywallBlocked || showPaywall) {
     return (
       <>
         <PaywallView
@@ -511,6 +512,7 @@ export default function App() {
           onSignOut={handleSignOutWrapper}
           onToastMessage={triggerToast}
           getAuthToken={getAuthToken}
+          onClose={isPaywallBlocked ? undefined : () => setShowPaywall(false)}
         />
         {renderToasts()}
       </>
@@ -564,6 +566,17 @@ export default function App() {
             </span>
           </div>
         </header>
+
+        {!isDemoMode && activeTenant?.subscriptionStatus === 'trialing' && trialDaysLeft <= 3 && (
+          <div className="bg-primary text-white px-6 md:px-10 py-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-sans">
+            <span className="font-semibold">
+              {trialDaysLeft <= 0 ? 'Tu prueba termina hoy.' : `Te ${trialDaysLeft === 1 ? 'queda 1 día' : `quedan ${trialDaysLeft} días`} de prueba.`} Activa tu plan para no perder el acceso.
+            </span>
+            <button onClick={() => setShowPaywall(true)} className="underline font-bold hover:no-underline cursor-pointer">
+              Activar mi plan
+            </button>
+          </div>
+        )}
 
         <div className="max-w-[1140px] mx-auto w-full px-6 md:px-10 py-8 flex flex-col flex-1">
           {isDataLoading ? (
@@ -690,6 +703,7 @@ export default function App() {
                   onUpdateStaff={onUpdateStaff}
                   clients={enrichedClients}
                   onUpdateClient={onUpdateClient}
+                  onAddClient={onAddClient}
                 />
               )}
               {currentView === 'admin' && (
