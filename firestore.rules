@@ -61,6 +61,24 @@ service cloud.firestore {
       return resource.data;
     }
 
+    // Billing/subscription fields are SERVER-ONLY (written via Admin SDK from Stripe webhooks,
+    // which bypasses these rules). Clients must never change them — this closes the paywall bypass.
+    function tenantBillingUnchanged() {
+      return incoming().get('subscriptionStatus', '') == existing().get('subscriptionStatus', '')
+        && incoming().get('trialEndsAt', '') == existing().get('trialEndsAt', '')
+        && incoming().get('subscriptionEndsAt', '') == existing().get('subscriptionEndsAt', '')
+        && incoming().get('stripeCustomerId', '') == existing().get('stripeCustomerId', '')
+        && incoming().get('stripeSubscriptionId', '') == existing().get('stripeSubscriptionId', '');
+    }
+
+    // At creation a client may only START a trial — never self-grant a paid/active state.
+    function tenantBillingCleanAtCreate() {
+      return incoming().get('subscriptionStatus', 'trialing') == 'trialing'
+        && !('subscriptionEndsAt' in incoming())
+        && !('stripeCustomerId' in incoming())
+        && !('stripeSubscriptionId' in incoming());
+    }
+
     // ----------------------------------------------------
     // SCHEMA TYPE CHANGER VALIDATION BLUEPRINTS
     // ----------------------------------------------------
@@ -239,9 +257,12 @@ service cloud.firestore {
     // ----------------------------------------------------
     match /tenants/{tenantId} {
       allow read: if isUserOfTenant(tenantId) || isGlobalAdmin();
-      allow create: if isAccountOwner() && isValidId(tenantId) && isValidTenant(incoming());
+      allow create: if isAccountOwner() && isValidId(tenantId) && isValidTenant(incoming())
+        && tenantBillingCleanAtCreate();
+      // Billing fields are immutable from the client (Stripe webhooks write them via Admin SDK).
       allow update: if (isManagerOrAdmin(tenantId) || isGlobalAdmin()) && isValidTenant(incoming())
-        && incoming().id == existing().id;
+        && incoming().id == existing().id
+        && tenantBillingUnchanged();
       allow delete: if false; // Salons can't be deleted entirely from client-sdk
     }
 
@@ -249,30 +270,37 @@ service cloud.firestore {
     // USERS RULES (Private PII profiles - Split Strategy)
     // ----------------------------------------------------
     match /users/{userId} {
-      allow read: if isAccountOwner() && (request.auth.uid == userId || getUserData().role == 'Administrador');
-      // A user is created during sign up, role defaults to stylist or is approved
+      // Self, a same-tenant Administrador, or a global admin. (Was: ANY Administrador could read ANY tenant's PII.)
+      allow read: if isAccountOwner() && (
+        request.auth.uid == userId
+        || (getUserData().role == 'Administrador' && getUserData().tenantId == resource.data.tenantId)
+        || isGlobalAdmin()
+      );
+      // A user is created during sign up. globalAdmin can never be self-granted from the client.
       allow create: if isAccountOwner() && request.auth.uid == userId && isValidUser(incoming())
-        && (!('globalAdmin' in incoming()) || incoming().globalAdmin == false);
-      allow update: if isAccountOwner() 
+        && incoming().get('globalAdmin', false) == false;
+      allow update: if isAccountOwner() && isValidUser(incoming())
         && (
-          // Allow admins to update all properties (e.g. status, role change)
-          (getUserData().role == 'Administrador' && isValidUser(incoming()))
-          || 
-          // Regular users can only update their own non-RBAC fields (like name)
-          (request.auth.uid == userId 
-            && isValidUser(incoming())
+          // Same-tenant Administrador may manage users in their OWN tenant only, and cannot move them
+          // to another tenant nor grant globalAdmin. (Was: ANY Administrador could mutate ANY user.)
+          (
+            getUserData().role == 'Administrador'
+            && getUserData().tenantId == existing().tenantId
+            && incoming().tenantId == existing().tenantId
+            && incoming().id == existing().id
+            && incoming().get('globalAdmin', false) == existing().get('globalAdmin', false)
+          )
+          ||
+          // Global admins (set out-of-band via Admin SDK) may manage any user.
+          isGlobalAdmin()
+          ||
+          // Regular users can only update their own non-RBAC fields (like name).
+          (request.auth.uid == userId
             && incoming().role == existing().role
             && incoming().status == existing().status
             && incoming().tenantId == existing().tenantId
             && incoming().id == existing().id
-            && (
-              (!('globalAdmin' in incoming()) && !('globalAdmin' in existing()))
-              || (
-                ('globalAdmin' in incoming())
-                && ('globalAdmin' in existing())
-                && incoming().globalAdmin == existing().globalAdmin
-              )
-            )
+            && incoming().get('globalAdmin', false) == existing().get('globalAdmin', false)
           )
         );
       allow delete: if false;
@@ -387,7 +415,11 @@ service cloud.firestore {
     // AUDIT LOGS
     match /tenants/{tenantId}/audit_logs/{logId} {
       allow read: if isManagerOrAdmin(tenantId);
-      allow create: if isUserOfTenant(tenantId) && isValidId(logId) && isValidAuditLog(incoming()) && incoming().tenantId == tenantId;
+      // Client-written audit entries must be attributable to the real signed-in user (no spoofed userId/email).
+      // Server-side AI/system logs are written via Admin SDK, which bypasses these rules.
+      allow create: if isUserOfTenant(tenantId) && isValidId(logId) && isValidAuditLog(incoming())
+        && incoming().tenantId == tenantId
+        && incoming().userId == request.auth.uid;
       allow update, delete: if false; // Audit logs must be strictly append-only & immutable
     }
 
