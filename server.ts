@@ -803,8 +803,15 @@ async function startServer() {
       });
  
       const responseText = response.text || "";
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      const result = JSON.parse((jsonMatch ? jsonMatch[0] : responseText).trim());
+      // responseMimeType=application/json returns clean JSON; parse directly and only fall
+      // back to brace-extraction if the model ever wraps it in prose.
+      let result: any;
+      try {
+        result = JSON.parse(responseText.trim());
+      } catch {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        result = JSON.parse((jsonMatch ? jsonMatch[0] : responseText).trim());
+      }
  
       // 7.3 Checklist: Cost estimate via prompt/response character length.
       const estimatedInputTokens = prompt.length / 4;
