@@ -147,9 +147,11 @@ export default function Sidebar({
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
                   title={isCollapsed ? item.label : undefined}
-                  className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl transition-all w-full text-left duration-200 cursor-pointer ${
-                    isSelected 
-                      ? 'bg-secondary text-primary font-bold border-r-4 border-primary' 
+                  className={`flex items-center rounded-xl transition-all duration-200 cursor-pointer ${
+                    isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3.5 px-3.5 py-3 w-full text-left'
+                  } ${
+                    isSelected
+                      ? `bg-secondary text-primary font-bold ${isCollapsed ? '' : 'border-r-4 border-primary'}`
                       : 'text-muted-foreground hover:bg-secondary/30 hover:text-primary'
                   }`}
                 >
@@ -174,7 +176,7 @@ export default function Sidebar({
           <button
             onClick={() => onToastMessage('Canal de feedback abierto: Hemos enviado un formulario a tu correo para sugerencias semanales.')}
             title={isCollapsed ? "Buzón de Feedback" : undefined}
-            className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground transition-all text-left w-full cursor-pointer`}
+            className={`flex items-center rounded-xl hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground transition-all cursor-pointer ${isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3.5 px-3.5 py-3 text-left w-full'}`}
           >
             <span className="material-symbols-outlined text-xl">record_voice_over</span>
             {!isCollapsed && (
@@ -186,9 +188,9 @@ export default function Sidebar({
           <button
             onClick={() => onNavigate('settings')}
             title={isCollapsed ? "Configuración" : undefined}
-            className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl transition-all text-left w-full cursor-pointer ${
-              currentView === 'settings' 
-                ? 'bg-secondary text-primary font-bold border-r-4 border-primary' 
+            className={`flex items-center rounded-xl transition-all cursor-pointer ${isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3.5 px-3.5 py-3 text-left w-full'} ${
+              currentView === 'settings'
+                ? `bg-secondary text-primary font-bold ${isCollapsed ? '' : 'border-r-4 border-primary'}`
                 : 'text-muted-foreground hover:bg-secondary/30 hover:text-primary'
             }`}
           >
@@ -202,7 +204,7 @@ export default function Sidebar({
           <button
             onClick={onSignOut}
             title={isCollapsed ? "Cerrar Sesión" : undefined}
-            className="flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-700 transition-all text-left w-full cursor-pointer"
+            className={`flex items-center rounded-xl text-muted-foreground hover:bg-red-50 hover:text-red-700 transition-all cursor-pointer ${isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3.5 px-3.5 py-3 text-left w-full'}`}
           >
             <span className="material-symbols-outlined text-xl">logout</span>
             {!isCollapsed && (
