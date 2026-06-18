@@ -16,7 +16,6 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { User } from '../types';
-import firebaseConfig from '../../firebase-applet-config.json';
 
 function buildTenantId(uid: string): string {
   return `tenant-${uid.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 18)}`;
@@ -183,10 +182,10 @@ export function useAuth(triggerToast: (msg: string) => void): UseAuthReturn {
   const handleSignInWithGoogle = async () => {
     if (
       window.location.hostname === 'elena-os.web.app' &&
-      firebaseConfig.projectId !== 'elena-39ea1'
+      import.meta.env.VITE_FIREBASE_PROJECT_ID !== 'elena-39ea1'
     ) {
       triggerToast(
-        'Falta conectar esta web al proyecto Firebase Elena. Actualiza firebase-applet-config.json.'
+        'Falta conectar esta web al proyecto Firebase Elena. Revisa las variables VITE_FIREBASE_* en el entorno.'
       );
       return;
     }
