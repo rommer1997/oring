@@ -1,6 +1,74 @@
 import React, { useState } from 'react';
 import { AppConfig, StaffMember, Tenant, User, ClientProfile } from '../types';
 
+// ponytail: import CSV real. Detecta delimitador (Excel ES usa ';'), mapea columnas por nombre difuso
+// (nombre/teléfono/email obligatorio el nombre+teléfono), y crea una ficha por fila vía onAddClient.
+// Parser mínimo: maneja comillas dobles básicas. No cubre saltos de línea dentro de celdas (raro en estos export).
+function parseCsvLine(line: string, delim: string): string[] {
+  const out: string[] = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (ch === delim && !inQ) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(s => s.trim());
+}
+
+export function importClientsCsv(text: string, tenantId: string, addClient: (c: ClientProfile) => void): number {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return 0;
+  const delim = (lines[0].match(/;/g)?.length || 0) > (lines[0].match(/,/g)?.length || 0) ? ';' : ',';
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const header = parseCsvLine(lines[0], delim).map(norm);
+  const findCol = (...keys: string[]) => header.findIndex(h => keys.some(k => h.includes(k)));
+  const iName = findCol('nombre', 'name', 'cliente');
+  const iPhone = findCol('telefono', 'phone', 'movil', 'celular', 'tel');
+  const iEmail = findCol('email', 'correo', 'mail');
+  const iService = findCol('servicio', 'service', 'tratamiento');
+  if (iName < 0 || iPhone < 0) return 0;
+
+  let count = 0;
+  for (let r = 1; r < lines.length; r++) {
+    const cells = parseCsvLine(lines[r], delim);
+    const name = cells[iName]?.trim();
+    const phone = cells[iPhone]?.trim();
+    if (!name || !phone) continue;
+    addClient({
+      id: `cli-${Date.now()}-${r}`,
+      name,
+      avatar: `https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200`,
+      phoneNumber: phone,
+      email: iEmail >= 0 ? (cells[iEmail]?.trim() || '') : '',
+      birthdate: '',
+      age: 0,
+      isVip: false,
+      riskLevel: 'Bajo',
+      riskDays: 10,
+      lastVisitDate: new Date().toISOString().split('T')[0],
+      lastVisitService: (iService >= 0 && cells[iService]?.trim()) || 'Importada de CSV',
+      spendingLtv: 0,
+      totalVisits: 1,
+      averageFrequencyDays: 30,
+      favoriteServices: [],
+      appointmentHistory: [],
+      preferences: [],
+      technicalNotes: '',
+      aiReason: 'Ficha importada desde CSV. Añade historial de citas para mejorar el análisis de retención.',
+      suggestedOfferTitle: '',
+      suggestedOfferDesc: '',
+      whatsappLog: [],
+      tenantId,
+      contactConsent: false,
+      marketingOptOut: false,
+    } as ClientProfile);
+    count++;
+  }
+  return count;
+}
+
 interface SettingsViewProps {
   config: AppConfig;
   onUpdateConfig: (updated: Partial<AppConfig>) => void;
@@ -17,6 +85,7 @@ interface SettingsViewProps {
   onUpdateStaff?: (staffId: string, fields: Partial<StaffMember>) => void;
   clients?: ClientProfile[];
   onUpdateClient?: (clientId: string, fields: Partial<ClientProfile>) => void;
+  onAddClient?: (client: ClientProfile) => void;
 }
 
 export default function SettingsView({
@@ -34,7 +103,8 @@ export default function SettingsView({
   staff = [],
   onUpdateStaff,
   clients = [],
-  onUpdateClient = () => {}
+  onUpdateClient = () => {},
+  onAddClient
 }: SettingsViewProps) {
   // Local states for the thresholds
   const [highDays, setHighDays] = useState<number>(config.highRiskThresholdDays);
@@ -495,9 +565,21 @@ export default function SettingsView({
                   className="absolute inset-0 opacity-0 cursor-pointer"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      onToastMessage(`Procesando ${file.name}... CSV programado para importación asíncrona.`);
-                    }
+                    if (!file) return;
+                    if (!onAddClient) { onToastMessage('La importación no está disponible en este modo.'); return; }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      try {
+                        const added = importClientsCsv(String(reader.result), activeTenant?.id || '', onAddClient);
+                        onToastMessage(added > 0
+                          ? `✓ ${added} ${added === 1 ? 'clienta importada' : 'clientas importadas'} desde ${file.name}.`
+                          : 'No se encontraron filas válidas (revisa que haya columnas de nombre y teléfono).');
+                      } catch (err) {
+                        onToastMessage('No se pudo leer el CSV. Asegúrate de que tenga cabecera con "nombre" y "teléfono".');
+                      }
+                    };
+                    reader.readAsText(file);
+                    e.target.value = '';
                   }}
                 />
               </div>
