@@ -567,6 +567,8 @@ export default function App() {
           </div>
         </header>
 
+        {/* ponytail: aviso de fin de trial solo in-app. Email automático aplazado: necesita proveedor
+            (SendGrid/Resend). Añadir cuando exista, disparado desde server.ts por cron sobre trialEndsAt. */}
         {!isDemoMode && activeTenant?.subscriptionStatus === 'trialing' && trialDaysLeft <= 3 && (
           <div className="bg-primary text-white px-6 md:px-10 py-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm font-sans">
             <span className="font-semibold">
