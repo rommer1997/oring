@@ -69,7 +69,6 @@ import {
 // ─── Firebase ─────────────────────────────────────────────────────────────────
 import { doc, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './firebase';
-import firebaseConfig from '../firebase-applet-config.json';
 
 interface ActiveToast {
   id: string;
@@ -257,6 +256,7 @@ export default function App() {
         setMessageDrafts([]);
         setInventory([]);
         setCurrentView('landing');
+        if (window.location.pathname === '/demo') window.history.pushState({}, '', '/');
       },
     });
     if (!isDemoMode) setCurrentView('landing');
@@ -294,8 +294,14 @@ export default function App() {
       }))
     );
     setCurrentView('dashboard');
+    if (window.location.pathname !== '/demo') window.history.pushState({}, '', '/demo');
     triggerToast('Estás viendo una demo aislada. Tus datos reales no se modificarán.');
   };
+
+  // ponytail: /demo arranca la demo al cargar la URL. window.history evita recargas.
+  useEffect(() => {
+    if (window.location.pathname === '/demo' && !isDemoMode) handleStartDemo();
+  }, []);
 
   // ─── Onboarding complete ──────────────────────────────────────────────────
   const handleCompleteOnboarding = async (payload: {
@@ -679,7 +685,7 @@ export default function App() {
                   onSignInWithGoogle={handleSignInWithGoogle}
                   onSignOut={handleSignOutWrapper}
                   getAuthToken={getAuthToken}
-                  firebaseProjectId={firebaseConfig.projectId}
+                  firebaseProjectId={import.meta.env.VITE_FIREBASE_PROJECT_ID}
                   staff={staff}
                   onUpdateStaff={onUpdateStaff}
                   clients={enrichedClients}
