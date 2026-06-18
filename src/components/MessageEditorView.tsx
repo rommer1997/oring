@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppView, ClientProfile, MessageDraft, WhatsAppMessage } from '../types';
-import { TEMPLATES_BY_TONE } from '../data';
+import { buildFallbackTemplates } from '../data';
 
 interface MessageEditorViewProps {
   clients: ClientProfile[];
@@ -43,12 +43,8 @@ export default function MessageEditorView({
   // Load fallback versions upon setup to ensure there's always 3 robust options instantly
   useEffect(() => {
     if (currentClient) {
-      const clientIdKey = currentClient.id === 'carmen-ruiz' ? 'carmen' : 
-                          currentClient.id === 'sofia-varela' ? 'sofia' : 'marta';
-      
-      const defaultTemplates = TEMPLATES_BY_TONE[clientIdKey as 'carmen' | 'sofia' | 'marta'] || TEMPLATES_BY_TONE.marta;
-      
       const docOffer = offerValue || currentClient.suggestedOfferTitle || 'un detalle de autor';
+      const defaultTemplates = buildFallbackTemplates(currentClient.name, currentClient.lastVisitService, currentClient.riskDays, docOffer);
 
       // Build 3 highly personalized default local text options
       const localVersions: LocalVersion[] = [
@@ -171,9 +167,7 @@ export default function MessageEditorView({
       onToastMessage('Utilizando plantilla local de autor (Configura tu GEMINI_API_KEY en Settings para activar la IA).');
       
       // Fallback update inside local templates applying the adjusted offer
-      const clientIdKey = currentClient.id === 'carmen-ruiz' ? 'carmen' : 
-                          currentClient.id === 'sofia-varela' ? 'sofia' : 'marta';
-      const defaultTemplates = TEMPLATES_BY_TONE[clientIdKey as 'carmen' | 'sofia' | 'marta'] || TEMPLATES_BY_TONE.marta;
+      const defaultTemplates = buildFallbackTemplates(currentClient.name, currentClient.lastVisitService, currentClient.riskDays, offerValue || currentClient?.suggestedOfferTitle || '');
       
       const localVersions: LocalVersion[] = [
         {
