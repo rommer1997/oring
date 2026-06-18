@@ -192,8 +192,19 @@ async function startServer() {
     message: { error: "Demasiadas peticiones desde esta IP, por favor intenta más tarde." },
     standardHeaders: true,
     legacyHeaders: false,
+    // Stripe webhooks arrive from a small set of Stripe IPs and must never be 429'd (lost events).
+    skip: (req) => req.originalUrl.startsWith("/api/stripe-webhook"),
   });
   app.use("/api/", apiLimiter);
+
+  // Stricter limiter for UNAUTHENTICATED public booking endpoints (slug enumeration / scraping / DoS).
+  const publicLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 40,
+    message: { error: "Demasiadas peticiones. Inténtalo de nuevo en unos minutos." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
 
   // Stricter rate limit specifically for the AI generation endpoint (has API cost)
   const aiLimiter = rateLimit({
@@ -413,7 +424,7 @@ async function startServer() {
     res.json({ status: "ok", message: "ElenaOS AI Backend Service is healthy." });
   });
 
-  app.get("/api/public-booking/:slug", async (req, res) => {
+  app.get("/api/public-booking/:slug", publicLimiter, async (req, res) => {
     try {
       if (!adminRuntime) {
         return res.status(503).json({ error: "Reservas online no configuradas." });
@@ -436,7 +447,15 @@ async function startServer() {
       const services = servicesSnap.docs.map((docSnap: any) => docSnap.data());
       const staff = staffSnap.docs
         .map((docSnap: any) => docSnap.data())
-        .filter((member: any) => member.visibleToClient !== false && member.acceptsOnlineBookings !== false);
+        .filter((member: any) => member.visibleToClient !== false && member.acceptsOnlineBookings !== false)
+        // Only expose what the booking page needs — never staff email/phone (PII) to anonymous visitors.
+        .map((member: any) => ({
+          id: member.id,
+          name: member.name,
+          role: member.role,
+          avatar: member.avatar,
+          specialty: member.specialty,
+        }));
 
       res.json({
         tenant: {
@@ -459,7 +478,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/public-booking/:slug/availability", async (req, res) => {
+  app.get("/api/public-booking/:slug/availability", publicLimiter, async (req, res) => {
     try {
       if (!adminRuntime) return res.status(503).json({ error: "Reservas online no configuradas." });
       const slug = String(req.params.slug || "").trim().toLowerCase();
@@ -505,6 +524,7 @@ async function startServer() {
 
   app.post(
     "/api/public-booking",
+    publicLimiter,
     [
       body("slug").trim().isLength({ min: 1, max: 128 }).matches(/^[a-z0-9-]+$/),
       body("serviceId").trim().isLength({ min: 1, max: 128 }),
