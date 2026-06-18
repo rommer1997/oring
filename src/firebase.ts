@@ -13,7 +13,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const auth = getAuth();
+// ponytail: getAuth lanza con apiKey vacía y deja la página en blanco. Sin config dejamos auth=null
+// para que la landing y la demo (que no usan Firebase) carguen igual.
+export const firebaseReady = Boolean(firebaseConfig.apiKey);
+export const auth = firebaseReady ? getAuth(app) : (null as unknown as ReturnType<typeof getAuth>);
 
 export enum OperationType {
   CREATE = 'create',
