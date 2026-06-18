@@ -1,0 +1,30 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run lint
+      - run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: elena-39ea1.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: elena-39ea1
+          VITE_FIREBASE_STORAGE_BUCKET: elena-39ea1.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "207197327585"
+          VITE_FIREBASE_APP_ID: "1:207197327585:web:b72317fd8ea87322aea7a0"
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ELENA_39EA1 }}
+          channelId: live
+          projectId: elena-39ea1
