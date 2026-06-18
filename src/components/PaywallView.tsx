@@ -8,6 +8,7 @@ interface PaywallViewProps {
   onToastMessage: (msg: string) => void;
   getAuthToken?: () => Promise<string | null>;
   isDemoMode?: boolean;
+  onClose?: () => void;
 }
 
 export default function PaywallView({
@@ -17,6 +18,7 @@ export default function PaywallView({
   onToastMessage,
   getAuthToken,
   isDemoMode = false,
+  onClose,
 }: PaywallViewProps) {
   const [billingPeriod, setBillingPeriod] = useState<'mensual' | 'anual'>('mensual');
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +62,14 @@ export default function PaywallView({
       </div>
 
       <div className="max-w-4xl w-full text-center relative z-10 space-y-10">
-        
+
+        {onClose && (
+          <button onClick={onClose} className="absolute -top-2 left-0 flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-20">
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            Volver
+          </button>
+        )}
+
         {/* Brand Banner */}
         <div className="flex flex-col items-center gap-1.5 animate-fade-in">
           <h1 className="font-display text-4.5xl font-bold tracking-tight text-primary">ElenaOS</h1>
@@ -73,9 +82,11 @@ export default function PaywallView({
             <span className="material-symbols-outlined text-3xl font-bold">lock_open</span>
           </div>
           
-          <h2 className="font-serif text-2.5xl font-bold text-primary">Tu período de prueba de 14 días ha expirado</h2>
+          <h2 className="font-serif text-2.5xl font-bold text-primary">{onClose ? 'Activa tu plan de ElenaOS' : 'Tu período de prueba de 14 días ha expirado'}</h2>
           <p className="text-sm text-on-surface-variant leading-relaxed font-medium">
-            El trial gratuito de tu salón <strong>{tenant?.name || 'Mi Salón'}</strong> ha finalizado. Para seguir rescatando visitas, accediendo a tu agenda premium y visualizando la facturación trimestral, suscríbete al plan comercial único de ElenaOS.
+            {onClose
+              ? <>Activa el plan comercial de tu salón <strong>{tenant?.name || 'Mi Salón'}</strong> para asegurar el acceso continuo al rescate de visitas, tu agenda premium y la facturación trimestral.</>
+              : <>El trial gratuito de tu salón <strong>{tenant?.name || 'Mi Salón'}</strong> ha finalizado. Para seguir rescatando visitas, accediendo a tu agenda premium y visualizando la facturación trimestral, suscríbete al plan comercial único de ElenaOS.</>}
           </p>
         </div>
 
