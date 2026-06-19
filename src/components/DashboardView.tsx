@@ -88,12 +88,12 @@ export default function DashboardView({
   const totalSentMessages = manualSentCount;
   const manualResponsesCount = clients.reduce((accum, c) => accum + (c.whatsappLog || []).filter(m => m.sender === 'client').length, 0);
   const totalResponses = manualResponsesCount;
-  // "Recuperada" = se le envió un mensaje Y tiene una cita Pagada posterior a ese mensaje
+  // "Recuperada" = se le envió un mensaje (con fecha ISO) Y tiene cita Pagada posterior
   const totalRecoveredCitas = clients.filter(c => {
-    const sentMsgs = (c.whatsappLog || []).filter(m => m.sender === 'user' && m.status === 'enviado');
+    const sentMsgs = (c.whatsappLog || []).filter(m => m.sender === 'user' && m.status === 'enviado' && m.date);
     if (sentMsgs.length === 0) return false;
-    const lastSentTs = sentMsgs.map(m => m.timestamp).sort().at(-1)!;
-    return appointments.some(a => a.clientId === c.id && a.status === 'Pagado' && a.date >= lastSentTs.slice(0, 10));
+    const lastSentDate = sentMsgs.map(m => m.date!).sort().at(-1)!;
+    return appointments.some(a => a.clientId === c.id && a.status === 'Pagado' && a.date >= lastSentDate);
   }).length;
 
   const responseRate = totalSentMessages > 0 ? Math.round((totalResponses / totalSentMessages) * 100) : 0;
