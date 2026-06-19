@@ -1,4 +1,4 @@
-import { ClientProfile, Appointment, FavoriteService } from '../types';
+import { ClientProfile, Appointment, FavoriteService, AppConfig } from '../types';
 
 /**
  * Calculates the difference in days between two date strings (YYYY-MM-DD).
@@ -77,9 +77,10 @@ export interface RiskAnalysis {
 }
 
 export function analyzeChurnRisk(
-  client: ClientProfile, 
+  client: ClientProfile,
   allAppointments: Appointment[],
-  referenceDate: string = getTodayISO()
+  referenceDate: string = getTodayISO(),
+  config?: Pick<AppConfig, 'highRiskThresholdDays' | 'midRiskThresholdDays'>
 ): RiskAnalysis {
   // 1. Get last visit date. Find either the client's hardcoded lastVisitDate
   // or the latest paid appointment date which is <= referenceDate.
@@ -96,18 +97,24 @@ export function analyzeChurnRisk(
   // Calculate days passed since that last visit
   const riskDays = calculateDaysBetween(latestVisitDate, referenceDate);
 
-  // 2. Estimate average frequency
-  const averageFrequency = estimateAverageFrequency(client, allAppointments);
+  // 2. Estimate average frequency — ponytail: fallback a 30 si es 0 (cliente nuevo online)
+  const rawFrequency = estimateAverageFrequency(client, allAppointments);
+  const averageFrequency = rawFrequency > 0 ? rawFrequency : 30;
 
-  // 3. Determine risk level
-  const ratio = averageFrequency > 0 ? Number((riskDays / averageFrequency).toFixed(2)) : 1;
+  // 3. Determine risk level: ratio-based, con umbrales de config como mínimo absoluto
+  const ratio = Number((riskDays / averageFrequency).toFixed(2));
   let riskLevel: 'Bajo' | 'Medio' | 'Alto' | 'Crítico' = 'Bajo';
 
-  if (riskDays < averageFrequency) {
+  // Umbrales en días absolutos (de config) — solo aplican si son más estrictos que el ratio
+  const midThreshold = config?.midRiskThresholdDays ?? Math.round(averageFrequency * 1.0);
+  const highThreshold = config?.highRiskThresholdDays ?? Math.round(averageFrequency * 2.0);
+  const critThreshold = Math.round(averageFrequency * 3.0);
+
+  if (riskDays < midThreshold) {
     riskLevel = 'Bajo';
-  } else if (riskDays < Math.round(averageFrequency * 2.0)) {
+  } else if (riskDays < highThreshold) {
     riskLevel = 'Medio';
-  } else if (riskDays < Math.round(averageFrequency * 3.0)) {
+  } else if (riskDays < critThreshold) {
     riskLevel = 'Alto';
   } else {
     riskLevel = 'Crítico';
