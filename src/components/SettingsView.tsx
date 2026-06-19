@@ -56,7 +56,7 @@ interface SettingsViewProps {
   onUpdateConfig: (updated: Partial<AppConfig>) => void;
   onRecalculateThresholds: (high: number, mid: number) => void;
   onToastMessage: (msg: string) => void;
-  currentUser: any | null;
+  currentUser: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null } | null;
   appUser?: User | null;
   activeTenant?: Tenant | null;
   onSignInWithGoogle: () => Promise<void>;
