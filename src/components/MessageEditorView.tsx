@@ -257,14 +257,12 @@ export default function MessageEditorView({
     // Update global state logger
     onUpdateClientLog(currentClient.id, newLogItem);
     
-    // Format sanitized phone to Spain standards if applicable
-    let phoneClean = currentClient.phoneNumber.replace(/[^\d+]/g, '');
-    if (phoneClean && !phoneClean.startsWith('+') && !phoneClean.startsWith('34')) {
-      if (phoneClean.startsWith('6') || phoneClean.startsWith('7')) {
-        phoneClean = '34' + phoneClean;
-      }
-    } else if (phoneClean.startsWith('+')) {
-      phoneClean = phoneClean.replace('+', '');
+    // Normalizar teléfono para wa.me: solo dígitos, prefijo 34 si es número ES de 9 dígitos
+    let phoneClean = currentClient.phoneNumber.replace(/\D/g, '');
+    if (phoneClean.startsWith('0034')) phoneClean = phoneClean.slice(4);
+    else if (phoneClean.startsWith('34') && phoneClean.length === 11) phoneClean = phoneClean.slice(2);
+    if (phoneClean.length === 9 && (phoneClean.startsWith('6') || phoneClean.startsWith('7') || phoneClean.startsWith('9'))) {
+      phoneClean = '34' + phoneClean;
     }
 
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(draftText)}`;
