@@ -116,66 +116,58 @@ export default function DashboardView({
     return notifs;
   }, [todaysAppts, criticalClients, pendingDrafts]);
 
-  // Compile recommended actions list dynamically based on real data states
-  const recommendedActions = [];
+  const recommendedActions = useMemo(() => {
+    const actions: {id:string;type:'draft'|'reactivate'|'general';priority:'Crítica'|'Alta'|'Media';title:string;desc:string;buttonText:string;icon:string;onClick:()=>void}[] = [];
 
-  // Action 1: Clients with pending drafts
-  const clientsWithDrafts = clients.filter(c => 
-    (c.whatsappLog || []).some(m => m.status === 'borrador')
-  );
-  if (clientsWithDrafts.length > 0) {
+    const clientsWithDrafts = clients.filter(c =>
+      (c.whatsappLog || []).some(m => m.status === 'borrador')
+    );
     clientsWithDrafts.forEach(c => {
-      recommendedActions.push({
+      actions.push({
         id: `draft-${c.id}`,
-        type: 'draft' as const,
-        priority: 'Alta' as const,
+        type: 'draft',
+        priority: 'Alta',
         title: `Aprobar borrador de ${c.name}`,
         desc: `Tienes una propuesta guardada lista para enviar por WhatsApp para rescatar sus visitas.`,
         buttonText: 'Completar / Enviar',
         icon: 'mark_email_unread',
-        onClick: () => {
-          onSelectClient(c.id);
-          onNavigate('client-profile');
-        }
+        onClick: () => { onSelectClient(c.id); onNavigate('client-profile'); }
       });
     });
-  }
 
-  // Action 2: Clients in critical or high risk
-  const criticalOrHighRiskClients = [...clients]
-    .filter(c => c.riskLevel === 'Crítico' || c.riskLevel === 'Alto')
-    .filter(c => !clientsWithDrafts.some(draftClient => draftClient.id === c.id))
-    .slice(0, 2);
+    [...clients]
+      .filter(c => c.riskLevel === 'Crítico' || c.riskLevel === 'Alto')
+      .filter(c => !clientsWithDrafts.some(d => d.id === c.id))
+      .slice(0, 2)
+      .forEach(c => {
+        actions.push({
+          id: `reactivate-${c.id}`,
+          type: 'reactivate',
+          priority: c.riskLevel === 'Crítico' ? 'Crítica' : 'Alta',
+          title: `Reactivar a ${c.name}`,
+          desc: `Lleva ${c.riskDays} días inactiva. Nuestro sistema sugiere obsequiarle un "${c.suggestedOfferTitle || 'un detalle especial'}".`,
+          buttonText: 'Ayuda para escribir el mensaje',
+          icon: 'magic_button',
+          onClick: () => { onSelectClient(c.id); onNavigate('message-editor'); }
+        });
+      });
 
-  criticalOrHighRiskClients.forEach(c => {
-    recommendedActions.push({
-      id: `reactivate-${c.id}`,
-      type: 'reactivate' as const,
-      priority: c.riskLevel === 'Crítico' ? 'Crítica' as const : 'Alta' as const,
-      title: `Reactivar a ${c.name}`,
-      desc: `Lleva ${c.riskDays} días inactiva. Nuestro sistema sugiere obsequiarle un "${c.suggestedOfferTitle || 'un detalle especial'}".`,
-      buttonText: 'Ayuda para escribir el mensaje',
-      icon: 'magic_button',
-      onClick: () => {
-        onSelectClient(c.id);
-        onNavigate('message-editor');
-      }
-    });
-  });
-
-  // Default Action in case recommended list is short
-  if (recommendedActions.length < 3) {
-    recommendedActions.push({
-      id: 'review-thresholds',
-      type: 'general' as const,
-      priority: 'Media' as const,
-      title: 'Revisar configuración de alertas',
-      desc: 'Revisa cuántos días sin venir activan una alerta en tu Configuración.',
-      buttonText: 'Ir a Configuración',
-      icon: 'settings',
-      onClick: () => onNavigate('settings')
-    });
-  }
+    if (actions.length < 3) {
+      actions.push({
+        id: 'review-thresholds',
+        type: 'general',
+        priority: 'Media',
+        title: 'Revisar configuración de alertas',
+        desc: 'Revisa cuántos días sin venir activan una alerta en tu Configuración.',
+        buttonText: 'Ir a Configuración',
+        icon: 'settings',
+        onClick: () => onNavigate('settings')
+      });
+    }
+    return actions;
+  // ponytail: onSelectClient/onNavigate are stable refs from App; clients is the only volatile dep
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients]);
 
   // Activity Timeline — 100% dinámico, sin hardcoding
   const recentActivities = useMemo(() => {
