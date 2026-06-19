@@ -86,7 +86,7 @@ export default function OnboardingView({
 
   const canContinue = useMemo(() => {
     if (step === 1) return Boolean(salonName.trim() && salonCity.trim() && salonEmail.trim());
-    if (step === 2) return servicesDraft.length > 0 || Boolean(serviceName.trim() && servicePrice >= 0 && serviceDuration > 0);
+    if (step === 2) return servicesDraft.length > 0; // ponytail: exige pulsar "Añadir" para evitar servicios a medio rellenar
     if (step === 3) return Boolean(staffName.trim() && staffEmail.trim() && staffSpecialty.trim());
     return (Object.values(schedule) as ScheduleDay[]).some((day) => day.isWorking);
   }, [step, salonName, salonCity, salonEmail, serviceName, servicePrice, serviceDuration, servicesDraft.length, staffName, staffEmail, staffSpecialty, schedule]);
