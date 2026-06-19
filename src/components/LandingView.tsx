@@ -68,7 +68,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
         <div className="hidden md:flex items-center gap-8">
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#soluciones">Soluciones</a>
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#calculadora">Calculadora</a>
-          <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#maravillas">Las Maravillas</a>
+          <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#maravillas">Lo que Elena hace</a>
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#precios">Precios</a>
         </div>
 
@@ -92,7 +92,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 Recupera clientas antes de perderlas
               </h1>
               <p className="text-lg text-on-surface-variant max-w-lg leading-relaxed">
-                El sistema operativo inteligente para centros de estética de autor. Genera mensajes personalizados con IA y envíalos tú misma con un clic para rescatar visitas en riesgo.
+                La herramienta que cuida tu salón y tus clientas. Genera mensajes personalizados con IA y envíalos tú misma con un clic para rescatar visitas en riesgo.
               </p>
               <div className="flex flex-wrap items-center gap-4">
                 <button 
@@ -235,10 +235,10 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               🎁 UNA SUITE EXCLUSIVA DE AUTOR
             </span>
             <h2 className="font-serif text-3xl md:text-4.5xl font-bold text-primary">
-              Las Maravillas de ElenaOS
+              Lo que Elena hace por ti
             </h2>
             <p className="text-sm md:text-base text-on-surface-variant leading-relaxed max-w-2xl mx-auto font-medium">
-              Una colección integrada de herramientas de alta costura digital, diseñadas exclusivamente para elevar la retención, los ingresos y el prestigio de tu salón.
+              Todo lo que necesitas para tu salón, en un solo sitio. Diseñado para que recuperes clientas, gestiones tu agenda y cuides tu negocio sin complicaciones.
             </p>
           </div>
 
@@ -249,9 +249,9 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
                   <span className="material-symbols-outlined text-2xl font-bold">insights</span>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Inteligencia de Retención</h3>
+                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Alertas de clientas ausentes</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed font-semibold font-sans">
-                  Identifica a tus clientas que te echan de menos y diseña planes de mimo preventivos para mantener su amor por tu salón de autor.
+                  Identifica a tus clientas que te echan de menos y prepara mensajes para que vuelvan a tu salón.
                 </p>
               </div>
             </div>
@@ -262,7 +262,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
                   <span className="material-symbols-outlined text-2xl font-bold">magic_button</span>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Copiloto IA de Redacción</h3>
+                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Asistente para escribir mensajes</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
                   Redacta borradores de WhatsApp hiper-personalizados adaptados al último servicio recibido en 3 tonos estéticos (Cercano, Profesional, Elegante) gracias al modelo Gemini 3.5.
                 </p>
@@ -275,7 +275,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
                   <span className="material-symbols-outlined text-2xl font-bold">public</span>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Reservas Online de Autor</h3>
+                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Reservas Online</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
                   Tu propio enlace público (/salon/tu-slug) interactivo y sofisticado para que tus clientas agenden online. Sincronización atómica y cálculo de slots inteligente.
                 </p>
@@ -316,7 +316,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 </div>
                 <h3 className="font-serif text-xl font-bold text-primary mb-2.5">RGPD y Derecho al Olvido</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
-                  Cumplimiento legal del RGPD español al vuelo. Exporta expedientes completos a CSV y anonimiza de forma permanente todos los datos personales en un solo clic.
+                  Los datos de tus clientas protegidos según la ley. Exporta todo en CSV y borra datos personales en un solo clic si alguien te lo pide.
                 </p>
               </div>
             </div>
@@ -507,7 +507,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   </div>
                   <p className="text-xs text-primary-fixed-dim mb-8">Equivale a <strong className="text-tertiary-fixed">29,17€/mes</strong> · 2 meses de regalo incluidos</p>
                   <ul className="flex flex-col gap-3 mb-10 text-sm font-medium">
-                    {['Todo lo del plan Mensual','Prioridad en nuevas funcionalidades','Onboarding personalizado por videollamada','Acceso anticipado a WhatsApp API'].map(f => (
+                    {['Todo lo del plan Mensual','Prioridad en nuevas funcionalidades','Ayuda para empezar por videollamada','Acceso prioritario a nuevas funciones'].map(f => (
                       <li key={f} className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-tertiary-fixed text-lg font-bold">check</span>
                         {f}
@@ -541,7 +541,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   </thead>
                   <tbody className="divide-y divide-surface-variant/50 text-on-surface-variant font-medium">
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Motor de abandono proactivo (riskEngine)</td>
+                      <td className="px-6 py-4 text-primary font-bold">Sistema de alertas de clientas</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
                       <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
                     </tr>
@@ -556,7 +556,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                       <td className="px-6 py-4 text-center text-xs">Agenda estática simple</td>
                     </tr>
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Métricas reales de Facturación & ROI trimestral</td>
+                      <td className="px-6 py-4 text-primary font-bold">Métricas reales de Facturación y recuperación estimada</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
                       <td className="px-6 py-4 text-center text-xs">Solo informes contables básicos</td>
                     </tr>
@@ -682,7 +682,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           </div>
           
           <div className="text-center md:text-left text-sm text-on-surface-variant font-medium">
-            © 2026 Elena. Sofisticación en gestión para salones de autor.
+            © 2026 Elena. Gestión moderna para tu salón.
           </div>
           
           <div className="flex flex-wrap justify-center gap-6">
