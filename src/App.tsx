@@ -37,6 +37,7 @@ import StaffTenantView from './components/StaffTenantView';
 import SettingsView from './components/SettingsView';
 import OnboardingView from './components/OnboardingView';
 import AdminView from './components/AdminView';
+import AgentView from './components/AgentView';
 import { AppLoadingScreen, DashboardSkeleton } from './components/LoadingStates';
 import PublicBookingView from './components/PublicBookingView';
 
@@ -695,6 +696,13 @@ export default function App() {
                   onSelectTenant={setSelectedTenantId}
                   onUpdateConfig={onUpdateConfig}
                   onToastMessage={triggerToast}
+                />
+              )}
+              {currentView === 'agente' && (
+                <AgentView
+                  onToastMessage={triggerToast}
+                  getAuthToken={getAuthToken}
+                  isDemoMode={isDemoMode}
                 />
               )}
               {currentView === 'settings' && (
