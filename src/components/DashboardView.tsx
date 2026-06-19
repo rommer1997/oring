@@ -171,7 +171,7 @@ export default function DashboardView({
 
   // Activity Timeline — 100% dinámico, sin hardcoding
   const recentActivities = useMemo(() => {
-    const acts: any[] = [];
+    const acts: { id: string; title: string; time: string; dateLabel: string; desc: string; icon: string; badge: string; badgeStyle: string; sortKey: string }[] = [];
     // WhatsApp log events
     clients.forEach(c => {
       (c.whatsappLog || []).forEach(e => {
