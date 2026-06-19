@@ -62,7 +62,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
       <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 md:px-16 py-4 bg-surface/90 backdrop-blur-md shadow-sm">
         <div className="flex flex-col items-start gap-0.5">
           <span className="font-serif text-2xl font-bold text-primary tracking-tight leading-none">Elena</span>
-          <span className="text-[6.5px] tracking-wider text-primary/70 font-sans uppercase">Salon OS</span>
+          <span className="text-[6.5px] tracking-wider text-primary/70 font-sans uppercase">Powered by Rommer Volcanes</span>
         </div>
         
         <div className="hidden md:flex items-center gap-8">
@@ -678,7 +678,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
         <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-col items-center md:items-start gap-1">
             <div className="font-serif text-2xl font-bold text-primary leading-none">Elena</div>
-            <div className="text-[7px] tracking-wider text-primary/70 font-sans uppercase">Salon OS</div>
+            <div className="text-[7px] tracking-wider text-primary/70 font-sans uppercase">Powered by Rommer Volcanes</div>
           </div>
           
           <div className="text-center md:text-left text-sm text-on-surface-variant font-medium">
