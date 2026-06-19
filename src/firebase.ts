@@ -62,5 +62,5 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // ponytail: no re-throw; callers handle errors or use .catch — throwing here creates unhandled rejections in onSnapshot callbacks
 }
