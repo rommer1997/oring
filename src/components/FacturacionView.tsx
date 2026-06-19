@@ -79,13 +79,24 @@ export default function FacturacionView({ appointments, clients, onToastMessage 
   }, [currentQData]);
 
   // ─── New vs recurring clients this quarter ────────────────────────────────
+  // "Recurrente" = clienta que ya vino el trimestre ANTERIOR inmediato (no el mismo del año pasado)
+  const prevImmediateQData = useMemo(() => {
+    const prevQ = selectedQuarter === 1 ? 4 : selectedQuarter - 1;
+    const prevYear = selectedQuarter === 1 ? selectedYear - 1 : selectedYear;
+    const startMonth = (prevQ - 1) * 3;
+    return paid.filter(a => {
+      const d = new Date(a.date);
+      return d.getFullYear() === prevYear && d.getMonth() >= startMonth && d.getMonth() < startMonth + 3;
+    });
+  }, [paid, selectedYear, selectedQuarter]);
+
   const clientRetention = useMemo(() => {
     const clientsThisQ = new Set(currentQData.map(a => a.clientId));
-    const clientsPrevQ = new Set(prevYearQData.map(a => a.clientId));
+    const clientsPrevQ = new Set(prevImmediateQData.map(a => a.clientId));
     const recurring = [...clientsThisQ].filter(id => clientsPrevQ.has(id)).length;
     const newClients = clientsThisQ.size - recurring;
     return { total: clientsThisQ.size, recurring, newClients };
-  }, [currentQData, prevYearQData]);
+  }, [currentQData, prevImmediateQData]);
 
   const quarterLabel = `T${selectedQuarter} ${selectedYear}`;
   const quarters = [1, 2, 3, 4];
