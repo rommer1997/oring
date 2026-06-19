@@ -188,3 +188,37 @@ export function analyzeChurnRisk(
     recommendation
   };
 }
+
+import { generateAvatarUrl } from '../hooks/useTenantData';
+
+/** Factory for a blank ClientProfile. Centralizes the default shape used in Agenda, Settings CSV import, and App quick-book. */
+export function buildNewClient(
+  overrides: Pick<ClientProfile, 'id' | 'name' | 'phoneNumber' | 'tenantId'> &
+    Partial<Pick<ClientProfile, 'avatar' | 'email' | 'lastVisitService' | 'favoriteServices' | 'aiReason'>>
+): ClientProfile {
+  return {
+    avatar: generateAvatarUrl(overrides.name),
+    email: '',
+    birthdate: '',
+    age: 0,
+    isVip: false,
+    riskLevel: 'Bajo',
+    riskDays: 0,
+    lastVisitDate: getTodayISO(),
+    lastVisitService: '',
+    spendingLtv: 0,
+    totalVisits: 1,
+    averageFrequencyDays: 30,
+    favoriteServices: [],
+    appointmentHistory: [],
+    preferences: [],
+    technicalNotes: '',
+    aiReason: 'Ficha creada manualmente.',
+    suggestedOfferTitle: '',
+    suggestedOfferDesc: '',
+    whatsappLog: [],
+    contactConsent: false,
+    marketingOptOut: false,
+    ...overrides,
+  };
+}
