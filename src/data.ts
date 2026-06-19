@@ -322,69 +322,6 @@ Quedamos a tu disposición para asignarte tu cita.`,
   };
 }
 
-export const TEMPLATES_BY_TONE = {
-  carmen: {
-    Cercano: `¡Hola Carmen! Esperamos que estés súper bien. 
-
-Siento mucho molestarte, pero al revisar nuestra agenda de citas he visto que pasaron tres meses desde tus últimas mechas y quería asegurarme de que tu pelo siga tan bonito como siempre. 
-
-Como te extrañamos mucho por aquí, si agendas tu retoque para esta semana te voy a regalar un Tratamiento de Hidratación Profunda con vapor (que vale 35€) para consentirte. 
-
-¿Vemos un huequito con Laura?`,
-    Profesional: `¡Hola Carmen! Esperamos que estés muy bien. 
-
-Hemos notado al revisar nuestra agenda de reservas que ya han pasado un par de meses desde tu última visita para tus mechas. Nos encantaría volver a verte y asegurarnos de que tu cabello siga luciendo espectacular. 
-
-Como valoramos mucho tu fidelidad, si reservas tu retoque esta semana, queremos obsequiarte un Tratamiento de Hidratación Profunda (valorado en 35€). 
-
-¿Te gustaría que busquemos un hueco en la agenda de Sofía?`,
-    Elegante: `Estimada Carmen, un placer saludarte.
-
-Esperamos que te encuentres de maravilla. Al revisar nuestro registro premium, observamos que tu última sesión de coloración fue hace tres meses. Deseamos invitarte a renovar el exquisito matizado de tus mechas para preservar su fulgor natural.
-
-Por ser una de nuestras clientas más distinguidas, nos complacerá obsequiarte nuestro selecto Tratamiento de Hidratación Profunda de autor en tu próxima reserva.
-
-Será un honor reservarte un espacio reservado con nuestras estilistas.`
-  },
-  sofia: {
-    Cercano: `¡Hola Sofi! Qué gusto saludarte.
-
-Te escribo porque vi que ya pasaron dos meses de tu última keratina y seguramente ya necesites ese retoque para mantener el cabello súper lacio y brillante.
-
-Si agendas esta semana te regalamos un hermoso Peinado Exprés de obsequio. ¿Cómo te viene los próximos días?`,
-    Profesional: `Hola Sofía, un saludo cordial de parte del equipo.
-
-Hemos verificado en nuestra plataforma que han transcurrido 62 días desde tu Keratina. Sugerimos agendar tu mantenimiento para proteger y prolongar el efecto liso.
-
-Esta semana disponemos de una promoción que incluye un Peinado Exprés de Obsequio con tu servicio en el centro.
-
-¿Te reservamos un hueco?`,
-    Elegante: `Estimada Sofía,
-
-Confiamos en que estés disfrutando de una excelente jornada. Tras completar el trimestre de tu exquisito tratamiento de Keratina, te sugerimos renovar el sellado de brillo para conservar su sedosidad impecable.
-
-Será un auténtico deleite asignarte un Peinado Express como cortesía complementaria en tu próxima visita de distinción.
-
-¿Nos indicas tu fecha ideal?`
-  },
-  marta: {
-    Cercano: `¡Hola Marta! ¿Qué tal todo?
-
-Ya pasaron casi 35 días de tu manicura y seguro que tus uñas ya necesitan cariño. ¿Vienes por el salón a tomar un café y te las dejamos impecables?
-
-Te mando un abrazo grande.`,
-    Profesional: `Estimada Marta, un afectuoso saludo de nuestro equipo de estilistas.
-
-Hemos observado que ha excedido su ciclo habitual de visita para su servicio de manicura. Le recomendamos agendar para mantener sus manos impecables y saludables.
-
-¿Desea conocer nuestras disponibilidades disponibles para esta semana?`,
-    Elegante: `Estimada Marta,
-
-Le enviamos nuestros saludos más selectos. Con el propósito de resguardar la pulcritud y la salud de sus manos, le ofrecemos un espacio selecto para renovar su Manicura Semipermanente habitual.
-
-Quedamos a su distinguida disposición para formalizar su próxima cita.`,
-  }
-};
 
 export const INITIAL_INVENTORY: InventoryItem[] = [
   {
