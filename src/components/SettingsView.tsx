@@ -131,7 +131,7 @@ export default function SettingsView({
       isErrorLoggingEnabled: isErrorLogging,
       isRotatingScheduleEnabled: isRotatingSchedule
     });
-    onToastMessage('⚙️ Parámetros guardados con éxito. Segmentación de clientas recalculada en tiempo real.');
+    onToastMessage('⚙️ Configuración guardada. Las alertas de clientas se han actualizado.');
   };
 
   const signIn = async () => {
@@ -163,7 +163,7 @@ export default function SettingsView({
       <div className="mb-8">
         <h2 className="font-serif text-3xl font-semibold text-primary">Configuración del Centro</h2>
         <p className="text-sm text-on-surface-variant font-medium">
-          Ajustes clave de segmentación algorítmica por riesgo, reglas de automatización de WhatsApp y políticas comerciales.
+          Configura cuándo avisarte de clientas ausentes, mensajes de WhatsApp y opciones del salón.
         </p>
       </div>
 
@@ -175,7 +175,7 @@ export default function SettingsView({
           <div>
             <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider mb-3">
               <span className="material-symbols-outlined text-lg text-primary animate-pulse">auto_awesome</span>
-              <h3>Tu Espacio Zen Digital (Estrategia de la Cebolla)</h3>
+              <h3>Tu panel (A tu ritmo)</h3>
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed mb-5 font-sans">
               Elena reduce tu sobrecarga cognitiva adaptando la complejidad de la interfaz a tu ritmo de crecimiento. Elige la fase en la que se encuentra tu negocio:
@@ -186,7 +186,7 @@ export default function SettingsView({
                 type="button"
                 onClick={() => {
                   onUpdateConfig({ isBeginnerMode: true });
-                  onToastMessage('✓ Modo Enfoque activado. Disfruta de tu espacio zen digital.');
+                  onToastMessage('✓ Vista simplificada activa.');
                 }}
                 className={`p-5 rounded-2xl border cursor-pointer transition-all ${
                   config.isBeginnerMode 
@@ -195,13 +195,13 @@ export default function SettingsView({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-bold text-primary">1. Modo Enfoque (Fase 1)</h4>
+                  <h4 className="text-xs font-bold text-primary">1. Vista simple (Fase 1)</h4>
                   {config.isBeginnerMode && (
                     <span className="material-symbols-outlined text-sm text-[#4A2C40] font-bold">check_circle</span>
                   )}
                 </div>
                 <p className="text-[11px] text-on-surface-variant leading-relaxed font-normal">
-                  Ideal para empezar. Concéntrate exclusivamente en gestionar tu agenda y recuperar clientas en riesgo usando la IA.
+                  Ideal para empezar. Concéntrate en gestionar tu agenda y recuperar clientas.
                 </p>
               </div>
 
@@ -218,7 +218,7 @@ export default function SettingsView({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-bold text-primary">2. Suite Completa (Fases 2 y 3)</h4>
+                  <h4 className="text-xs font-bold text-primary">2. Todas las herramientas (Fases 2 y 3)</h4>
                   {!config.isBeginnerMode && (
                     <span className="material-symbols-outlined text-sm text-[#4A2C40] font-bold">check_circle</span>
                   )}
@@ -236,10 +236,10 @@ export default function SettingsView({
           <div>
             <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider mb-3">
               <span className="material-symbols-outlined text-lg">analytics</span>
-              <h3>Parámetros de Riesgo de Abandono</h3>
+              <h3>¿Cuántos días sin venir = alerta?</h3>
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
-              Define los límites temporales (en días transcurridos desde la última visita) que determinan el nivel de riesgo de deserción de cada clienta de autor. Estas reglas re-categorizan toda la base de datos de manera inmediata.
+              Define cuántos días sin venir activan una alerta para cada clienta. Estas reglas actualizan toda la base de datos de manera inmediata.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-[#faf8f4] border border-outline-variant/30 rounded-xl mb-4">
@@ -279,11 +279,11 @@ export default function SettingsView({
             </div>
           </div>
 
-          {/* Section 2: Consonancias de WhatsApp y Consentimiento de IA */}
+          {/* Section 2: Permisos de WhatsApp y Consentimiento de IA */}
           <div className="pt-6 border-t border-outline-variant/20">
             <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider mb-3">
               <span className="material-symbols-outlined text-lg">verified_user</span>
-              <h3>WhatsApp & Políticas de Privacidad</h3>
+              <h3>Permisos de WhatsApp & Políticas de Privacidad</h3>
             </div>
             
             <p className="text-xs text-on-surface-variant leading-relaxed mb-5">
@@ -354,7 +354,7 @@ export default function SettingsView({
                   <div>
                     <h4 className="text-xs font-bold text-primary flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-sm text-[#bfa982]">schedule</span>
-                      Asignación Semanal de Turnos
+                      Horarios de trabajo
                     </h4>
                     <p className="text-[10px] text-on-surface-variant">Define qué días y horas está disponible cada estilista premium.</p>
                   </div>
@@ -544,16 +544,16 @@ export default function SettingsView({
             {/* Manual Onboarding Trigger */}
             <div className="mt-4 bg-primary text-on-primary p-4 border border-outline-variant/25 rounded-xl flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold mb-1">Onboarding Manual (Franquiciados)</h4>
+                <h4 className="text-xs font-bold mb-1">Guía de inicio para tu equipo</h4>
                 <p className="text-[11px] opacity-90">Despliega el tutorial interactivo para habilitar a tu equipo.</p>
               </div>
               <button
                 type="button"
-                onClick={() => onToastMessage('Inicializando Asistente de Onboarding para los 3 salones piloto (Enviando notificaciones...)')}
+                onClick={() => onToastMessage('Iniciando la guía de inicio para tu equipo (Enviando notificaciones...)')}
                 className="bg-white/20 hover:bg-white/30 text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg cursor-pointer flex items-center gap-1.5 transition-all shadow-sm shrink-0"
               >
                 <span className="material-symbols-outlined text-sm">school</span>
-                <span>Lanzar Onboarding</span>
+                <span>Lanzar guía de inicio</span>
               </button>
             </div>
 
@@ -671,7 +671,7 @@ export default function SettingsView({
           <div className="bg-[#f0ece3] p-6 rounded-2xl border border-primary/10 text-left space-y-4">
             <div className="flex items-center gap-2 text-primary">
               <span className="material-symbols-outlined font-bold">cloud_sync</span>
-              <h4 className="font-serif text-lg font-bold">Base de Datos en la Nube</h4>
+              <h4 className="font-serif text-lg font-bold">Tus datos guardados</h4>
             </div>
             
             <p className="text-xs text-on-surface-variant leading-relaxed">
@@ -824,7 +824,7 @@ export default function SettingsView({
           </div>
 
           <div className="bg-[#faf8f4] p-6 rounded-2xl border border-outline-variant/30 text-left space-y-4">
-            <h4 className="font-serif text-lg font-bold text-primary">Consistencia de Datos</h4>
+            <h4 className="font-serif text-lg font-bold text-primary">Seguridad de tus datos</h4>
             <p className="text-xs text-on-surface-variant leading-relaxed">
               Elena asegura que tu franquicia de centros estéticos no genere incoherencias entre sucursales ni repeticiones involuntarias de envíos de WhatsApp.
             </p>
@@ -837,7 +837,7 @@ export default function SettingsView({
             </div>
             
             <div className="p-4 bg-white/70 border border-outline-variant/25 rounded-xl">
-              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">CONEXIÓN WHATSAPP CLOUD</p>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">WHATSAPP CONECTADO</p>
               <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5 leading-relaxed">
                 <span className="material-symbols-outlined text-sm">wifi</span>
                 <span>API Oficial de Elena Activa</span>
