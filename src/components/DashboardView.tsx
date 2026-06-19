@@ -23,7 +23,6 @@ export default function DashboardView({
   isBeginnerMode = true,
   onUpdateConfig
 }: DashboardViewProps) {
-  const [showCampaignModal, setShowCampaignModal] = useState<boolean>(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -89,8 +88,13 @@ export default function DashboardView({
   const totalSentMessages = manualSentCount;
   const manualResponsesCount = clients.reduce((accum, c) => accum + (c.whatsappLog || []).filter(m => m.sender === 'client').length, 0);
   const totalResponses = manualResponsesCount;
-  const dynamicRecoveredCount = clients.filter(c => (c.whatsappLog || []).some(m => m.sender === 'user' && m.status === 'enviado')).length;
-  const totalRecoveredCitas = dynamicRecoveredCount;
+  // "Recuperada" = se le envió un mensaje Y tiene una cita Pagada posterior a ese mensaje
+  const totalRecoveredCitas = clients.filter(c => {
+    const sentMsgs = (c.whatsappLog || []).filter(m => m.sender === 'user' && m.status === 'enviado');
+    if (sentMsgs.length === 0) return false;
+    const lastSentTs = sentMsgs.map(m => m.timestamp).sort().at(-1)!;
+    return appointments.some(a => a.clientId === c.id && a.status === 'Pagado' && a.date >= lastSentTs.slice(0, 10));
+  }).length;
 
   const responseRate = totalSentMessages > 0 ? Math.round((totalResponses / totalSentMessages) * 100) : 0;
   const conversionRate = totalSentMessages > 0 ? Math.round((totalRecoveredCitas / totalSentMessages) * 100) : 0;
@@ -636,7 +640,7 @@ export default function DashboardView({
                   <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1 font-sans">Interacción Digital</span>
                   <h4 className="font-serif text-xl font-bold text-primary">Respuestas de Clienta</h4>
                 </div>
-                <span className="p-2.5 rounded-lg bg-orange-100 text-orange-850 font-extrabold text-xs">
+                <span className="p-2.5 rounded-lg bg-orange-100 text-orange-900 font-extrabold text-xs">
                   {totalResponses}
                 </span>
               </div>
@@ -691,7 +695,7 @@ export default function DashboardView({
                       action.priority === 'Crítica'
                         ? 'bg-red-100 text-red-800 border-red-200'
                         : action.priority === 'Alta'
-                        ? 'bg-orange-100 text-orange-850 border-orange-200'
+                        ? 'bg-orange-100 text-orange-900 border-orange-200'
                         : 'bg-[#bfa982]/10 text-primary border-[#bfa982]/20';
 
                     return (
@@ -902,60 +906,6 @@ export default function DashboardView({
         </div>
       )}
 
-      {/* Styled Campaign Modal */}
-      {showCampaignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="absolute inset-0 bg-[#4A2C40]/40 backdrop-blur-sm shadow-inner" onClick={() => setShowCampaignModal(false)}></div>
-          
-          <div className="bg-[#fdf6ec] max-w-lg w-full rounded-2xl p-6 relative z-10 shadow-lg border border-[#bfa982]/32 text-left">
-            <button 
-              className="absolute top-4 right-4 text-primary hover:text-[#4A2C40] cursor-pointer"
-              onClick={() => setShowCampaignModal(false)}
-            >
-              <span className="material-symbols-outlined text-xl font-bold">close</span>
-            </button>
-
-            <div className="flex items-center gap-2.5 mb-4 text-[#4A2C40]">
-              <span className="material-symbols-outlined font-bold">auto_awesome</span>
-              <h3 className="font-serif text-xl font-bold">Propuesta de Campaña Inteligente</h3>
-            </div>
-            
-            <div className="border border-outline-variant/35 rounded-xl p-4 bg-white mb-4 h-64 overflow-y-auto shadow-inner">
-              <p className="text-[9.5px] font-bold text-primary uppercase tracking-wider mb-2">Segmento seleccionado:</p>
-              <p className="text-sm text-on-surface mb-3 font-semibold">45 clientas con preferencia en Masajes Faciales e Hidratación Profunda inactivas por más de 45 días.</p>
-              
-              <p className="text-[9.5px] font-bold text-primary uppercase tracking-wider mb-2">Plantilla generada (Cercana):</p>
-              <div className="p-3 bg-[#faf8f4] border border-outline-variant/20 rounded-lg text-xs leading-relaxed font-serif text-on-surface-variant mb-4 italic">
-                "¡Hola [Nombre]! Se acerca el cambio de estación y en el salón nos encantaría volver a mimar tu piel con tu tratamiento facial consentido. Queremos que luzcas estupenda este mes, así que si reservas tu espacio de relax antes de este viernes te obsequiaremos un Masaje de Ojos Criogénico de autor (valorado en 25€). ¿Te apetece que te reservemos un huequecito? ✨"
-              </div>
-              
-              <div className="flex justify-between items-center text-[10px] font-bold text-on-surface-variant border-t border-outline-variant/10 pt-2.5">
-                <span>Canal: WhatsApp de Autor</span>
-                <span className="text-emerald-700">Est. conversión: 42%</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-end text-sm">
-              <button
-                className="px-4 py-2 text-xs font-bold text-primary hover:underline cursor-pointer"
-                onClick={() => setShowCampaignModal(false)}
-              >
-                Cerrar
-              </button>
-              <button
-                className="px-5 py-2.5 bg-[#4A2C40] text-white text-xs font-bold rounded-xl hover:bg-[#2E1927] transition-all cursor-pointer shadow-sm"
-                onClick={() => {
-                  setShowCampaignModal(false);
-                  onNavigate('retention');
-                  onToastMessage('Navega a Clientes & Riesgo para seleccionar y contactar a tus clientas.');
-                }}
-              >
-                Ir a Monitor de Mimo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
