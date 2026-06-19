@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { analyzeChurnRisk, getTodayISO } from './utils/riskEngine';
+import { analyzeChurnRisk, getTodayISO, buildNewClient } from './utils/riskEngine';
 import {
   AppView,
   ClientProfile,
@@ -44,7 +44,6 @@ import PublicBookingView from './components/PublicBookingView';
 import { useAuth } from './hooks/useAuth';
 import { useFirestoreSync } from './hooks/useFirestoreSync';
 import {
-  generateAvatarUrl,
   handleAddService,
   handleEditService,
   handleDeleteService,
@@ -318,25 +317,21 @@ export default function App() {
     const now = new Date().toISOString();
     const completedUser = { ...appUser, onboardingCompleted: true, staffMemberId: payload.staff.id, lastLoginAt: now };
 
-    try {
-      await setDoc(doc(db, 'tenants', payload.tenant.id), payload.tenant, { merge: true });
-      await Promise.all(
-        payload.services.map((service) =>
-          setDoc(doc(db, 'tenants', payload.tenant.id, 'services', service.id), service)
-        )
-      );
-      await setDoc(doc(db, 'tenants', payload.tenant.id, 'staff_members', payload.staff.id), payload.staff);
-      await setDoc(doc(db, 'tenants', payload.tenant.id, 'settings', 'profile'), {
-        tenantId: payload.tenant.id,
-        onboardingCompleted: true,
-        completedAt: now,
-        updatedAt: now,
-      });
-      await setDoc(doc(db, 'users', firebaseUser.uid), completedUser);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `onboarding/${payload.tenant.id}`);
-      triggerToast('Error al guardar la configuración. Comprueba tu conexión y vuelve a intentarlo.');
-      return;
+    const steps: Array<[string, () => Promise<unknown>]> = [
+      ['datos del salón', () => setDoc(doc(db, 'tenants', payload.tenant.id), payload.tenant, { merge: true })],
+      ['servicios', () => Promise.all(payload.services.map(s => setDoc(doc(db, 'tenants', payload.tenant.id, 'services', s.id), s)))],
+      ['equipo', () => setDoc(doc(db, 'tenants', payload.tenant.id, 'staff_members', payload.staff.id), payload.staff)],
+      ['perfil', () => setDoc(doc(db, 'tenants', payload.tenant.id, 'settings', 'profile'), { tenantId: payload.tenant.id, onboardingCompleted: true, completedAt: now, updatedAt: now })],
+      ['cuenta', () => setDoc(doc(db, 'users', firebaseUser.uid), completedUser)],
+    ];
+    for (const [stepName, run] of steps) {
+      try {
+        await run();
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `onboarding/${payload.tenant.id}/${stepName}`);
+        triggerToast(`Error al guardar ${stepName}. Comprueba tu conexión y vuelve a intentarlo.`);
+        return;
+      }
     }
 
     setAppUser(completedUser);
@@ -438,22 +433,15 @@ export default function App() {
 
     if (modalIsPhoneNewClient) {
       if (!modalNewClientName.trim()) { triggerToast('⚠️ Introduce el nombre de la nueva clienta.'); return; }
-      const newId = `cli-${Date.now()}`;
-      const newClient: ClientProfile = {
-        id: newId,
+      const newClient = buildNewClient({
+        id: `cli-${Date.now()}`,
         name: modalNewClientName.trim(),
-        avatar: generateAvatarUrl(modalNewClientName.trim()),
         phoneNumber: modalPhoneSearch.trim(),
-        email: '', birthdate: '', age: 0, isVip: false,
-        riskLevel: 'Bajo', riskDays: 0,
-        lastVisitDate: getTodayISO(),
+        tenantId: selectedTenantId,
         lastVisitService: matchedService.name,
-        spendingLtv: 0, totalVisits: 1, averageFrequencyDays: 30,
         favoriteServices: [{ name: matchedService.name, count: 1, pricePerVisit: matchedService.price, icon: 'spa' }],
-        appointmentHistory: [], preferences: [], technicalNotes: '',
-        aiReason: 'Ficha creada desde agenda.', suggestedOfferTitle: '', suggestedOfferDesc: '',
-        whatsappLog: [], tenantId: selectedTenantId, contactConsent: false, marketingOptOut: false,
-      };
+        aiReason: 'Ficha creada desde agenda.',
+      });
       onAddClient(newClient);
       onAddAppointment({ id: `appt-quick-${Date.now()}`, clientName: newClient.name, clientId: newClient.id, serviceName: matchedService.name, serviceId: matchedService.id, staffName: matchedStaff.name, staffId: matchedStaff.id, time: modalTime, date: modalDate, price: matchedService.price, status: 'Reservado', durationMinutes: matchedService.durationMinutes, tenantId: selectedTenantId });
       setIsAppointmentModalOpen(false);
