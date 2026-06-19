@@ -153,8 +153,8 @@ export default function DashboardView({
       type: 'reactivate' as const,
       priority: c.riskLevel === 'Crítico' ? 'Crítica' as const : 'Alta' as const,
       title: `Reactivar a ${c.name}`,
-      desc: `Lleva ${c.riskDays} días inactiva. El Monitor de Mimo sugiere obsequiarle un "${c.suggestedOfferTitle || 'un detalle de autor'}".`,
-      buttonText: 'Asistente de Redacción con IA',
+      desc: `Lleva ${c.riskDays} días inactiva. Nuestro sistema sugiere obsequiarle un "${c.suggestedOfferTitle || 'un detalle especial'}".`,
+      buttonText: 'Ayuda para escribir el mensaje',
       icon: 'magic_button',
       onClick: () => {
         onSelectClient(c.id);
@@ -169,8 +169,8 @@ export default function DashboardView({
       id: 'review-thresholds',
       type: 'general' as const,
       priority: 'Media' as const,
-      title: 'Auditar umbrales de inactividad',
-      desc: 'Optimiza tus tasas de conversión revisando el diagnóstico general en tu Configuración.',
+      title: 'Revisar configuración de alertas',
+      desc: 'Revisa cuántos días sin venir activan una alerta en tu Configuración.',
       buttonText: 'Ir a Configuración',
       icon: 'settings',
       onClick: () => onNavigate('settings')
@@ -309,11 +309,11 @@ export default function DashboardView({
       <div className="mb-10 text-left flex justify-between items-end">
         <div>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-primary mb-1">
-            {isBeginnerMode ? "Tu Espacio Zen Digital" : "Panel del salón"}
+            {isBeginnerMode ? "Tu panel" : "Panel del salón"}
           </h2>
           <p className="text-base text-muted-foreground font-medium font-sans">
-            {isBeginnerMode 
-              ? "Modo Enfoque activo. Sigue tu agenda y mima a tus clientas de autor." 
+            {isBeginnerMode
+              ? "Vista simplificada activa. Sigue tu agenda y cuida a tus clientas."
               : "Sigue la actividad real de tu agenda, clientas y mensajes."}
           </p>
         </div>
@@ -359,7 +359,7 @@ export default function DashboardView({
             <div className="flex-1 space-y-4 font-sans">
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#8c6d7a] bg-[#ebdcc9]/40 border border-[#bfa982]/30 px-3 py-1 rounded-full tracking-wider inline-block mb-2 select-none">
-                  Mimo Urgente Requerido ✦
+                  Atención Urgente ✦
                 </span>
                 <h3 className="font-serif text-3xl font-bold text-primary mb-1">¡Elena te susurra un secreto!</h3>
                 <p className="text-sm text-on-surface-variant font-medium leading-relaxed font-serif italic max-w-2xl">
@@ -381,10 +381,10 @@ export default function DashboardView({
                   className="bg-[#4A2C40] hover:bg-[#2E1927] text-[#fdf6ec] py-3.5 px-7 text-xs font-bold rounded-2xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm font-bold">auto_awesome</span>
-                  <span>Mimar a {urgentClient.name} con Asistente de Redacción ✨</span>
+                  <span>Escribir mensaje para {urgentClient.name} ✨</span>
                 </button>
                 <span className="text-xs font-semibold text-[#8c6d7a] bg-[#faf6f0] border border-[#bfa982]/20 px-3 py-2.5 rounded-xl font-mono select-none">
-                  Potencial de recuperación: +{Math.round(urgentClient.spendingLtv / (urgentClient.totalVisits || 1) || avgTicket)}€ esta semana
+                  Dinero que puedes recuperar: +{Math.round(urgentClient.spendingLtv / (urgentClient.totalVisits || 1) || avgTicket)}€ esta semana
                 </span>
               </div>
             </div>
@@ -401,7 +401,7 @@ export default function DashboardView({
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="font-serif text-xl font-bold text-primary">Dinero que has recuperado</h3>
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1 font-sans">El valor de tu retención</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1 font-sans">Dinero de clientas recuperadas</p>
               </div>
               <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-2 rounded-xl font-bold text-lg select-none">trending_up</span>
             </div>
@@ -443,7 +443,7 @@ export default function DashboardView({
           </div>
 
           <div className="mt-6 pt-4 border-t border-light-divider flex justify-between items-center text-[10px] text-muted-foreground font-semibold font-sans">
-            <span>Tasa de efectividad: {conversionRate}%</span>
+            <span>Tasa de respuesta: {conversionRate}%</span>
             <span>{totalRecoveredCitas} clientas rescatadas</span>
           </div>
         </div>
@@ -512,7 +512,7 @@ export default function DashboardView({
           </div>
 
           <div className="mt-6 pt-4 border-t border-light-divider text-center font-sans">
-            <p className="text-[11px] text-outline font-medium italic">Sincronización en tiempo real habilitada con tu salón de autor</p>
+            <p className="text-[11px] text-outline font-medium italic">Tus citas siempre al día</p>
           </div>
         </div>
 
@@ -565,7 +565,7 @@ export default function DashboardView({
                 <h4 className="font-serif text-lg font-bold text-primary">¿Preparada para expandir tu negocio?</h4>
               </div>
               <p className="text-[11.5px] text-on-surface-variant max-w-2xl leading-relaxed">
-                Actualmente estás operando en el **Modo Enfoque** para mantener tu agenda ordenada y concentrarte en la retención. Cuando estés lista, puedes habilitar de forma gratuita las herramientas avanzadas de **Inventario, Facturación mensual y Gestión de equipo**.
+                Ahora mismo estás en la **vista simple** para mantener tu agenda ordenada y concentrarte en tus clientas. Cuando estés lista, puedes activar de forma gratuita las herramientas avanzadas de **Inventario, Facturación mensual y Gestión de equipo**.
               </p>
             </div>
             
@@ -574,11 +574,11 @@ export default function DashboardView({
                 if (onUpdateConfig) {
                   onUpdateConfig({ isBeginnerMode: false });
                 }
-                onToastMessage('✓ ¡Felicidades! Has activado la Suite Completa de Elena. Todas las herramientas están disponibles.');
+                onToastMessage('✓ ¡Felicidades! Has activado Todas las herramientas de Elena. Todo está disponible.');
               }}
               className="bg-primary hover:bg-[#4a2c40] text-on-primary py-3.5 px-6 text-xs font-bold rounded-xl transition-all shadow shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5"
             >
-              <span>Activar Suite Completa ✨</span>
+              <span>Activar Todas las herramientas ✨</span>
               <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
             </button>
           </div>
@@ -595,7 +595,7 @@ export default function DashboardView({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1 font-sans">Monitor de Mimo</span>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1 font-sans">Clientas en Riesgo</span>
                   <h4 className="font-serif text-xl font-bold text-primary">Clientas que te echan de menos</h4>
                 </div>
                 <span className="p-2.5 rounded-lg bg-red-100 text-red-800 font-extrabold text-xs">
@@ -617,7 +617,7 @@ export default function DashboardView({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1 font-sans">Asistente de Redacción</span>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1 font-sans">Asistente de mensajes</span>
                   <h4 className="font-serif text-xl font-bold text-primary">Mensajes Enviados</h4>
                 </div>
                 <span className="p-2.5 rounded-lg bg-secondary text-primary font-extrabold text-xs">
@@ -682,7 +682,7 @@ export default function DashboardView({
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="font-serif text-2xl font-bold text-primary leading-none">Acciones Recomendadas Hoy</h3>
-                    <p className="text-xs text-muted-foreground mt-1.5 font-medium">Recomendaciones inmediatas basadas en el ciclo óptimo del salón.</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 font-medium">Lo más importante que puedes hacer hoy en tu salón.</p>
                   </div>
                   <span className="text-[10px] uppercase font-bold text-[#8c6d7a] bg-secondary/15 border border-[#bfa982]/30 px-3 py-1 rounded-full shrink-0 select-none font-sans">
                     Monitor Alerta
@@ -735,7 +735,7 @@ export default function DashboardView({
               </div>
 
               <div className="mt-8 pt-4 border-t border-outline-variant/15 flex flex-col sm:flex-row justify-between items-center gap-3">
-                <span className="text-[10px] text-outline font-semibold">El copiloto calcula alertas cada 24 horas</span>
+                <span className="text-[10px] text-outline font-semibold">El asistente de mensajes actualiza las alertas cada 24 horas</span>
                 <button
                   onClick={() => onNavigate('retention')}
                   className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
@@ -752,7 +752,7 @@ export default function DashboardView({
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="font-serif text-2xl font-bold text-primary font-sans">Agenda de Hoy</h3>
-                    <p className="text-xs text-muted-foreground mt-1.5 font-medium">Tratamientos asignados para hoy en el salón.</p>
+                        <p className="text-xs text-muted-foreground mt-1.5 font-medium">Tratamientos asignados para hoy en el salón.</p>
                   </div>
                   <a 
                     href="#agenda" 
@@ -803,7 +803,7 @@ export default function DashboardView({
                 </div>
               </div>
 
-              <p className="text-xs text-outline font-medium italic text-center mt-6">Sincronización de citas habilitada por IA.</p>
+              <p className="text-xs text-outline font-medium italic text-center mt-6">Tus citas siempre al día.</p>
             </div>
 
           </div>
@@ -816,7 +816,7 @@ export default function DashboardView({
                 <h4 className="font-serif text-lg font-bold text-primary">Atención Temprana de Fuga de Clientes</h4>
               </div>
               <p className="text-[11.5px] text-on-surface-variant max-w-2xl leading-relaxed">
-                Tienes <strong className="text-primary">{riskClientsCount} de tu clientela de autor</strong> superando el ciclo óptimo de visitas sin retorno programado. Cada día adicional de inactividad reduce la probabilidad de retención en un 4.5%.
+                Tienes <strong className="text-primary">{riskClientsCount} clientas</strong> que llevan demasiado tiempo sin venir. Cada día que pasa es más difícil recuperarlas.
               </p>
             </div>
             
@@ -880,13 +880,13 @@ export default function DashboardView({
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="material-symbols-outlined text-[#fdf6ec] font-bold text-xl select-none">auto_awesome</span>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#fdf6ec] opacity-85">Asistente de Redacción</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#fdf6ec] opacity-85">Asistente de mensajes</h3>
                 </div>
                 <h4 className="font-serif text-2xl font-semibold leading-tight mb-3">
                   Recupera a tus {campaignContext.highRiskCount} clientas de alto riesgo en {campaignContext.monthName}
                 </h4>
                 <p className="text-[11.5px] text-[#f5ebd7]/90 leading-relaxed max-w-md font-sans">
-                  El Monitor de Mimo detecta {campaignContext.highRiskCount} clientas con desviación prolongada. Si las contactas esta semana con una propuesta de
+                  Nuestro sistema detecta {campaignContext.highRiskCount} clientas que llevan tiempo sin venir. Si las contactas esta semana con una propuesta de
                   {' '}<strong>{campaignContext.topService}</strong>, el dinero que puedes recuperar ronda los{' '}
                   <strong>{campaignContext.estimatedGain.toLocaleString('es-ES')}€</strong>.
                 </p>
