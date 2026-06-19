@@ -41,7 +41,8 @@ export default function ClientProfileView({
     if (currentClient) {
       setTechnicalNotes(currentClient.technicalNotes);
     }
-  }, [selectedClientId, currentClient]);
+  // ponytail: dep on id only — avoids re-running when other client fields update
+  }, [currentClient?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll chat window to bottom on new messages
   useEffect(() => {
