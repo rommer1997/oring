@@ -392,7 +392,7 @@ export default function AgendaView({
         <div>
           <h2 className="font-serif text-3xl font-semibold text-primary">Agenda & Citas</h2>
           <p className="text-sm text-on-surface-variant font-medium">
-            Programación diaria de tratamientos, asignación de estilistas de autor y gestión de cobros en tiempo real.
+            Tu agenda del día: quién viene, quién la atiende y qué cobras.
           </p>
         </div>
         
@@ -427,7 +427,7 @@ export default function AgendaView({
       <div className="mb-6 bg-surface-container-low/40 p-4 rounded-2xl border border-outline-variant/10 text-primary">
         <h4 className="text-[11px] uppercase font-bold tracking-wider text-[#bfa982] mb-3 flex items-center gap-1.5">
           <span className="material-symbols-outlined text-sm font-bold">calendar_month</span>
-          Ocupación y Perspectiva Global Semanal
+          Citas de esta semana
         </h4>
         
         <div className="grid grid-cols-7 gap-2">
@@ -603,7 +603,7 @@ export default function AgendaView({
                         </span>
                         <span className="text-outline">•</span>
                         <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs text-primary/70">face</span> Asignado a: <strong className="text-primary">{appt.staffName}</strong>
+                          <span className="material-symbols-outlined text-xs text-primary/70">face</span> Con: <strong className="text-primary">{appt.staffName}</strong>
                         </span>
                       </p>
                     </div>
@@ -788,7 +788,7 @@ export default function AgendaView({
 
                   {/* Select Service */}
                   <div>
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Tratamiento / Servicio</label>
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Servicio</label>
                     <select
                       value={formServiceId}
                       onChange={(e) => handleServiceChange(e.target.value)}
@@ -803,7 +803,7 @@ export default function AgendaView({
 
                   {/* Select Stylist */}
                   <div>
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Estilista / Especialista</label>
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Profesional</label>
                     <select
                       value={formStaffId}
                       onChange={(e) => setFormStaffId(e.target.value)}
