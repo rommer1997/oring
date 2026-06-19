@@ -256,6 +256,24 @@ export default function AgendaView({
       return;
     }
 
+    // Overlap check: reject if this staff already has a booking that overlaps
+    const [newHr, newMin] = formTime.split(':').map(Number);
+    const newStart = (newHr || 0) * 60 + (newMin || 0);
+    const newEnd = newStart + (matchedService.durationMinutes || 30);
+    const hasOverlap = appointments.some(a => {
+      if (a.staffId !== formStaffId || a.date !== formDate) return false;
+      if (editingAppointment && a.id === editingAppointment.id) return false;
+      if (a.status === 'Cancelado') return false;
+      const [aHr, aMin] = a.time.split(':').map(Number);
+      const aStart = (aHr || 0) * 60 + (aMin || 0);
+      const aEnd = aStart + (a.durationMinutes || 30);
+      return newStart < aEnd && newEnd > aStart;
+    });
+    if (hasOverlap) {
+      onToastMessage(`⚠️ Conflicto de agenda: ${matchedStaff.name} ya tiene una cita en ese horario.`);
+      return;
+    }
+
     // Handle Client Registration on-the-fly if it was a new client
     if (!editingAppointment && isPhoneNewClient) {
       const newId = `cli-${Date.now()}`;
@@ -270,7 +288,7 @@ export default function AgendaView({
         isVip: false,
         riskLevel: 'Bajo',
         riskDays: 0,
-        lastVisitDate: new Date().toISOString().split('T')[0],
+        lastVisitDate: getTodayISO(),
         lastVisitService: matchedService.name,
         spendingLtv: 0,
         totalVisits: 1,
@@ -306,6 +324,7 @@ export default function AgendaView({
         date: formDate,
         price: formPrice,
         status: formStatus,
+        durationMinutes: matchedService.durationMinutes,
         tenantId: selectedTenantId
       };
 
@@ -354,6 +373,7 @@ export default function AgendaView({
         date: formDate,
         price: formPrice,
         status: formStatus,
+        durationMinutes: matchedService.durationMinutes,
         tenantId: selectedTenantId
       };
 
