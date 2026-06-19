@@ -5,7 +5,9 @@ import { ClientProfile, Appointment, FavoriteService } from '../types';
  * Reference date defaults to the current local day.
  */
 export function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  // ponytail: local date, not UTC. toISOString() rolls over to tomorrow after ~22:00 in Spain.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export function calculateDaysBetween(startDateStr: string, endDateStr: string = getTodayISO()): number {
