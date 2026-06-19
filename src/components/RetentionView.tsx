@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppView, ClientProfile } from '../types';
+import { getTodayISO, buildNewClient } from '../utils/riskEngine';
 
 interface RetentionViewProps {
   clients: ClientProfile[];
@@ -97,43 +98,27 @@ export default function RetentionView({
       return;
     }
 
-    const newId = `cli-${Date.now()}`;
-    const cleanClient: ClientProfile = {
-      id: newId,
+    const cleanClient = buildNewClient({
+      id: `cli-${Date.now()}`,
       name: newName,
-      avatar: `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1544005313-94ddf0286df2' : '1508214751196-bcfd4ca60f91'}?auto=format&fit=crop&q=80&w=200`,
       phoneNumber: newPhone,
+      tenantId: selectedTenantId,
       email: newEmail.trim(),
-      birthdate: newBirthdate.trim(),
-      age: 0,
+      lastVisitService: 'Consulta de Autor',
+      favoriteServices: [{ name: 'Consulta de Autor', count: 1, pricePerVisit: 0, icon: 'spa' }],
+      aiReason: 'Ficha creada recientemente. Añade historial de citas para mejorar el análisis de retención.',
       isVip: newVip,
       riskLevel: newRiskLevel,
       riskDays: newRiskLevel === 'Crítico' ? 110 : newRiskLevel === 'Alto' ? 62 : newRiskLevel === 'Medio' ? 35 : 10,
-      lastVisitDate: new Date().toISOString().split('T')[0],
-      lastVisitService: 'Consulta de Autor',
-      spendingLtv: 0,
-      totalVisits: 1,
-      averageFrequencyDays: 30,
-      favoriteServices: [
-        { name: 'Consulta de Autor', count: 1, pricePerVisit: 0, icon: 'spa' }
-      ],
-      appointmentHistory: [],
-      preferences: [],
-      technicalNotes: '',
-      aiReason: 'Ficha creada recientemente. Añade historial de citas para mejorar el análisis de retención.',
-      suggestedOfferTitle: '',
-      suggestedOfferDesc: '',
-      whatsappLog: [],
-      tenantId: selectedTenantId,
+      birthdate: newBirthdate.trim(),
       contactConsent: newContactConsent,
       contactConsentAt: newContactConsent ? new Date().toISOString() : undefined,
-      marketingOptOut: false
-    };
+    } as Parameters<typeof buildNewClient>[0]);
 
     if (onAddClient) {
       onAddClient(cleanClient);
     }
-    onSelectClient(newId);
+    onSelectClient(cleanClient.id);
     onToastMessage(`Ficha de ${newName} añadida con éxito.`);
 
     // Reset fields & close drawer
