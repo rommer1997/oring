@@ -1,6 +1,17 @@
 import { Tenant, StaffMember, Service, Appointment, ClientProfile, InventoryItem } from './types';
 
-const TODAY_ISO = new Date().toISOString().split('T')[0];
+// ponytail: local YYYY-MM-DD, not UTC. toISOString() rolls over to tomorrow after ~22:00 in Spain.
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// Demo dates are relative to today so the seed always shows a stable spread of risk levels
+// (Crítico/Alto/Bajo) instead of drifting as the calendar advances.
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return toLocalISO(d);
+}
+const TODAY_ISO = toLocalISO(new Date());
 
 export const INITIAL_TENANTS: Tenant[] = [
   {
@@ -107,8 +118,8 @@ export const INITIAL_SERVICES: Service[] = [
 export const INITIAL_APPOINTMENTS: Appointment[] = [
   {
     id: 'appt-1',
-    clientName: 'Sofia Vergara',
-    clientId: 'carmen-ruiz', // Link code
+    clientName: 'Carmen Ruiz',
+    clientId: 'carmen-ruiz',
     serviceName: 'Tratamiento Facial Iluminador',
     serviceId: 'serv-facial',
     staffName: 'Elena García',
@@ -121,7 +132,7 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
   },
   {
     id: 'appt-2',
-    clientName: 'Laura Gómez',
+    clientName: 'Marta Iglesias',
     clientId: 'marta-iglesias',
     serviceName: 'Masaje Relajante de autor (60m)',
     serviceId: 'serv-masaje',
@@ -161,7 +172,7 @@ export const INITIAL_CLIENTS: ClientProfile[] = [
     isVip: true,
     riskLevel: 'Crítico', // Default, but recalculates
     riskDays: 95,
-    lastVisitDate: '2026-02-18',
+    lastVisitDate: daysAgo(155), // ~3.4x su frecuencia (45d) → Crítico
     lastVisitService: 'Mechas Balayage + Matiz Premium',
     spendingLtv: 1450,
     totalVisits: 12,
@@ -212,7 +223,7 @@ export const INITIAL_CLIENTS: ClientProfile[] = [
     isVip: false,
     riskLevel: 'Alto',
     riskDays: 62,
-    lastVisitDate: '2026-03-23',
+    lastVisitDate: daysAgo(75), // 2.5x su frecuencia (30d) → Alto
     lastVisitService: 'Tratamiento de Keratina Orgánica',
     spendingLtv: 850,
     totalVisits: 8,
@@ -254,7 +265,7 @@ export const INITIAL_CLIENTS: ClientProfile[] = [
     isVip: false,
     riskLevel: 'Bajo',
     riskDays: 18,
-    lastVisitDate: '2026-05-06',
+    lastVisitDate: daysAgo(12), // dentro de su frecuencia (25d) → Bajo (su cita pagada de hoy lo refuerza)
     lastVisitService: 'Manicura Semipermanente Spa',
     spendingLtv: 320,
     totalVisits: 5,
