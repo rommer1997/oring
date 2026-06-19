@@ -93,6 +93,7 @@ export interface Appointment {
   date: string; // YYYY-MM-DD
   price: number;
   status: 'Pagado' | 'Reservado' | 'Cancelado';
+  durationMinutes?: number;
   tenantId: string;
   source?: 'manual' | 'online';
   clientEmail?: string;
