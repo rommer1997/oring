@@ -15,6 +15,7 @@ interface AgendaViewProps {
   onToastMessage: (msg: string) => void;
   onAddClient?: (client: ClientProfile) => void;
   config?: AppConfig;
+  tenantSlug?: string;
 }
 
 export default function AgendaView({
@@ -29,7 +30,8 @@ export default function AgendaView({
   onDeleteAppointment,
   onToastMessage,
   onAddClient,
-  config
+  config,
+  tenantSlug,
 }: AgendaViewProps) {
   const [selectedDate, setSelectedDate] = useState<string>(getTodayISO());
   const [filterStaffId, setFilterStaffId] = useState<string>('all');
@@ -374,13 +376,27 @@ export default function AgendaView({
           </p>
         </div>
         
-        <button
-          onClick={openCreateModal}
-          className="bg-primary text-on-primary font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#4a2c40]/90 transition-all cursor-pointer shadow-sm"
-        >
-          <span className="material-symbols-outlined text-sm font-bold">add_circle</span>
-          <span>Programar Cita</span>
-        </button>
+        <div className="flex gap-2 flex-wrap justify-end">
+          {tenantSlug && (
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/salon/${tenantSlug}`;
+                navigator.clipboard?.writeText(url).then(() => onToastMessage('✓ Enlace copiado. Compártelo con tus clientas para que reserven solas.'));
+              }}
+              className="border border-primary text-primary font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl flex items-center gap-2 hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-sm">share</span>
+              <span>Compartir agenda</span>
+            </button>
+          )}
+          <button
+            onClick={openCreateModal}
+            className="bg-primary text-on-primary font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#4a2c40]/90 transition-all cursor-pointer shadow-sm"
+          >
+            <span className="material-symbols-outlined text-sm font-bold">add_circle</span>
+            <span>Programar Cita</span>
+          </button>
+        </div>
       </div>
 
       {/* Day / List view tabs */}
