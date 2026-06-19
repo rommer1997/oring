@@ -74,7 +74,7 @@ export default function Sidebar({
             >
               <h1 className="font-display text-2.5xl font-bold text-primary tracking-tight">Elena</h1>
               <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-0.5">{isDemoMode ? 'Demo aislada' : 'Gestión del salón'}</p>
-              <span className="text-[7.5px] tracking-wider block text-primary/75 mt-0.5" style={{ fontFamily: '"Arial Black", "Arial Bold", sans-serif', fontWeight: 900 }}>POWERED BY ROMMER VOLCANES</span>
+              <span className="text-[7.5px] tracking-wider block text-primary/75 mt-0.5 font-sans uppercase">Salon OS</span>
               {!isDemoMode && subscriptionStatus === 'trialing' && (
                 <div className="mt-3 bg-amber-50 border border-amber-200/50 rounded-lg px-2.5 py-1 text-[9.5px] font-bold text-amber-800 flex items-center gap-1 animate-pulse select-none self-start">
                   <span className="material-symbols-outlined text-[10px] font-bold">hourglass_empty</span>
