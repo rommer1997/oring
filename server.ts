@@ -253,20 +253,19 @@ async function startServer() {
           const customerId = session.customer as string;
           const subscriptionId = session.subscription as string;
 
-          if (tenantId && subscriptionId) {
-            // Recuperar la suscripción real para obtener la fecha de fin correcta (mensual o anual)
-            const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
-            const subscriptionEndsAt = new Date((sub.current_period_end as number) * 1000).toISOString();
+          if (tenantId) {
+            const now = new Date();
+            const subscriptionEndsAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default yearly or handled by invoice
 
             await db.doc(`tenants/${tenantId}`).update({
               stripeCustomerId: customerId,
               stripeSubscriptionId: subscriptionId,
               subscriptionStatus: "active",
               subscriptionEndsAt,
-              updatedAt: new Date().toISOString()
+              updatedAt: now.toISOString()
             });
 
-            console.log(`[STRIPE SUCCESS] Subscription activated for tenant: ${tenantId}, ends: ${subscriptionEndsAt}`);
+            console.log(`[STRIPE SUCCESS] Subscription activated for tenant: ${tenantId}`);
           }
         } else if (event.type === "customer.subscription.deleted" || event.type === "customer.subscription.updated") {
           const subscription = event.data.object as Stripe.Subscription;
@@ -279,25 +278,12 @@ async function startServer() {
 
           if (!tenantsSnap.empty) {
             const tenantDoc = tenantsSnap.docs[0];
-            // Mapear todos los estados de Stripe correctamente (past_due/unpaid ≠ canceled)
-            const statusMap: Record<string, string> = {
-              active: "active",
-              trialing: "trialing",
-              past_due: "past_due",
-              unpaid: "unpaid",
-              canceled: "canceled",
-              incomplete: "past_due",
-              incomplete_expired: "canceled",
-              paused: "past_due",
-            };
-            const newStatus = statusMap[subscription.status] ?? "canceled";
-            const subscriptionEndsAt = new Date(((subscription as any).current_period_end as number) * 1000).toISOString();
+            const newStatus = subscription.status === "active" ? "active" : "canceled";
             await tenantDoc.ref.update({
               subscriptionStatus: newStatus,
-              subscriptionEndsAt,
               updatedAt: new Date().toISOString()
             });
-            console.log(`[STRIPE UPDATE] Tenant: ${tenantDoc.id} → ${newStatus}, ends: ${subscriptionEndsAt}`);
+            console.log(`[STRIPE UPDATE] Updated subscription status for tenant: ${tenantDoc.id} to ${newStatus}`);
           }
         }
       } catch (dbErr) {
