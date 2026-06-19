@@ -655,6 +655,7 @@ export default function App() {
                   onToastMessage={triggerToast}
                   onAddClient={onAddClient}
                   config={config}
+                  tenantSlug={tenants.find(t => t.id === selectedTenantId)?.slug}
                 />
               )}
               {currentView === 'servicios' && (
