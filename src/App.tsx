@@ -540,7 +540,7 @@ export default function App() {
           setModalPhoneSearch(''); setModalIsPhoneVerified(false); setModalIsPhoneNewClient(false);
           setModalFoundClient(null); setModalNewClientName('');
           setModalServiceId(services[0]?.id || ''); setModalStaffId(staff[0]?.id || '');
-          setModalDate(new Date().toISOString().split('T')[0]); setModalTime('12:00');
+          setModalDate(getTodayISO()); setModalTime('12:00');
           setIsAppointmentModalOpen(true);
         }}
         onToastMessage={triggerToast}
