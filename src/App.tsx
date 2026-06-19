@@ -317,24 +317,26 @@ export default function App() {
     const now = new Date().toISOString();
     const completedUser = { ...appUser, onboardingCompleted: true, staffMemberId: payload.staff.id, lastLoginAt: now };
 
-    await setDoc(doc(db, 'tenants', payload.tenant.id), payload.tenant, { merge: true })
-      .catch((err) => handleFirestoreError(err, OperationType.UPDATE, `tenants/${payload.tenant.id}`));
-    await Promise.all(
-      payload.services.map((service) =>
-        setDoc(doc(db, 'tenants', payload.tenant.id, 'services', service.id), service)
-          .catch((err) => handleFirestoreError(err, OperationType.CREATE, `tenants/${payload.tenant.id}/services/${service.id}`))
-      )
-    );
-    await setDoc(doc(db, 'tenants', payload.tenant.id, 'staff_members', payload.staff.id), payload.staff)
-      .catch((err) => handleFirestoreError(err, OperationType.CREATE, `tenants/${payload.tenant.id}/staff_members/${payload.staff.id}`));
-    await setDoc(doc(db, 'tenants', payload.tenant.id, 'settings', 'profile'), {
-      tenantId: payload.tenant.id,
-      onboardingCompleted: true,
-      completedAt: now,
-      updatedAt: now,
-    }).catch((err) => handleFirestoreError(err, OperationType.CREATE, `tenants/${payload.tenant.id}/settings/profile`));
-    await setDoc(doc(db, 'users', firebaseUser.uid), completedUser)
-      .catch((err) => handleFirestoreError(err, OperationType.UPDATE, `users/${firebaseUser.uid}`));
+    try {
+      await setDoc(doc(db, 'tenants', payload.tenant.id), payload.tenant, { merge: true });
+      await Promise.all(
+        payload.services.map((service) =>
+          setDoc(doc(db, 'tenants', payload.tenant.id, 'services', service.id), service)
+        )
+      );
+      await setDoc(doc(db, 'tenants', payload.tenant.id, 'staff_members', payload.staff.id), payload.staff);
+      await setDoc(doc(db, 'tenants', payload.tenant.id, 'settings', 'profile'), {
+        tenantId: payload.tenant.id,
+        onboardingCompleted: true,
+        completedAt: now,
+        updatedAt: now,
+      });
+      await setDoc(doc(db, 'users', firebaseUser.uid), completedUser);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `onboarding/${payload.tenant.id}`);
+      triggerToast('Error al guardar la configuración. Comprueba tu conexión y vuelve a intentarlo.');
+      return;
+    }
 
     setAppUser(completedUser);
     setTenants([payload.tenant]);
