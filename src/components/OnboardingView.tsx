@@ -35,7 +35,7 @@ const defaultSchedule: ScheduleMap = {
   Domingo: { start: '10:00', end: '14:00', isWorking: false, splitShift: false, secondStart: '16:00', secondEnd: '20:00' }
 };
 
-const roleSuggestions = ['Propietaria', 'Estilista de autor', 'Especialista Facial', 'Manicurista', 'Masajista', 'Recepcionista', 'Personalizado'];
+const roleSuggestions = ['Propietaria', 'Estilista', 'Especialista Facial', 'Manicurista', 'Masajista', 'Recepcionista', 'Personalizado'];
 
 function buildSlug(value: string, fallback: string) {
   const source = value.trim() || fallback;
