@@ -200,7 +200,7 @@ export default function App() {
 
   const isSubscriptionActive = activeTenant?.subscriptionStatus === 'active';
   const isTrialExpired = activeTenant?.trialEndsAt ? new Date() > new Date(activeTenant.trialEndsAt) : false;
-  const isPaywallBlocked = !isDemoMode && firebaseUser && appUser && appUser.onboardingCompleted && !isSubscriptionActive && isTrialExpired;
+  const isPaywallBlocked = Boolean(!isDemoMode && firebaseUser && appUser && appUser.onboardingCompleted && !isSubscriptionActive && isTrialExpired);
 
   // ─── CRUD wrappers (bind common args) ────────────────────────────────────
   const ctx = { firebaseUser, isDemoMode, selectedTenantId };
@@ -420,6 +420,22 @@ export default function App() {
       }
     }
 
+    // Validar solapamiento antes de crear (mismo staff, mismo día, no canceladas)
+    const [newH, newM] = modalTime.split(':').map(Number);
+    const newStart = (newH || 0) * 60 + (newM || 0);
+    const newEnd = newStart + (matchedService.durationMinutes || 30);
+    const hasOverlap = appointments.some(a => {
+      if (a.staffId !== matchedStaff.id || a.date !== modalDate || a.status === 'Cancelado') return false;
+      const [aH, aM] = a.time.split(':').map(Number);
+      const aStart = (aH || 0) * 60 + (aM || 0);
+      const aEnd = aStart + (a.durationMinutes || 30);
+      return newStart < aEnd && newEnd > aStart;
+    });
+    if (hasOverlap) {
+      triggerToast(`⚠️ ${matchedStaff.name} ya tiene una cita en ese horario.`);
+      return;
+    }
+
     if (modalIsPhoneNewClient) {
       if (!modalNewClientName.trim()) { triggerToast('⚠️ Introduce el nombre de la nueva clienta.'); return; }
       const newId = `cli-${Date.now()}`;
@@ -430,7 +446,7 @@ export default function App() {
         phoneNumber: modalPhoneSearch.trim(),
         email: '', birthdate: '', age: 0, isVip: false,
         riskLevel: 'Bajo', riskDays: 0,
-        lastVisitDate: new Date().toISOString().split('T')[0],
+        lastVisitDate: getTodayISO(),
         lastVisitService: matchedService.name,
         spendingLtv: 0, totalVisits: 1, averageFrequencyDays: 30,
         favoriteServices: [{ name: matchedService.name, count: 1, pricePerVisit: matchedService.price, icon: 'spa' }],
@@ -439,7 +455,7 @@ export default function App() {
         whatsappLog: [], tenantId: selectedTenantId, contactConsent: false, marketingOptOut: false,
       };
       onAddClient(newClient);
-      onAddAppointment({ id: `appt-quick-${Date.now()}`, clientName: newClient.name, clientId: newClient.id, serviceName: matchedService.name, serviceId: matchedService.id, staffName: matchedStaff.name, staffId: matchedStaff.id, time: modalTime, date: modalDate, price: matchedService.price, status: 'Reservado', tenantId: selectedTenantId });
+      onAddAppointment({ id: `appt-quick-${Date.now()}`, clientName: newClient.name, clientId: newClient.id, serviceName: matchedService.name, serviceId: matchedService.id, staffName: matchedStaff.name, staffId: matchedStaff.id, time: modalTime, date: modalDate, price: matchedService.price, status: 'Reservado', durationMinutes: matchedService.durationMinutes, tenantId: selectedTenantId });
       setIsAppointmentModalOpen(false);
       triggerToast(`✨ ${newClient.name} registrada y cita agendada para el ${modalDate} a las ${modalTime}.`);
       return;
@@ -447,7 +463,7 @@ export default function App() {
 
     const matchedClient = clients.find((c) => c.id === (modalFoundClient?.id || ''));
     if (!matchedClient) { triggerToast('⚠️ Selecciona una clienta válida.'); return; }
-    onAddAppointment({ id: `appt-quick-${Date.now()}`, clientName: matchedClient.name, clientId: matchedClient.id, serviceName: matchedService.name, serviceId: matchedService.id, staffName: matchedStaff.name, staffId: matchedStaff.id, time: modalTime, date: modalDate, price: matchedService.price, status: 'Reservado', tenantId: selectedTenantId });
+    onAddAppointment({ id: `appt-quick-${Date.now()}`, clientName: matchedClient.name, clientId: matchedClient.id, serviceName: matchedService.name, serviceId: matchedService.id, staffName: matchedStaff.name, staffId: matchedStaff.id, time: modalTime, date: modalDate, price: matchedService.price, status: 'Reservado', durationMinutes: matchedService.durationMinutes, tenantId: selectedTenantId });
     setIsAppointmentModalOpen(false);
     triggerToast(`✨ Cita para ${matchedClient.name} agendada el ${modalDate} a las ${modalTime}.`);
   };
