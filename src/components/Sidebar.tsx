@@ -35,7 +35,7 @@ export default function Sidebar({
 
   const baseItems = [
     { id: 'dashboard' as AppView, label: 'Panel', icon: 'dashboard' },
-    { id: 'retention' as AppView, label: 'Monitor de Mimo', icon: 'group' },
+    { id: 'retention' as AppView, label: 'Clientas en Riesgo', icon: 'group' },
     { id: 'agenda' as AppView, label: 'Agenda Siempre al Día', icon: 'calendar_month' },
   ];
 
@@ -236,12 +236,12 @@ export default function Sidebar({
                     {item.icon}
                   </span>
                   <span className={`text-[10px] mt-0.5 font-sans truncate max-w-full ${isSelected ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
-                    {item.id === 'retention' ? 'Mimos' : item.label}
+                    {item.id === 'retention' ? 'Alertas' : item.label}
                   </span>
                 </button>
               );
             })}
-            {/* ponytail: botón "Suite ✦" eliminado. La activación vive en Configuración → "Suite Completa". */}
+            {/* ponytail: botón "Suite ✦" eliminado. La activación vive en Configuración → "Todas las herramientas". */}
           </>
         ) : (
           [...baseItems, ...secondaryItems].map((item) => {
@@ -263,7 +263,7 @@ export default function Sidebar({
                   {item.icon}
                 </span>
                 <span className={`text-[10px] mt-0.5 font-sans truncate max-w-full ${isSelected ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
-                  {item.id === 'retention' ? 'Mimos' : item.id === 'staff-tenant' ? 'Equipo' : item.label}
+                  {item.id === 'retention' ? 'Alertas' : item.id === 'staff-tenant' ? 'Equipo' : item.label}
                 </span>
               </button>
             );
