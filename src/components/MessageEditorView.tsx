@@ -203,15 +203,17 @@ export default function MessageEditorView({
   const handleSaveDraft = () => {
     if (!draftText.trim()) return;
 
-    const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const time = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
     const newDraft: WhatsAppMessage = {
       id: `draft-${Date.now()}`,
       sender: 'user',
       text: draftText,
       timestamp: time,
+      date: now.toISOString().slice(0, 10),
       dateLabel: 'Hoy',
-      status: 'borrador' // Stored as draft
+      status: 'borrador'
     };
 
     onUpdateClientLog(currentClient.id, newDraft);
