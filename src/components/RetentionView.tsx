@@ -201,7 +201,7 @@ export default function RetentionView({
               </div>
 
               <div className="bg-surface-container-lowest p-3 border border-outline-variant/20 rounded-2xl text-center">
-                <p className="text-[9px] text-[#8c6d7a] uppercase font-bold tracking-wider mb-1">Ratio Fideliz.</p>
+                <p className="text-[9px] text-[#8c6d7a] uppercase font-bold tracking-wider mb-1">Fidelización</p>
                 <div className="flex items-center justify-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   <span className="font-serif text-lg font-bold text-emerald-700">
@@ -212,7 +212,7 @@ export default function RetentionView({
             </div>
 
             <div className="text-[10px] text-outline leading-relaxed bg-surface-container-low p-3 rounded-xl border border-outline-variant/10 text-left">
-              💡 Nuestro algoritmo dinámico cruza el intervalo de días ausentes del salón con la frecuencia de visita promedio calculada de cada clienta para alertar de desviaciones de conducta.
+              💡 Nuestro sistema cruza el intervalo de días ausentes del salón con la frecuencia de visita promedio calculada de cada clienta para alertar de desviaciones de conducta.
             </div>
           </div>
 
@@ -283,7 +283,7 @@ export default function RetentionView({
           <div className="flex items-center gap-3 mb-6">
             <span className="material-symbols-outlined text-3xl text-primary font-bold">person_add</span>
             <div>
-              <h3 className="font-serif text-xl font-bold text-primary">Añadir Nueva Ficha de Clienta</h3>
+              <h3 className="font-serif text-xl font-bold text-primary">Registrar nueva clienta</h3>
               <p className="text-xs text-on-surface-variant">Configure la información demográfica básica y los indicadores iniciales.</p>
             </div>
           </div>
@@ -560,7 +560,7 @@ export default function RetentionView({
                       {/* IA Suggestion snippet */}
                       {client.aiReason && (
                         <div className="bg-surface-container-low/60 border border-outline-variant/10 rounded-xl p-3 text-xs text-on-surface-variant shadow-sm leading-relaxed italic font-sans text-left">
-                          <span className="font-bold text-primary not-italic text-[9.5px] block mb-0.5 uppercase tracking-wider">PROPUESTA DE RECUPERACIÓN</span>
+                          <span className="font-bold text-primary not-italic text-[9.5px] block mb-0.5 uppercase tracking-wider">CÓMO TRAERLA DE VUELTA</span>
                           {client.aiReason}
                         </div>
                       )}
@@ -655,7 +655,7 @@ export default function RetentionView({
                   className="w-full bg-surface hover:bg-surface-container-high border border-outline py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-primary transition-all text-center cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">visibility</span>
-                  <span>Ver Ficha Completa</span>
+                  <span>Ver Perfil Completo</span>
                 </button>
               </div>
 
