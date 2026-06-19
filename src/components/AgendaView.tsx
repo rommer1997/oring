@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Appointment, ClientProfile, Service, StaffMember, AppConfig } from '../types';
-import { getTodayISO } from '../utils/riskEngine';
+import { getTodayISO, buildNewClient } from '../utils/riskEngine';
 
 interface AgendaViewProps {
   appointments: Appointment[];
@@ -276,37 +276,15 @@ export default function AgendaView({
 
     // Handle Client Registration on-the-fly if it was a new client
     if (!editingAppointment && isPhoneNewClient) {
-      const newId = `cli-${Date.now()}`;
-      const cleanClient: ClientProfile = {
-        id: newId,
+      const cleanClient = buildNewClient({
+        id: `cli-${Date.now()}`,
         name: newClientName.trim(),
-        avatar: `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1544005313-94ddf0286df2' : '1508214751196-bcfd4ca60f91'}?auto=format&fit=crop&q=80&w=200`,
         phoneNumber: phoneSearch.trim(),
-        email: '',
-        birthdate: '',
-        age: 0,
-        isVip: false,
-        riskLevel: 'Bajo',
-        riskDays: 0,
-        lastVisitDate: getTodayISO(),
-        lastVisitService: matchedService.name,
-        spendingLtv: 0,
-        totalVisits: 1,
-        averageFrequencyDays: 30,
-        favoriteServices: [
-          { name: matchedService.name, count: 1, pricePerVisit: matchedService.price, icon: 'spa' }
-        ],
-        appointmentHistory: [],
-        preferences: [],
-        technicalNotes: '',
-        aiReason: 'Ficha creada desde agenda. Añade historial para mejorar el análisis.',
-        suggestedOfferTitle: '',
-        suggestedOfferDesc: '',
-        whatsappLog: [],
         tenantId: selectedTenantId,
-        contactConsent: false,
-        marketingOptOut: false
-      };
+        lastVisitService: matchedService.name,
+        favoriteServices: [{ name: matchedService.name, count: 1, pricePerVisit: matchedService.price, icon: 'spa' }],
+        aiReason: 'Ficha creada desde agenda.',
+      });
 
       if (onAddClient) {
         onAddClient(cleanClient);
