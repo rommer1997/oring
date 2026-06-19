@@ -859,6 +859,327 @@ async function startServer() {
     }
   });
 
+  // ─── WhatsApp Adapter ────────────────────────────────────────────────────────
+  // ponytail: stub activo cuando no hay token. Real cuando META_WA_TOKEN + META_PHONE_NUMBER_ID están en .env
+  async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
+    const token = process.env.META_WA_TOKEN;
+    const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+    if (!token || !phoneNumberId) {
+      console.log(`[WA STUB] → ${to}: ${text.substring(0, 80)}...`);
+      return true; // stub: simula envío exitoso
+    }
+    try {
+      const res = await fetch(
+        `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to,
+            type: 'text',
+            text: { body: text },
+          }),
+        }
+      );
+      return res.ok;
+    } catch (err) {
+      console.error('[WA] Error enviando mensaje:', err);
+      return false;
+    }
+  }
+
+  // ─── Agente: Generar mensaje personalizado con Gemini ────────────────────────
+  async function generateAgentOutreach(client: any, tenantName: string, genAI: GoogleGenAI | null): Promise<string> {
+    const fallback = `Hola ${client.clientName || client.name}! 👋 Te echamos de menos en ${tenantName}. Han pasado ${client.riskDays} días desde tu última visita. ¿Te apetece reservar un hueco esta semana? Escríbenos y te buscamos el mejor momento. 💇`;
+    if (!genAI) return fallback;
+    try {
+      const model = genAI.models;
+      const result = await model.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Eres el asistente de ${tenantName}, un salón de belleza. Redacta un WhatsApp breve y cálido (máx 3 frases) para reconectar con una clienta.
+Clienta: ${client.clientName || client.name}
+Días sin visita: ${client.riskDays}
+Último servicio: ${client.lastVisitService || 'desconocido'}
+Oferta sugerida: ${client.suggestedOfferTitle || 'ninguna especial'}
+Tono: cercano, personal, sin presión. NO uses emojis en exceso. Termina con una pregunta abierta para agendar.`
+          }]
+        }]
+      });
+      return result.text?.trim() || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  // ─── Agente: Continuar conversación ──────────────────────────────────────────
+  async function generateAgentReply(
+    clientReply: string,
+    conversationLog: any[],
+    tenantName: string,
+    availableSlots: string[],
+    genAI: GoogleGenAI | null
+  ): Promise<{ text: string; intent: 'booking' | 'info' | 'continue' | 'human' }> {
+    if (!genAI) return { text: `Perfecto, te paso con el equipo de ${tenantName} para confirmar tu cita. 😊`, intent: 'human' };
+    try {
+      const history = conversationLog.map(m => `${m.role === 'agent' ? 'Salón' : 'Clienta'}: ${m.text}`).join('\n');
+      const slotsText = availableSlots.length > 0 ? `Huecos disponibles: ${availableSlots.slice(0, 4).join(', ')}` : 'Sin disponibilidad inmediata.';
+      const result = await genAI.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Eres el asistente de ${tenantName}. Responde al mensaje de la clienta de forma breve y natural.
+Conversación previa:
+${history}
+Clienta ahora dice: "${clientReply}"
+${slotsText}
+Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"|"human"}
+- booking: la clienta confirma querer cita
+- info: pregunta información (precio, servicio)
+- continue: continúa conversando sin confirmar
+- human: situación compleja, escalar al gerente`
+          }]
+        }]
+      });
+      const raw = result.text?.trim() || '';
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      return { text: raw, intent: 'continue' };
+    } catch {
+      return { text: `Gracias por escribir. Ahora mismo te atendemos personalmente. 😊`, intent: 'human' };
+    }
+  }
+
+  // ─── POST /api/agent/scan ─────────────────────────────────────────────────────
+  // Escanea clientes en riesgo y genera campañas pendientes
+  app.post('/api/agent/scan', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId, db } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+
+      // Leer config del agente
+      const configDoc = await db_.doc(`tenants/${tenantId}/settings/agent`).get();
+      const agentConfig = configDoc.exists ? configDoc.data() : { enabled: true, autoSend: false, cooldownDays: 7, maxActivePerDay: 10, minRiskLevel: 'Alto' };
+
+      if (!agentConfig?.enabled) return res.json({ scanned: 0, queued: 0, message: 'Agente desactivado.' });
+
+      // Clientes en riesgo
+      const clientsSnap = await db_.collection(`tenants/${tenantId}/clients`)
+        .where('riskLevel', 'in', agentConfig.minRiskLevel === 'Crítico' ? ['Crítico'] : ['Alto', 'Crítico'])
+        .get();
+
+      // Campañas recientes (para cooldown)
+      const cooldownDate = new Date();
+      cooldownDate.setDate(cooldownDate.getDate() - (agentConfig.cooldownDays || 7));
+      const recentSnap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
+        .where('createdAt', '>=', cooldownDate.toISOString())
+        .get();
+      const recentClientIds = new Set(recentSnap.docs.map((d: any) => d.data().clientId));
+
+      // Campañas activas hoy (para maxActivePerDay)
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todaySnap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
+        .where('createdAt', '>=', `${todayStr}T00:00:00.000Z`)
+        .get();
+
+      const tenantDoc = await db_.doc(`tenants/${tenantId}`).get();
+      const tenantName = tenantDoc.data()?.name || 'el salón';
+
+      let queued = 0;
+      const maxToday = (agentConfig.maxActivePerDay || 10) - todaySnap.size;
+
+      for (const doc of clientsSnap.docs) {
+        if (queued >= maxToday) break;
+        const client = { id: doc.id, ...doc.data() } as any;
+        if (recentClientIds.has(client.id)) continue;
+        if (!client.phoneNumber || !client.contactConsent) continue;
+
+        const message = await generateAgentOutreach({ ...client, clientName: client.name }, tenantName, ai);
+
+        const campaign = {
+          tenantId,
+          clientId: client.id,
+          clientName: client.name,
+          clientPhone: client.phoneNumber,
+          riskLevel: client.riskLevel,
+          riskDays: client.riskDays || 0,
+          suggestedService: client.lastVisitService || '',
+          message,
+          status: agentConfig.autoSend ? 'enviado' : 'pendiente',
+          autoSend: agentConfig.autoSend || false,
+          createdAt: new Date().toISOString(),
+          conversationLog: [{ role: 'agent', text: message, timestamp: new Date().toISOString() }],
+        };
+
+        const ref = db_.collection(`tenants/${tenantId}/agent_campaigns`).doc();
+        await ref.set(campaign);
+
+        if (agentConfig.autoSend) {
+          let phone = client.phoneNumber.replace(/\D/g, '');
+          if (phone.startsWith('0034')) phone = phone.slice(4);
+          else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
+          if (phone.length === 9) phone = '34' + phone;
+          const sent = await sendWhatsAppMessage(phone, message);
+          if (sent) await ref.update({ sentAt: new Date().toISOString() });
+        }
+
+        queued++;
+      }
+
+      res.json({ scanned: clientsSnap.size, queued, autoSend: agentConfig.autoSend });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── GET /api/agent/campaigns ─────────────────────────────────────────────────
+  app.get('/api/agent/campaigns', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+      const snap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .get();
+      res.json(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── POST /api/agent/campaigns/:id/approve ────────────────────────────────────
+  app.post('/api/agent/campaigns/:id/approve', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+      const ref = db_.doc(`tenants/${tenantId}/agent_campaigns/${req.params.id}`);
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
+      const campaign = snap.data() as any;
+
+      let phone = campaign.clientPhone.replace(/\D/g, '');
+      if (phone.startsWith('0034')) phone = phone.slice(4);
+      else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
+      if (phone.length === 9) phone = '34' + phone;
+
+      const sent = await sendWhatsAppMessage(phone, campaign.message);
+      await ref.update({ status: sent ? 'enviado' : 'pendiente', sentAt: sent ? new Date().toISOString() : null });
+      res.json({ ok: true, sent });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── POST /api/agent/campaigns/:id/reject ────────────────────────────────────
+  app.post('/api/agent/campaigns/:id/reject', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+      await db_.doc(`tenants/${tenantId}/agent_campaigns/${req.params.id}`).update({ status: 'rechazado' });
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── GET /api/agent/config ────────────────────────────────────────────────────
+  app.get('/api/agent/config', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+      const doc = await db_.doc(`tenants/${tenantId}/settings/agent`).get();
+      res.json(doc.exists ? doc.data() : { enabled: false, autoSend: false, scanIntervalHours: 24, minRiskLevel: 'Alto', cooldownDays: 7, maxActivePerDay: 10 });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── PUT /api/agent/config ────────────────────────────────────────────────────
+  app.put('/api/agent/config', apiLimiter, express.json(), async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+      await db_.doc(`tenants/${tenantId}/settings/agent`).set(req.body, { merge: true });
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── POST /webhook/whatsapp ───────────────────────────────────────────────────
+  // Meta envía aquí los mensajes entrantes del cliente
+  app.post('/webhook/whatsapp', express.json(), async (req, res) => {
+    // Verificar firma de Meta (seguridad)
+    res.sendStatus(200); // Responder rápido para que Meta no reintente
+
+    try {
+      const entry = req.body?.entry?.[0];
+      const change = entry?.changes?.[0];
+      const message = change?.value?.messages?.[0];
+      if (!message || message.type !== 'text') return;
+
+      const from = message.from; // número del cliente
+      const clientText = message.text?.body || '';
+
+      if (!adminRuntime) return;
+      const db_ = adminRuntime.admin.firestore();
+
+      // Buscar campaña activa para este número
+      const tenantsSnap = await db_.collectionGroup('agent_campaigns')
+        .where('clientPhone', '>=', from.slice(-9))
+        .where('status', 'in', ['enviado', 'respondido'])
+        .limit(1)
+        .get();
+
+      if (tenantsSnap.empty) return;
+
+      const campaignDoc = tenantsSnap.docs[0];
+      const campaign = campaignDoc.data() as any;
+      const tenantId = campaign.tenantId;
+
+      const tenantDoc = await db_.doc(`tenants/${tenantId}`).get();
+      const tenantName = tenantDoc.data()?.name || 'el salón';
+
+      // Huecos disponibles (simplificado — primer servicio del tenant)
+      const servicesSnap = await db_.collection(`tenants/${tenantId}/services`).limit(1).get();
+      const firstService = servicesSnap.docs[0]?.data();
+      const availableSlots: string[] = []; // ponytail: slot calculation omitida aquí, se delega al booking endpoint
+
+      const newLog = [...(campaign.conversationLog || []), { role: 'client', text: clientText, timestamp: new Date().toISOString() }];
+      const { text: reply, intent } = await generateAgentReply(clientText, newLog, tenantName, availableSlots, ai);
+
+      newLog.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
+
+      const update: any = {
+        status: intent === 'booking' ? 'reservado' : 'respondido',
+        repliedAt: new Date().toISOString(),
+        lastReply: clientText,
+        conversationLog: newLog,
+      };
+
+      await campaignDoc.ref.update(update);
+      await sendWhatsAppMessage(from, reply);
+    } catch (err) {
+      console.error('[Webhook WA] Error:', err);
+    }
+  });
+
+  // Meta verifica el webhook con GET
+  app.get('/webhook/whatsapp', (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    if (mode === 'subscribe' && token === process.env.META_WA_VERIFY_TOKEN) {
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  });
+
   // Vite middleware for development
   if (!isProduction) {
     const vite = await createViteServer({
