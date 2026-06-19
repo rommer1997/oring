@@ -10,6 +10,7 @@ interface ClientProfileViewProps {
   onUpdateTechnicalNotes: (clientId: string, notes: string) => void;
   onUpdateClient?: (clientId: string, fields: Partial<ClientProfile>) => void;
   onToastMessage: (msg: string) => void;
+  isDemoMode?: boolean;
 }
 
 export default function ClientProfileView({
@@ -20,7 +21,8 @@ export default function ClientProfileView({
   onUpdateClientLog,
   onUpdateTechnicalNotes,
   onUpdateClient,
-  onToastMessage
+  onToastMessage,
+  isDemoMode = false
 }: ClientProfileViewProps) {
   const currentClient = clients.find(c => c.id === selectedClientId) || clients[0];
   
@@ -121,40 +123,44 @@ export default function ClientProfileView({
     const queryText = inputText;
     setInputText('');
 
-    const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    
+    const now = new Date();
+    const time = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const dateISO = now.toISOString().slice(0, 10);
+
     // Add User Message
     const userMsg: WhatsAppMessage = {
       id: Math.random().toString(),
       sender: 'user',
       text: queryText,
       timestamp: time,
-      dateLabel: 'Hoy'
+      date: dateISO,
+      dateLabel: 'Hoy',
+      status: 'enviado'
     };
     onUpdateClientLog(currentClient.id, userMsg);
     onToastMessage('Mensaje enviado por WhatsApp.');
 
-    // Interactive callback reply after 1.5 seconds
-    setTimeout(() => {
-      const clientPhrases = [
-        "¡Hola! Sí, porfa, resérvame la cita. ¿Te queda libre el jueves a las 11:30?",
-        "Hola Elena, muchas gracias por estar pendiente de mí. Me va súper bien ese regalo de hidratación, apúntame para esta semana.",
-        "Hola! Me parece genial, gracias por recordármelo. El viernes por la tarde paso por el salón.",
-        "Perfecto, nos vemos entonces. Muchas gracias por el detalle de la hidratación, ¡eres un sol!"
-      ];
-      const randomReply = clientPhrases[Math.floor(Math.random() * clientPhrases.length)];
-      
-      const clientMsg: WhatsAppMessage = {
-        id: Math.random().toString(),
-        sender: 'client',
-        text: randomReply,
-        timestamp: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        dateLabel: 'Hoy'
-      };
-
-      onUpdateClientLog(currentClient.id, clientMsg);
-      onToastMessage(`${currentClient.name} ha respondido.`);
-    }, 1500);
+    // ponytail: respuesta simulada solo en demo — en producción no escribir datos falsos a Firestore
+    if (isDemoMode) {
+      setTimeout(() => {
+        const clientPhrases = [
+          "¡Hola! Sí, porfa, resérvame la cita. ¿Te queda libre el jueves a las 11:30?",
+          "Hola Elena, muchas gracias por estar pendiente de mí. Me va súper bien ese regalo de hidratación, apúntame para esta semana.",
+          "Hola! Me parece genial, gracias por recordármelo. El viernes por la tarde paso por el salón.",
+          "Perfecto, nos vemos entonces. Muchas gracias por el detalle de la hidratación, ¡eres un sol!"
+        ];
+        const randomReply = clientPhrases[Math.floor(Math.random() * clientPhrases.length)];
+        const clientMsg: WhatsAppMessage = {
+          id: Math.random().toString(),
+          sender: 'client',
+          text: randomReply,
+          timestamp: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+          dateLabel: 'Hoy'
+        };
+        onUpdateClientLog(currentClient.id, clientMsg);
+        onToastMessage(`${currentClient.name} ha respondido (demo).`);
+      }, 1500);
+    }
   };
 
   return (
