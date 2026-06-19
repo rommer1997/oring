@@ -1,17 +1,18 @@
-export type AppView = 
-  | 'landing' 
+export type AppView =
+  | 'landing'
   | 'onboarding'
-  | 'dashboard' 
-  | 'retention' 
-  | 'message-editor' 
-  | 'client-profile' 
-  | 'agenda' 
+  | 'dashboard'
+  | 'retention'
+  | 'message-editor'
+  | 'client-profile'
+  | 'agenda'
   | 'servicios'
   | 'inventario'
   | 'facturacion'
   | 'admin'
-  | 'staff-tenant' 
-  | 'settings';
+  | 'staff-tenant'
+  | 'settings'
+  | 'agente';
 
 export interface Tenant {
   id: string;
@@ -244,4 +245,49 @@ export interface AuditLog {
   entityId: string;
   details: string;
   timestamp: string; // ISO DateTime string
+}
+
+// ─── Agente Proactivo ─────────────────────────────────────────────────────────
+
+export type AgentCampaignStatus =
+  | 'pendiente'   // generado, esperando aprobación del gerente
+  | 'enviado'     // enviado por WhatsApp al cliente
+  | 'respondido'  // cliente respondió
+  | 'reservado'   // cliente reservó cita (auto o manual)
+  | 'rechazado'   // gerente descartó el mensaje
+  | 'sin_respuesta'; // enviado hace >48h sin reply
+
+export interface AgentCampaign {
+  id: string;
+  tenantId: string;
+  clientId: string;
+  clientName: string;
+  clientPhone: string;
+  riskLevel: 'Alto' | 'Crítico';
+  riskDays: number;
+  suggestedService: string;
+  message: string;           // mensaje generado por Gemini
+  status: AgentCampaignStatus;
+  autoSend: boolean;         // si se envió sin aprobación manual
+  createdAt: string;
+  sentAt?: string;
+  repliedAt?: string;
+  lastReply?: string;        // último mensaje del cliente
+  conversationLog: AgentMessage[];
+  appointmentId?: string;    // si se creó cita
+}
+
+export interface AgentMessage {
+  role: 'agent' | 'client';
+  text: string;
+  timestamp: string;
+}
+
+export interface AgentConfig {
+  enabled: boolean;
+  autoSend: boolean;          // false = requiere aprobación del gerente
+  scanIntervalHours: number;  // cada cuántas horas escanea (default 24)
+  minRiskLevel: 'Alto' | 'Crítico';
+  cooldownDays: number;       // días mínimos entre contactos al mismo cliente
+  maxActivePerDay: number;    // máx mensajes salientes por día
 }
