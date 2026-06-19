@@ -253,19 +253,20 @@ async function startServer() {
           const customerId = session.customer as string;
           const subscriptionId = session.subscription as string;
 
-          if (tenantId) {
-            const now = new Date();
-            const subscriptionEndsAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default yearly or handled by invoice
+          if (tenantId && subscriptionId) {
+            // Recuperar la suscripción real para obtener la fecha de fin correcta (mensual o anual)
+            const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
+            const subscriptionEndsAt = new Date((sub.current_period_end as number) * 1000).toISOString();
 
             await db.doc(`tenants/${tenantId}`).update({
               stripeCustomerId: customerId,
               stripeSubscriptionId: subscriptionId,
               subscriptionStatus: "active",
               subscriptionEndsAt,
-              updatedAt: now.toISOString()
+              updatedAt: new Date().toISOString()
             });
 
-            console.log(`[STRIPE SUCCESS] Subscription activated for tenant: ${tenantId}`);
+            console.log(`[STRIPE SUCCESS] Subscription activated for tenant: ${tenantId}, ends: ${subscriptionEndsAt}`);
           }
         } else if (event.type === "customer.subscription.deleted" || event.type === "customer.subscription.updated") {
           const subscription = event.data.object as Stripe.Subscription;
@@ -278,12 +279,25 @@ async function startServer() {
 
           if (!tenantsSnap.empty) {
             const tenantDoc = tenantsSnap.docs[0];
-            const newStatus = subscription.status === "active" ? "active" : "canceled";
+            // Mapear todos los estados de Stripe correctamente (past_due/unpaid ≠ canceled)
+            const statusMap: Record<string, string> = {
+              active: "active",
+              trialing: "trialing",
+              past_due: "past_due",
+              unpaid: "unpaid",
+              canceled: "canceled",
+              incomplete: "past_due",
+              incomplete_expired: "canceled",
+              paused: "past_due",
+            };
+            const newStatus = statusMap[subscription.status] ?? "canceled";
+            const subscriptionEndsAt = new Date(((subscription as any).current_period_end as number) * 1000).toISOString();
             await tenantDoc.ref.update({
               subscriptionStatus: newStatus,
+              subscriptionEndsAt,
               updatedAt: new Date().toISOString()
             });
-            console.log(`[STRIPE UPDATE] Updated subscription status for tenant: ${tenantDoc.id} to ${newStatus}`);
+            console.log(`[STRIPE UPDATE] Tenant: ${tenantDoc.id} → ${newStatus}, ends: ${subscriptionEndsAt}`);
           }
         }
       } catch (dbErr) {
@@ -645,17 +659,18 @@ async function startServer() {
     "/api/generate-whatsapp",
     aiLimiter,
     [
-      body("clientId").optional().trim().escape(),
-      body("clientName").trim().escape().isLength({ min: 1, max: 256 }),
-      body("lastService").trim().escape().isLength({ min: 1, max: 256 }),
+      // ponytail: sin .escape() en campos de texto libre — van al prompt de IA, escape() convierte ' en &#x27;
+      body("clientId").optional().trim(),
+      body("clientName").trim().isLength({ min: 1, max: 256 }),
+      body("lastService").trim().isLength({ min: 1, max: 256 }),
       body("riskDays").optional().isInt({ min: 0 }),
-      body("riskLevel").optional().trim().escape().isIn(["Alta", "Media", "Baja", "Crítico", "Alto", "Medio", "Bajo"]),
+      body("riskLevel").optional().trim().isIn(["Alta", "Media", "Baja", "Crítico", "Alto", "Medio", "Bajo"]),
       body("isVip").optional().isBoolean(),
-      body("suggestedOffer").optional().trim().escape().isLength({ max: 256 }),
+      body("suggestedOffer").optional().trim().isLength({ max: 256 }),
       body("preferences").optional().isArray(),
-      body("preferences.*").optional().trim().escape(),
-      body("tone").optional().trim().escape().isIn(["Cercano", "Profesional", "Elegante"]),
-      body("tenantId").optional().trim().escape().isLength({ min: 1, max: 128 })
+      body("preferences.*").optional().trim(),
+      body("tone").optional().trim().isIn(["Cercano", "Profesional", "Elegante"]),
+      body("tenantId").optional().trim().isLength({ min: 1, max: 128 })
     ],
     async (req: any, res: any) => {
       const errors = validationResult(req);
