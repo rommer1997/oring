@@ -184,7 +184,8 @@ export default function DashboardView({
           icon: e.status === 'borrador' ? 'save' : 'outgoing_mail',
           badge: e.status === 'borrador' ? 'Borrador' : 'Enviado',
           badgeStyle: e.status === 'borrador' ? 'bg-[#FCF8F2] text-[#8c6d7a] border-[#bfa982]/20' : 'bg-emerald-50 text-emerald-800 border-emerald-100',
-          sortKey: e.timestamp || ''
+          // ponytail: timestamp is HH:MM display only; date+timestamp gives a sortable YYYY-MM-DDTHH:MM key
+          sortKey: (e.date || '') + 'T' + (e.timestamp || '')
         });
       });
     });
