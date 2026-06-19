@@ -248,7 +248,8 @@ export default function App() {
       isDemoMode,
       onDemoSignOut: () => {
         setIsDemoMode(false);
-        setSelectedTenantId('');
+        // Restaurar tenant real si hay sesión activa, si no volver a landing
+        setSelectedTenantId(appUser?.tenantId || '');
         setTenants([]);
         setStaff([]);
         setServices([]);
@@ -256,7 +257,7 @@ export default function App() {
         setClients([]);
         setMessageDrafts([]);
         setInventory([]);
-        setCurrentView('landing');
+        setCurrentView(appUser ? 'dashboard' : 'landing');
         if (window.location.pathname === '/demo') window.history.pushState({}, '', '/');
       },
     });
@@ -633,6 +634,7 @@ export default function App() {
                   onUpdateTechnicalNotes={onUpdateTechnicalNotes}
                   onUpdateClient={onUpdateClient}
                   onToastMessage={triggerToast}
+                  isDemoMode={isDemoMode}
                 />
               )}
               {currentView === 'agenda' && (
