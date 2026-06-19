@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppConfig, StaffMember, Tenant, User, ClientProfile } from '../types';
+import { buildNewClient } from '../utils/riskEngine';
 
 // ponytail: import CSV real. Detecta delimitador (Excel ES usa ';'), mapea columnas por nombre difuso
 // (nombre/teléfono/email obligatorio el nombre+teléfono), y crea una ficha por fila vía onAddClient.
@@ -36,34 +37,15 @@ export function importClientsCsv(text: string, tenantId: string, addClient: (c: 
     const name = cells[iName]?.trim();
     const phone = cells[iPhone]?.trim();
     if (!name || !phone) continue;
-    addClient({
+    addClient(buildNewClient({
       id: `cli-${Date.now()}-${r}`,
       name,
-      avatar: `https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200`,
       phoneNumber: phone,
-      email: iEmail >= 0 ? (cells[iEmail]?.trim() || '') : '',
-      birthdate: '',
-      age: 0,
-      isVip: false,
-      riskLevel: 'Bajo',
-      riskDays: 10,
-      lastVisitDate: new Date().toISOString().split('T')[0],
-      lastVisitService: (iService >= 0 && cells[iService]?.trim()) || 'Importada de CSV',
-      spendingLtv: 0,
-      totalVisits: 1,
-      averageFrequencyDays: 30,
-      favoriteServices: [],
-      appointmentHistory: [],
-      preferences: [],
-      technicalNotes: '',
-      aiReason: 'Ficha importada desde CSV. Añade historial de citas para mejorar el análisis de retención.',
-      suggestedOfferTitle: '',
-      suggestedOfferDesc: '',
-      whatsappLog: [],
       tenantId,
-      contactConsent: false,
-      marketingOptOut: false,
-    } as ClientProfile);
+      email: iEmail >= 0 ? (cells[iEmail]?.trim() || '') : '',
+      lastVisitService: (iService >= 0 && cells[iService]?.trim()) || 'Importada de CSV',
+      aiReason: 'Ficha importada desde CSV. Añade historial de citas para mejorar el análisis de retención.',
+    }));
     count++;
   }
   return count;
