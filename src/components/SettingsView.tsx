@@ -182,15 +182,15 @@ export default function SettingsView({
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div 
+              <button
                 type="button"
                 onClick={() => {
                   onUpdateConfig({ isBeginnerMode: true });
                   onToastMessage('✓ Vista simplificada activa.');
                 }}
-                className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                  config.isBeginnerMode 
-                    ? 'bg-secondary/35 border-primary font-bold shadow-sm' 
+                className={`p-5 rounded-2xl border cursor-pointer transition-all text-left ${
+                  config.isBeginnerMode
+                    ? 'bg-secondary/35 border-primary font-bold shadow-sm'
                     : 'bg-white border-muted hover:border-primary/30 text-muted-foreground'
                 }`}
               >
@@ -203,17 +203,17 @@ export default function SettingsView({
                 <p className="text-[11px] text-on-surface-variant leading-relaxed font-normal">
                   Ideal para empezar. Concéntrate en gestionar tu agenda y recuperar clientas.
                 </p>
-              </div>
+              </button>
 
-              <div 
+              <button
                 type="button"
                 onClick={() => {
                   onUpdateConfig({ isBeginnerMode: false });
                   onToastMessage('✓ Suite de Gestión Completa activada. Todas las herramientas están disponibles.');
                 }}
-                className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                  !config.isBeginnerMode 
-                    ? 'bg-secondary/35 border-primary font-bold shadow-sm' 
+                className={`p-5 rounded-2xl border cursor-pointer transition-all text-left ${
+                  !config.isBeginnerMode
+                    ? 'bg-secondary/35 border-primary font-bold shadow-sm'
                     : 'bg-white border-muted hover:border-primary/30 text-muted-foreground'
                 }`}
               >
@@ -226,7 +226,7 @@ export default function SettingsView({
                 <p className="text-[11px] text-on-surface-variant leading-relaxed font-normal">
                   Activa el control avanzado de stock de productos, costes de cabina, facturación mensual y administración de personal.
                 </p>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -299,8 +299,11 @@ export default function SettingsView({
                 </p>
               </div>
 
-              <div className="relative inline-flex items-center h-6 rounded-full w-11 bg-primary cursor-not-allowed">
-                <span className="translate-x-6 inline-block w-4 h-4 transform bg-white rounded-full transition-transform"></span>
+              <div className="flex flex-col items-center gap-1">
+                <div className="relative inline-flex items-center h-6 rounded-full w-11 bg-primary cursor-not-allowed">
+                  <span className="translate-x-6 inline-block w-4 h-4 transform bg-white rounded-full transition-transform"></span>
+                </div>
+                <span className="text-[9px] text-on-surface-variant font-sans uppercase tracking-wide">Próximamente</span>
               </div>
             </div>
 
