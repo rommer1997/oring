@@ -172,7 +172,7 @@ export default function App() {
   const enrichedClients = useMemo(() => {
     const today = getTodayISO();
     return clients.map((client) => {
-      const analysis = analyzeChurnRisk(client, appointments, today);
+      const analysis = analyzeChurnRisk(client, appointments, today, config);
       return {
         ...client,
         riskDays: analysis.riskDays,
@@ -183,7 +183,7 @@ export default function App() {
         suggestedOfferDesc: analysis.recommendation.description,
       };
     });
-  }, [clients, appointments]);
+  }, [clients, appointments, config]);
 
   const activeTenant = useMemo(() => {
     return tenants.find((t) => t.id === selectedTenantId) || null;
