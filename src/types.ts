@@ -153,7 +153,8 @@ export interface WhatsAppMessage {
   id: string;
   sender: 'client' | 'ai_auto' | 'user';
   text: string;
-  timestamp: string;
+  timestamp: string;  // HH:MM para mostrar en UI
+  date?: string;      // YYYY-MM-DD para comparaciones de recuperación
   dateLabel: string;
   status?: 'borrador' | 'enviado';
 }
