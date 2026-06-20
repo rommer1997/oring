@@ -421,9 +421,38 @@ async function startServer() {
     return ai;
   };
 
+  // ─── WhatsApp per-tenant state (defined early so health endpoint can read it) ──
+  type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
+  const WA_AUTH_DIR = path.join(process.cwd(), '.wa-auth');
+  const waStatusMap = new Map<string, WAStatus>();
+  const waQRMap = new Map<string, string | null>();
+  const waSockMap = new Map<string, any>();
+  const waPhoneMap = new Map<string, string | null>();
+  const waClientsMap = new Map<string, Set<express.Response>>();
+
+  function getWAClients(tenantId: string): Set<express.Response> {
+    if (!waClientsMap.has(tenantId)) waClientsMap.set(tenantId, new Set());
+    return waClientsMap.get(tenantId)!;
+  }
+
+  function broadcastWAStatus(tenantId: string) {
+    const status = waStatusMap.get(tenantId) ?? 'disconnected';
+    const phone = waPhoneMap.get(tenantId) ?? null;
+    const qr = status === 'qr' ? (waQRMap.get(tenantId) ?? null) : null;
+    const payload = JSON.stringify({ status, phone, qr });
+    getWAClients(tenantId).forEach(res => res.write(`data: ${payload}\n\n`));
+  }
+
   // Health check endpoint
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", message: "ElenaOS AI Backend Service is healthy." });
+    res.json({
+      ok: true,
+      version: "1.0.0",
+      geminiConfigured: !!process.env.GEMINI_API_KEY,
+      firebaseConfigured: !!adminRuntime,
+      waSessionsActive: Array.from(waStatusMap.values()).filter(s => s === 'connected').length,
+      uptime: Math.floor(process.uptime()),
+    });
   });
 
   app.get("/api/public-booking/:slug", publicLimiter, async (req, res) => {
@@ -798,7 +827,7 @@ async function startServer() {
       `;
  
       const response = await client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -1183,22 +1212,6 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   });
 
   // ─── Baileys WhatsApp Session ────────────────────────────────────────────────
-  // ponytail: estado global del proceso; reiniciar servidor reconecta la sesión desde disco
-  type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
-  let waStatus: WAStatus = 'disconnected';
-  let waQR: string | null = null;        // base64 PNG del QR actual
-  let waSock: any = null;               // socket de Baileys
-  let waConnectedPhone: string | null = null;
-  const WA_AUTH_DIR = path.join(process.cwd(), '.wa-auth');
-
-  // SSE clients suscritos al estado WA (para el panel del gerente)
-  const waStatusClients = new Set<express.Response>();
-
-  function broadcastWAStatus() {
-    const payload = JSON.stringify({ status: waStatus, phone: waConnectedPhone, qr: waStatus === 'qr' ? waQR : null });
-    waStatusClients.forEach(res => res.write(`data: ${payload}\n\n`));
-  }
-
   async function startBaileys(tenantId: string) {
     try {
       // Dynamic import — baileys es ESM puro
@@ -1219,34 +1232,34 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
         getMessage: async () => undefined,
       });
 
-      waSock = sock;
-      waStatus = 'connecting';
-      broadcastWAStatus();
+      waSockMap.set(tenantId, sock);
+      waStatusMap.set(tenantId, 'connecting');
+      broadcastWAStatus(tenantId);
 
       sock.ev.on('creds.update', saveCreds);
 
       sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
         if (qr) {
-          waStatus = 'qr';
-          waQR = await QRCode.toDataURL(qr);
-          broadcastWAStatus();
+          waStatusMap.set(tenantId, 'qr');
+          waQRMap.set(tenantId, await QRCode.toDataURL(qr));
+          broadcastWAStatus(tenantId);
         }
         if (connection === 'open') {
-          waStatus = 'connected';
-          waQR = null;
-          waConnectedPhone = sock.user?.id?.split(':')[0] || null;
-          broadcastWAStatus();
-          console.log(`[WA Baileys] Conectado: ${waConnectedPhone}`);
+          waStatusMap.set(tenantId, 'connected');
+          waQRMap.set(tenantId, null);
+          waPhoneMap.set(tenantId, sock.user?.id?.split(':')[0] || null);
+          broadcastWAStatus(tenantId);
+          console.log(`[WA Baileys] Conectado: ${waPhoneMap.get(tenantId)}`);
         }
         if (connection === 'close') {
           const code = (lastDisconnect?.error as any)?.output?.statusCode;
           const shouldReconnect = code !== DisconnectReason.loggedOut;
-          waStatus = shouldReconnect ? 'connecting' : 'disconnected';
-          waConnectedPhone = null;
-          broadcastWAStatus();
+          waStatusMap.set(tenantId, shouldReconnect ? 'connecting' : 'disconnected');
+          waPhoneMap.set(tenantId, null);
+          broadcastWAStatus(tenantId);
           if (shouldReconnect) setTimeout(() => startBaileys(tenantId), 5000);
-          else { waSock = null; fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true }); }
+          else { waSockMap.delete(tenantId); fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true }); }
         }
       });
 
@@ -1292,39 +1305,29 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       });
     } catch (err) {
       console.error('[WA Baileys] Error iniciando:', err);
-      waStatus = 'disconnected';
-      broadcastWAStatus();
+      waStatusMap.set(tenantId, 'disconnected');
+      broadcastWAStatus(tenantId);
     }
   }
 
-  // Reconectar si ya existe sesión guardada al arrancar
+  // Reconectar sesiones guardadas al arrancar
   if (adminRuntime) {
     const sessions = fs.existsSync(WA_AUTH_DIR) ? fs.readdirSync(WA_AUTH_DIR) : [];
-    if (sessions.length > 0) {
-      console.log(`[WA Baileys] Reconectando sesión: ${sessions[0]}`);
-      startBaileys(sessions[0]);
-    }
+    sessions.forEach(tid => {
+      console.log(`[WA Baileys] Reconectando sesión: ${tid}`);
+      startBaileys(tid);
+    });
   }
 
-  // Sobreescribir sendWhatsAppMessage para usar Baileys cuando esté conectado
-  const _sendWhatsAppMessageOriginal = sendWhatsAppMessage;
-  (global as any).__elenaSendWA = async (to: string, text: string): Promise<boolean> => {
-    if (waSock && waStatus === 'connected') {
-      try {
-        await waSock.sendMessage(`${to}@s.whatsapp.net`, { text });
-        return true;
-      } catch (err) {
-        console.error('[WA Baileys] Error send:', err);
-        return false;
-      }
-    }
-    return _sendWhatsAppMessageOriginal(to, text);
-  };
-
   // ─── GET /api/agent/wa-status (SSE) ──────────────────────────────────────────
+  // ponytail: EventSource no soporta headers custom → aceptar token por query param
   app.get('/api/agent/wa-status', async (req, res) => {
+    if (!req.headers.authorization && req.query.token) {
+      req.headers.authorization = `Bearer ${req.query.token}`;
+    }
+    let tenantId: string;
     try {
-      await resolveAuthenticatedTenant(req, adminRuntime);
+      ({ tenantId } = await resolveAuthenticatedTenant(req, adminRuntime));
     } catch {
       return res.sendStatus(401);
     }
@@ -1333,18 +1336,22 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    // Enviar estado actual inmediatamente
-    res.write(`data: ${JSON.stringify({ status: waStatus, phone: waConnectedPhone, qr: waStatus === 'qr' ? waQR : null })}\n\n`);
+    const status = waStatusMap.get(tenantId) ?? 'disconnected';
+    const phone = waPhoneMap.get(tenantId) ?? null;
+    const qr = status === 'qr' ? (waQRMap.get(tenantId) ?? null) : null;
+    res.write(`data: ${JSON.stringify({ status, phone, qr })}\n\n`);
 
-    waStatusClients.add(res);
-    req.on('close', () => waStatusClients.delete(res));
+    const clients = getWAClients(tenantId);
+    clients.add(res);
+    req.on('close', () => clients.delete(res));
   });
 
   // ─── POST /api/agent/wa-connect ───────────────────────────────────────────────
   app.post('/api/agent/wa-connect', apiLimiter, async (req, res) => {
     try {
       const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
-      if (waStatus !== 'disconnected') return res.json({ ok: true, status: waStatus });
+      const currentStatus = waStatusMap.get(tenantId) ?? 'disconnected';
+      if (currentStatus !== 'disconnected') return res.json({ ok: true, status: currentStatus });
       startBaileys(tenantId);
       res.json({ ok: true, status: 'connecting' });
     } catch (err: any) {
@@ -1356,10 +1363,13 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   app.post('/api/agent/wa-disconnect', apiLimiter, async (req, res) => {
     try {
       const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
-      if (waSock) { await waSock.logout(); waSock = null; }
-      waStatus = 'disconnected'; waConnectedPhone = null; waQR = null;
+      const sock = waSockMap.get(tenantId);
+      if (sock) { await sock.logout(); waSockMap.delete(tenantId); }
+      waStatusMap.set(tenantId, 'disconnected');
+      waPhoneMap.set(tenantId, null);
+      waQRMap.set(tenantId, null);
       fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true });
-      broadcastWAStatus();
+      broadcastWAStatus(tenantId);
       res.json({ ok: true });
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
