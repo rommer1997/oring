@@ -946,6 +946,31 @@ Tono: cercano, personal, sin presión. NO uses emojis en exceso. Termina con una
     }
   }
 
+  // ─── Agente: Clasificar motivo de ausencia ───────────────────────────────────
+  async function classifyAbsenceReason(clientText: string, genAI: GoogleGenAI | null): Promise<string | null> {
+    if (!genAI) return null;
+    try {
+      const result = await genAI.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: `Clasifica el siguiente mensaje de una clienta de salón de belleza en UNO de estos motivos de ausencia. Responde SOLO con la clave exacta o "null" si no aplica ninguno:
+- economia (menciona dinero, precio, caro, justa, presupuesto)
+- competencia (menciona otro salón, cerca de casa, probando otro)
+- autoservicio (menciona hacérselo ella misma, tinte en casa, tutorial)
+- tiempo (menciona que no tiene tiempo, ocupada, trabajo, agenda)
+- personal (menciona situación personal, familia, salud, estrés)
+
+Mensaje: "${clientText.replace(/"/g, "'")}"
+
+Responde solo la clave o null:`,
+      });
+      const raw = result.text?.trim().toLowerCase() || 'null';
+      const valid = ['economia', 'competencia', 'autoservicio', 'tiempo', 'personal'];
+      return valid.includes(raw) ? raw : null;
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Agente: Continuar conversación ──────────────────────────────────────────
   async function generateAgentReply(
     clientReply: string,
@@ -1150,6 +1175,60 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   });
 
+  // ─── POST /api/agent/campaigns/:id/absence-action ────────────────────────────
+  // Genera y encola un mensaje adaptado al motivo de ausencia detectado
+  app.post('/api/agent/campaigns/:id/absence-action', aiLimiter, async (req, res) => {
+    try {
+      const { tenantId, db } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const db_ = adminRuntime!.admin.firestore();
+      const ref = db_.doc(`tenants/${tenantId}/agent_campaigns/${req.params.id}`);
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
+      const campaign = snap.data() as any;
+      const absenceReason = campaign.absenceReason || req.body.absenceReason;
+      if (!absenceReason) return res.status(400).json({ error: 'Sin motivo de ausencia.' });
+
+      const actionMap: Record<string, string> = {
+        economia:     'oferta especial de reconexión con descuento exclusivo',
+        competencia:  'propuesta de valor diferencial del salón',
+        autoservicio: 'ventajas del cuidado profesional frente al autoservicio',
+        tiempo:       'recordatorio amable en 2 semanas sin presión',
+        personal:     'mensaje empático de apoyo dando espacio',
+      };
+
+      const tenantDoc = await db_.doc(`tenants/${tenantId}`).get();
+      const tenantName = tenantDoc.data()?.name || 'el salón';
+      const action = actionMap[absenceReason] || 'mensaje de reconexión';
+
+      const message = await generateAgentOutreach(
+        { ...campaign, clientName: campaign.clientName, suggestedOfferTitle: action },
+        tenantName, ai
+      );
+
+      const newCampaign = {
+        ...campaign,
+        id: undefined,
+        message,
+        status: 'pendiente',
+        autoSend: false,
+        createdAt: new Date().toISOString(),
+        sentAt: null,
+        repliedAt: null,
+        lastReply: null,
+        conversationLog: [{ role: 'agent', text: message, timestamp: new Date().toISOString() }],
+      };
+      delete newCampaign.id;
+
+      const newRef = db_.collection(`tenants/${tenantId}/agent_campaigns`).doc();
+      await newRef.set(newCampaign);
+      await ref.update({ absenceActionTaken: true });
+
+      res.json({ ok: true, campaignId: newRef.id, message });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
   // ─── POST /api/agent/broadcast ───────────────────────────────────────────────
   // Envía un mensaje personalizado a todos los clientes con campañas pendientes
   app.post('/api/agent/broadcast', aiLimiter, async (req, res) => {
@@ -1278,12 +1357,17 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       const { text: reply, intent } = await generateAgentReply(clientText, newLog, tenantName, availableSlots, ai);
 
       newLog.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
+      const absenceReason = await classifyAbsenceReason(clientText, ai);
 
       const update: any = {
         status: intent === 'booking' ? 'reservado' : 'respondido',
         repliedAt: new Date().toISOString(),
         lastReply: clientText,
         conversationLog: newLog,
+        ...(absenceReason && {
+          absenceReason,
+          absenceDetectedText: `IA: Detectado motivo ${absenceReason} → acción sugerida disponible`,
+        }),
       };
 
       await campaignDoc.ref.update(update);
@@ -1385,12 +1469,17 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
             { role: 'client', text, timestamp: new Date().toISOString() }];
           const { text: reply, intent } = await generateAgentReply(text, newLog, tenantName, [], ai);
           newLog.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
+          const absenceReason = await classifyAbsenceReason(text, ai);
 
           await campaignDoc.ref.update({
             status: intent === 'booking' ? 'reservado' : 'respondido',
             repliedAt: new Date().toISOString(),
             lastReply: text,
             conversationLog: newLog,
+            ...(absenceReason && {
+              absenceReason,
+              absenceDetectedText: `IA: Detectado motivo ${absenceReason} → acción sugerida disponible`,
+            }),
           });
 
           // Responder por WhatsApp
