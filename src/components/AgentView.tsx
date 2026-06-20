@@ -234,10 +234,10 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const listedClients = listTab === 'prioridad' ? priorityList : contactadosList;
 
   return (
-    <div className="flex gap-4 min-h-0" style={{ height: 'calc(100vh - 112px)' }}>
+    <div className="flex gap-2 min-h-0" style={{ height: 'calc(100vh - 112px)' }}>
 
       {/* ══ COLUMNA IZQUIERDA — oscura ══════════════════════════════════════════ */}
-      <div className="w-64 flex-shrink-0 flex flex-col bg-[#062d32] rounded-xl overflow-hidden min-h-0">
+      <div className="w-64 flex-shrink-0 flex flex-col bg-[#062d32]/85 rounded-xl overflow-hidden min-h-0">
 
         {/* WA status */}
         <div className="px-4 py-3 border-b border-white/8 flex-shrink-0">
@@ -303,7 +303,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 </div>
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${RISK_STYLE[c.riskLevel] || 'bg-white/10 text-white/60'}`}>
-                    Riesgo {c.riskLevel}
+                    {c.riskDays}d
                   </span>
                 </div>
                 {c.absenceReason && (
@@ -324,10 +324,10 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       </div>
 
       {/* ══ COLUMNA CENTRAL ═════════════════════════════════════════════════════ */}
-      <div className="flex-1 min-w-0 flex flex-col gap-3 min-h-0">
+      <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
 
         {/* Tarjetas de acción superiores */}
-        <div className="flex gap-3 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0">
           {([
             { id: 'campaign', icon: 'campaign',       label: 'Lanzar Campaña Masiva', sub: 'Subir Imagen/Texto' },
             { id: 'analyze',  icon: 'manage_search',  label: 'Analizar Riesgo',       sub: 'Ver clientes en riesgo' },
@@ -571,7 +571,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                       </td>
                       <td className="px-4 py-3.5 text-[11px] font-sans text-[#062d32]/50">{r.service}</td>
                       <td className="px-4 py-3.5">
-                        <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${RISK_STYLE[r.risk] || ''}`}>{r.risk} · {r.days}d</span>
+                        <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${RISK_STYLE[r.risk] || ''}`}>{r.days}d</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <button onClick={e => { e.stopPropagation(); onToastMessage(`Agente autorizado para ${r.name}.`); }}
@@ -632,11 +632,11 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       </div>
 
       {/* ══ COLUMNA DERECHA — oscura ═════════════════════════════════════════════ */}
-      <div className="w-56 flex-shrink-0 flex flex-col gap-3 min-h-0">
+      <div className="w-56 flex-shrink-0 flex flex-col gap-2 min-h-0">
         {selected ? (
           <>
             {/* Ficha */}
-            <div className="bg-[#062d32] rounded-xl px-5 py-5 flex-shrink-0">
+            <div className="bg-[#062d32]/85 rounded-xl px-5 py-5 flex-shrink-0">
               <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/30 mb-4">Inteligencia del Cliente</p>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-[#c9a9b5]/25 flex items-center justify-center font-sans text-white text-xs font-bold flex-shrink-0">
@@ -654,14 +654,14 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 </div>
                 <div className="flex justify-between text-[11px]">
                   <span className="font-sans text-white/40">Riesgo</span>
-                  <span className={`font-sans font-bold text-[10px] px-1.5 py-0.5 rounded-full ${RISK_STYLE[selected.riskLevel]}`}>{selected.riskLevel}</span>
+                  <span className={`font-sans font-bold text-[10px] px-1.5 py-0.5 rounded-full ${RISK_STYLE[selected.riskLevel]}`}>{selected.riskDays}d</span>
                 </div>
               </div>
             </div>
 
             {/* Motivo + acción */}
             {selected.absenceReason && (
-              <div className="bg-[#062d32] rounded-xl px-5 py-5 flex-shrink-0">
+              <div className="bg-[#062d32]/85 rounded-xl px-5 py-5 flex-shrink-0">
                 <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/30 mb-3">Motivo Detectado</p>
                 <span className="inline-block text-[9px] font-sans font-bold uppercase tracking-wider border border-[#c9a9b5]/50 text-[#c9a9b5] rounded px-2 py-0.5 mb-2">
                   {ABSENCE[selected.absenceReason].label}
@@ -677,7 +677,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             )}
 
             {/* Historia */}
-            <div className="bg-[#062d32] rounded-xl px-5 py-5 flex-1 overflow-y-auto min-h-0">
+            <div className="bg-[#062d32]/85 rounded-xl px-5 py-5 flex-1 overflow-y-auto min-h-0">
               <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/30 mb-3">Historia</p>
               <div className="space-y-2.5">
                 {selected.conversationLog.map((msg, i) => (
@@ -702,7 +702,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             </div>
           </>
         ) : (
-          <div className="bg-[#062d32] rounded-xl flex-1 flex flex-col items-center justify-center px-5 py-8">
+          <div className="bg-[#062d32]/85 rounded-xl flex-1 flex flex-col items-center justify-center px-5 py-8">
             <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/20 text-center leading-relaxed">
               Selecciona un cliente para ver su inteligencia
             </p>
