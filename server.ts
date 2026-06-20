@@ -1150,6 +1150,50 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   });
 
+  // ─── POST /api/agent/broadcast ───────────────────────────────────────────────
+  // Envía un mensaje personalizado a todos los clientes con campañas pendientes
+  app.post('/api/agent/broadcast', aiLimiter, async (req, res) => {
+    try {
+      const { tenantId, db } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const { message } = req.body;
+      if (!message?.trim()) return res.status(400).json({ error: 'message requerido.' });
+
+      const db_ = adminRuntime!.admin.firestore();
+      const snap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
+        .where('status', '==', 'pendiente').get();
+
+      const sock = waSockMap.get(tenantId);
+      const waConnected = waStatusMap.get(tenantId) === 'connected';
+      let sent = 0;
+
+      for (const doc of snap.docs) {
+        const campaign = doc.data() as any;
+        let phone = campaign.clientPhone.replace(/\D/g, '');
+        if (phone.startsWith('0034')) phone = phone.slice(4);
+        else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
+        if (phone.length === 9) phone = '34' + phone;
+
+        let ok = false;
+        if (waConnected && sock) {
+          try { await sock.sendMessage(`${phone}@s.whatsapp.net`, { text: message }); ok = true; } catch {}
+        }
+        if (!ok) ok = await sendWhatsAppMessage(phone, message);
+
+        const entry = { role: 'agent', text: message, timestamp: new Date().toISOString() };
+        await doc.ref.update({
+          status: 'enviado',
+          sentAt: new Date().toISOString(),
+          conversationLog: [...(campaign.conversationLog || []), entry],
+        });
+        if (ok) sent++;
+      }
+
+      res.json({ ok: true, total: snap.size, sent });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
   // ─── POST /api/agent/refine ───────────────────────────────────────────────────
   app.post('/api/agent/refine', aiLimiter, async (req, res) => {
     try {
