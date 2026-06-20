@@ -10,13 +10,13 @@ interface AgentViewProps {
 
 type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
 
-const STATUS_BADGE: Record<AgentCampaignStatus, { label: string; dot: string }> = {
-  pendiente:    { label: 'Pendiente',   dot: 'bg-amber-400' },
-  enviado:      { label: 'Enviado',     dot: 'bg-blue-400' },
-  respondido:   { label: 'Respondió',   dot: 'bg-violet-400' },
-  reservado:    { label: 'Reservado',   dot: 'bg-emerald-500' },
-  rechazado:    { label: 'Descartado',  dot: 'bg-gray-300' },
-  sin_respuesta:{ label: 'Sin respuesta', dot: 'bg-red-400' },
+const STATUS_BADGE: Record<AgentCampaignStatus, { label: string; color: string }> = {
+  pendiente:     { label: 'Pendiente',      color: 'text-amber-700 bg-amber-50 border-amber-200' },
+  enviado:       { label: 'Enviado',        color: 'text-blue-700 bg-blue-50 border-blue-200' },
+  respondido:    { label: 'Respondió',      color: 'text-violet-700 bg-violet-50 border-violet-200' },
+  reservado:     { label: 'Reservado',      color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  rechazado:     { label: 'Descartado',     color: 'text-[#062d32]/40 bg-[#062d32]/5 border-[#062d32]/10' },
+  sin_respuesta: { label: 'Sin respuesta',  color: 'text-red-700 bg-red-50 border-red-200' },
 };
 
 const DEFAULT_CONFIG: AgentConfig = {
@@ -139,7 +139,6 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // SSE estado WhatsApp
   useEffect(() => {
     if (isDemoMode) { setWAStatus('connected'); setWAPhone('34666123456'); return; }
     const connectSSE = async () => {
@@ -213,53 +212,58 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   };
 
   const filtered = filter === 'todas' ? campaigns : campaigns.filter(c => c.status === filter);
-
   const chatUrl = tenantSlug ? `${window.location.origin}/salon/${tenantSlug}/chat` : null;
 
-  // ── Layout WhatsApp-style ──────────────────────────────────────────────────
   return (
-    <div className="flex h-[calc(100vh-0px)] overflow-hidden -mx-4 -my-0" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="flex gap-6 h-[calc(100vh-112px)] min-h-0">
 
-      {/* ── Panel izquierdo ─────────────────────────────────────────────────── */}
-      <div className="w-80 flex-shrink-0 flex flex-col border-r border-[#062d32]/10 bg-white">
+      {/* ── Lista de conversaciones ──────────────────────────────────────────── */}
+      <div className="w-72 flex-shrink-0 flex flex-col bg-white border border-[#062d32]/10 overflow-hidden">
 
-        {/* Header izquierdo */}
-        <div className="bg-[#062d32] px-4 py-4 flex items-center justify-between">
+        {/* Cabecera */}
+        <div className="px-5 py-4 border-b border-[#062d32]/10 flex items-start justify-between">
           <div>
-            <h2 className="font-serif text-white text-lg font-semibold leading-none">WhatsApp</h2>
-            <p className="text-[10px] font-sans uppercase tracking-[0.1em] text-[#c9a9b5] mt-0.5">
-              {waStatus === 'connected' ? `+${waPhone}` : 'Sin conexión'}
+            <h2 className="font-serif text-[#062d32] text-lg font-semibold leading-none">WhatsApp</h2>
+            <p className="text-[10px] font-sans uppercase tracking-[0.1em] text-[#062d32]/40 mt-1">
+              {waStatus === 'connected'
+                ? <span className="text-emerald-600">● Conectado · +{waPhone}</span>
+                : <span className="text-[#062d32]/40">Sin conexión</span>
+              }
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 mt-0.5">
             <button
               onClick={handleScan}
               disabled={scanning || !config.enabled}
-              title="Escanear clientas en riesgo"
-              className="text-[#c9a9b5] hover:text-white transition-colors disabled:opacity-40"
+              title="Detectar clientas en riesgo"
+              className="w-7 h-7 flex items-center justify-center text-[#062d32]/40 hover:text-[#062d32] transition-colors disabled:opacity-30"
             >
-              <span className="material-symbols-outlined text-xl">{scanning ? 'sync' : 'radar'}</span>
+              <span className="material-symbols-outlined text-[18px]">{scanning ? 'sync' : 'radar'}</span>
             </button>
-            <button onClick={() => setShowConfig(v => !v)} title="Configuración" className="text-[#c9a9b5] hover:text-white transition-colors">
-              <span className="material-symbols-outlined text-xl">settings</span>
+            <button
+              onClick={() => setShowConfig(v => !v)}
+              title="Configuración"
+              className={`w-7 h-7 flex items-center justify-center transition-colors ${showConfig ? 'text-[#062d32]' : 'text-[#062d32]/40 hover:text-[#062d32]'}`}
+            >
+              <span className="material-symbols-outlined text-[18px]">settings</span>
             </button>
           </div>
         </div>
 
-        {/* Estado de conexión */}
+        {/* Conexión WhatsApp */}
         {waStatus !== 'connected' && (
-          <div className="px-4 py-3 border-b border-[#062d32]/8 bg-[#fbf9f5]">
+          <div className="px-4 py-3 border-b border-[#062d32]/10 bg-[#fbf9f5]">
             {waStatus === 'qr' && waQR ? (
-              <div className="flex flex-col items-center gap-2">
-                <img src={waQR} alt="QR" className="w-40 h-40 border border-[#062d32]/10 p-1.5 bg-white" />
-                <p className="text-[10px] text-[#062d32]/60 text-center font-sans leading-relaxed">
-                  WhatsApp → Dispositivos vinculados → Vincular dispositivo
+              <div className="flex flex-col items-center gap-2 py-1">
+                <img src={waQR} alt="QR" className="w-36 h-36 border border-[#062d32]/10 p-1 bg-white" />
+                <p className="text-[10px] text-[#062d32]/50 text-center font-sans leading-relaxed">
+                  WhatsApp → Dispositivos vinculados → Vincular
                 </p>
               </div>
             ) : (
               <button
                 onClick={handleWAConnect}
-                className="w-full border border-[#062d32] text-[#062d32] text-[11px] font-sans font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-2 hover:bg-[#062d32] hover:text-white transition-all"
+                className="w-full border border-[#062d32] text-[#062d32] text-[10px] font-sans font-bold uppercase tracking-[0.08em] py-2.5 flex items-center justify-center gap-2 hover:bg-[#062d32] hover:text-white transition-all"
               >
                 <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
                 {waStatus === 'connecting' ? 'Conectando…' : 'Conectar WhatsApp'}
@@ -268,16 +272,16 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
           </div>
         )}
 
-        {/* Filtros rápidos */}
-        <div className="flex overflow-x-auto gap-1 px-3 py-2.5 border-b border-[#062d32]/8 scrollbar-hide">
-          {(['todas', 'pendiente', 'enviado', 'respondido', 'reservado'] as const).map(f => (
+        {/* Filtros */}
+        <div className="flex overflow-x-auto gap-1 px-3 py-2 border-b border-[#062d32]/10">
+          {(['todas', 'pendiente', 'respondido', 'reservado'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`flex-shrink-0 text-[10px] font-sans font-bold uppercase tracking-wider px-2.5 py-1 transition-all ${
+              className={`flex-shrink-0 text-[9px] font-sans font-bold uppercase tracking-wider px-2 py-1 border transition-all ${
                 filter === f
-                  ? 'bg-[#062d32] text-white'
-                  : 'text-[#062d32]/50 hover:text-[#062d32] border border-transparent hover:border-[#062d32]/20'
+                  ? 'bg-[#062d32] text-white border-[#062d32]'
+                  : 'text-[#062d32]/50 border-[#062d32]/15 hover:border-[#062d32]/30 hover:text-[#062d32]'
               }`}
             >
               {f === 'todas' ? 'Todas' : STATUS_BADGE[f]?.label}
@@ -285,17 +289,17 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
           ))}
         </div>
 
-        {/* Lista de conversaciones */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Lista */}
+        <div className="flex-1 overflow-y-auto divide-y divide-[#062d32]/6">
           {loading && (
-            <div className="flex items-center justify-center py-12">
-              <span className="material-symbols-outlined animate-spin text-[#062d32]/30 text-2xl">sync</span>
+            <div className="flex items-center justify-center py-10">
+              <span className="material-symbols-outlined animate-spin text-[#062d32]/20 text-xl">sync</span>
             </div>
           )}
           {!loading && filtered.length === 0 && (
-            <div className="px-6 py-12 text-center">
-              <span className="material-symbols-outlined text-3xl text-[#062d32]/20 block mb-2">chat_bubble_outline</span>
-              <p className="text-xs text-[#062d32]/40 font-sans">Sin conversaciones</p>
+            <div className="px-5 py-10 text-center">
+              <span className="material-symbols-outlined text-2xl text-[#062d32]/15 block mb-2">chat_bubble_outline</span>
+              <p className="text-[11px] text-[#062d32]/30 font-sans">Sin conversaciones</p>
             </div>
           )}
           {filtered.map(c => {
@@ -305,26 +309,26 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             return (
               <button
                 key={c.id}
-                onClick={() => setSelected(c)}
-                className={`w-full text-left px-4 py-3.5 border-b border-[#062d32]/6 flex items-start gap-3 transition-colors ${
-                  isActive ? 'bg-[#062d32]/6' : 'hover:bg-[#062d32]/3'
+                onClick={() => { setSelected(c); setShowConfig(false); }}
+                className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-colors ${
+                  isActive ? 'bg-[#062d32]/5' : 'hover:bg-[#062d32]/[0.02]'
                 }`}
               >
-                {/* Avatar inicial */}
-                <div className="w-10 h-10 flex-shrink-0 bg-[#c9a9b5]/30 flex items-center justify-center text-[#062d32] font-serif font-semibold text-sm">
+                {/* Inicial */}
+                <div className="w-9 h-9 flex-shrink-0 bg-[#c9a9b5]/25 flex items-center justify-center text-[#062d32] font-serif font-semibold text-sm">
                   {c.clientName.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="font-sans font-semibold text-[13px] text-[#062d32] truncate">{c.clientName}</span>
-                    <span className="text-[10px] text-[#062d32]/40 font-sans flex-shrink-0 ml-2">{timeAgo(last?.timestamp || c.createdAt)}</span>
+                  <div className="flex items-baseline justify-between mb-0.5 gap-1">
+                    <span className="font-serif text-[13px] text-[#062d32] font-semibold truncate">{c.clientName}</span>
+                    <span className="text-[9px] text-[#062d32]/35 font-sans flex-shrink-0">{timeAgo(last?.timestamp || c.createdAt)}</span>
                   </div>
-                  <p className="text-[12px] text-[#062d32]/55 truncate font-sans leading-snug">{last?.text}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${badge.dot}`} />
-                    <span className="text-[10px] text-[#062d32]/40 font-sans">{badge.label}</span>
-                    <span className="text-[10px] text-[#062d32]/30 font-sans">·</span>
-                    <span className={`text-[10px] font-sans font-bold ${c.riskLevel === 'Crítico' ? 'text-red-500' : 'text-orange-500'}`}>
+                  <p className="text-[11px] text-[#062d32]/45 truncate font-sans leading-snug mb-1.5">{last?.text}</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[9px] font-sans font-bold uppercase tracking-wide px-1.5 py-0.5 border ${badge.color}`}>
+                      {badge.label}
+                    </span>
+                    <span className={`text-[9px] font-sans font-bold ${c.riskLevel === 'Crítico' ? 'text-red-500' : 'text-amber-600'}`}>
                       {c.riskLevel} {c.riskDays}d
                     </span>
                   </div>
@@ -334,183 +338,197 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
           })}
         </div>
 
-        {/* Chat web link */}
+        {/* Enlace chat web */}
         {chatUrl && (
-          <div className="px-3 py-3 border-t border-[#062d32]/8">
+          <div className="px-4 py-3 border-t border-[#062d32]/10">
             <button
               onClick={() => navigator.clipboard?.writeText(chatUrl).then(() => onToastMessage('✓ Enlace del chat copiado.'))}
-              className="w-full text-[10px] font-sans font-bold uppercase tracking-wider text-[#062d32]/50 hover:text-[#062d32] flex items-center justify-center gap-1.5 py-1.5 transition-colors"
+              className="w-full text-[9px] font-sans font-bold uppercase tracking-wider text-[#062d32]/40 hover:text-[#062d32] flex items-center justify-center gap-1.5 py-1 transition-colors"
             >
-              <span className="material-symbols-outlined text-sm">link</span>
+              <span className="material-symbols-outlined text-[13px]">link</span>
               Copiar enlace chat web
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Panel derecho: chat ─────────────────────────────────────────────── */}
-      {selected ? (
-        <div className="flex-1 flex flex-col min-w-0 bg-[#f0ece4]" style={{ backgroundImage: 'radial-gradient(circle, rgba(6,45,50,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      {/* ── Panel derecho ────────────────────────────────────────────────────── */}
+      <div className="flex-1 min-w-0 flex flex-col bg-white border border-[#062d32]/10 overflow-hidden">
 
-          {/* Header chat */}
-          <div className="bg-[#062d32] px-5 py-3.5 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-[#c9a9b5]/20 flex items-center justify-center text-[#c9a9b5] font-serif font-semibold text-sm">
-                {selected.clientName.charAt(0)}
-              </div>
-              <div>
-                <p className="font-sans font-semibold text-white text-sm leading-none">{selected.clientName}</p>
-                <p className="text-[10px] text-[#c9a9b5] font-sans mt-0.5">{selected.clientPhone} · {selected.suggestedService}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {waStatus === 'connected' && (
-                <button onClick={handleWADisconnect} title="Desconectar" className="text-[#c9a9b5]/60 hover:text-[#c9a9b5] transition-colors">
-                  <span className="material-symbols-outlined text-base">phone_disabled</span>
-                </button>
-              )}
-              <button onClick={() => setSelected(null)} className="text-[#c9a9b5]/60 hover:text-[#c9a9b5] transition-colors">
-                <span className="material-symbols-outlined text-base">close</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Mensajes */}
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-3">
-            {/* Badge de riesgo */}
-            <div className="flex justify-center mb-4">
-              <span className={`text-[10px] font-sans font-bold uppercase tracking-wider px-3 py-1 ${
-                selected.riskLevel === 'Crítico' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-              }`}>
-                {selected.riskLevel} · {selected.riskDays} días sin visita · {selected.suggestedService}
-              </span>
-            </div>
-
-            {selected.conversationLog.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[65%] flex flex-col gap-0.5 ${msg.role === 'agent' ? 'items-end' : 'items-start'}`}>
-                  <div className={`px-3.5 py-2.5 text-[13px] leading-relaxed font-sans shadow-sm ${
-                    msg.role === 'agent'
-                      ? 'bg-[#062d32] text-white'
-                      : 'bg-white text-[#062d32] border-l-2 border-[#c9a9b5]'
-                  }`}>
-                    {msg.text}
-                  </div>
-                  <span className="text-[10px] text-[#062d32]/35 font-sans px-0.5">{formatHour(msg.timestamp)}</span>
-                </div>
-              </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Barra inferior de acciones */}
-          <div className="bg-white border-t border-[#062d32]/10 px-5 py-4 flex-shrink-0">
-            {selected.status === 'pendiente' && (
+        {selected ? (
+          <>
+            {/* Cabecera conversación */}
+            <div className="px-6 py-4 border-b border-[#062d32]/10 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="flex-1 bg-[#fbf9f5] border border-[#062d32]/10 px-4 py-2.5 text-[12px] text-[#062d32]/40 font-sans italic">
-                  El agente redactó este mensaje para ti
+                <div className="w-9 h-9 bg-[#c9a9b5]/25 flex items-center justify-center text-[#062d32] font-serif font-semibold text-sm">
+                  {selected.clientName.charAt(0)}
                 </div>
-                <button
-                  onClick={() => handleReject(selected)}
-                  className="border border-[#062d32]/20 text-[#062d32]/50 text-[11px] font-sans font-bold uppercase tracking-wider px-4 py-2.5 hover:border-red-300 hover:text-red-600 transition-all"
-                >
-                  Descartar
-                </button>
-                <button
-                  onClick={() => handleApprove(selected)}
-                  className="bg-[#062d32] text-white text-[11px] font-sans font-bold uppercase tracking-wider px-5 py-2.5 flex items-center gap-2 hover:bg-[#062d32]/85 transition-all"
-                >
-                  <span className="material-symbols-outlined text-sm">send</span>
-                  Enviar
-                </button>
-              </div>
-            )}
-            {selected.status === 'enviado' && (
-              <div className="flex items-center gap-3 text-[#062d32]/50">
-                <span className="material-symbols-outlined text-base">schedule</span>
-                <span className="text-[12px] font-sans">Esperando respuesta de {selected.clientName}…</span>
-              </div>
-            )}
-            {selected.status === 'respondido' && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[#062d32]/50">
-                  <span className="material-symbols-outlined text-base text-violet-500">smart_toy</span>
-                  <span className="text-[12px] font-sans">El agente gestiona la conversación</span>
+                <div>
+                  <p className="font-serif text-[#062d32] text-base font-semibold leading-none">{selected.clientName}</p>
+                  <p className="text-[10px] text-[#062d32]/40 font-sans mt-0.5 uppercase tracking-wide">
+                    {selected.clientPhone} · {selected.suggestedService}
+                  </p>
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[9px] font-sans font-bold uppercase tracking-wide px-2 py-1 border ${STATUS_BADGE[selected.status].color}`}>
+                  {STATUS_BADGE[selected.status].label}
+                </span>
+                {waStatus === 'connected' && (
+                  <button
+                    onClick={handleWADisconnect}
+                    title="Desconectar WhatsApp"
+                    className="w-7 h-7 flex items-center justify-center text-[#062d32]/30 hover:text-[#062d32] transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">phone_disabled</span>
+                  </button>
+                )}
                 <button
-                  onClick={() => onToastMessage('Intervención activada — el agente pausará esta conversación.')}
-                  className="border border-[#062d32]/20 text-[#062d32] text-[11px] font-sans font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#062d32] hover:text-white transition-all"
+                  onClick={() => setSelected(null)}
+                  className="w-7 h-7 flex items-center justify-center text-[#062d32]/30 hover:text-[#062d32] transition-colors"
                 >
-                  Intervenir
+                  <span className="material-symbols-outlined text-[16px]">close</span>
                 </button>
               </div>
-            )}
-            {selected.status === 'reservado' && (
-              <div className="flex items-center gap-2 text-emerald-700">
-                <span className="material-symbols-outlined text-base">event_available</span>
-                <span className="text-[12px] font-sans font-semibold">Cita confirmada por el agente</span>
+            </div>
+
+            {/* Hilo de mensajes */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-[#fbf9f5]">
+              {/* Contexto de riesgo */}
+              <div className="flex justify-center mb-2">
+                <span className={`text-[9px] font-sans font-bold uppercase tracking-wider px-3 py-1 border ${
+                  selected.riskLevel === 'Crítico' ? 'text-red-700 bg-red-50 border-red-200' : 'text-amber-700 bg-amber-50 border-amber-200'
+                }`}>
+                  {selected.riskLevel} · {selected.riskDays} días sin visita · {selected.suggestedService}
+                </span>
               </div>
-            )}
-            {selected.status === 'rechazado' && (
-              <div className="flex items-center gap-2 text-[#062d32]/30">
-                <span className="material-symbols-outlined text-base">block</span>
-                <span className="text-[12px] font-sans">Mensaje descartado</span>
-              </div>
-            )}
+
+              {selected.conversationLog.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[60%] flex flex-col gap-1 ${msg.role === 'agent' ? 'items-end' : 'items-start'}`}>
+                    <div className={`px-4 py-3 text-[13px] leading-relaxed font-serif ${
+                      msg.role === 'agent'
+                        ? 'bg-[#062d32] text-white'
+                        : 'bg-white border border-[#062d32]/12 text-[#062d32] border-l-2 border-l-[#c9a9b5]'
+                    }`}>
+                      {msg.text}
+                    </div>
+                    <span className="text-[9px] text-[#062d32]/30 font-sans px-0.5">
+                      {msg.role === 'agent' ? 'Agente' : selected.clientName} · {formatHour(msg.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Barra de acciones */}
+            <div className="flex-shrink-0 border-t border-[#062d32]/10 bg-white px-6 py-4">
+              {selected.status === 'pendiente' && (
+                <div className="flex items-center gap-3">
+                  <p className="flex-1 text-[11px] font-sans text-[#062d32]/50 italic">
+                    El agente redactó este mensaje — revísalo antes de enviar
+                  </p>
+                  <button
+                    onClick={() => handleReject(selected)}
+                    className="border border-[#062d32]/20 text-[#062d32]/50 text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-2 hover:border-red-300 hover:text-red-600 transition-all"
+                  >
+                    Descartar
+                  </button>
+                  <button
+                    onClick={() => handleApprove(selected)}
+                    className="bg-[#062d32] text-white text-[10px] font-sans font-bold uppercase tracking-wider px-5 py-2 flex items-center gap-2 hover:opacity-85 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">send</span>
+                    Enviar
+                  </button>
+                </div>
+              )}
+              {selected.status === 'enviado' && (
+                <div className="flex items-center gap-2 text-[#062d32]/40">
+                  <span className="material-symbols-outlined text-[15px]">schedule</span>
+                  <span className="text-[11px] font-sans">Esperando respuesta de {selected.clientName}…</span>
+                </div>
+              )}
+              {selected.status === 'respondido' && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[#062d32]/40">
+                    <span className="material-symbols-outlined text-[15px]">smart_toy</span>
+                    <span className="text-[11px] font-sans">El agente gestiona esta conversación</span>
+                  </div>
+                  <button
+                    onClick={() => onToastMessage('Intervención activada — el agente pausará esta conversación.')}
+                    className="border border-[#062d32]/20 text-[#062d32] text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#062d32] hover:text-white transition-all"
+                  >
+                    Intervenir
+                  </button>
+                </div>
+              )}
+              {selected.status === 'reservado' && (
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[15px] text-emerald-600">event_available</span>
+                  <span className="text-[11px] font-sans font-semibold text-emerald-700">Cita confirmada por el agente</span>
+                </div>
+              )}
+              {selected.status === 'rechazado' && (
+                <div className="flex items-center gap-2 text-[#062d32]/25">
+                  <span className="material-symbols-outlined text-[15px]">block</span>
+                  <span className="text-[11px] font-sans">Mensaje descartado</span>
+                </div>
+              )}
+            </div>
+          </>
+        ) : showConfig ? (
+          /* Configuración */
+          <div className="flex-1 overflow-y-auto px-8 py-8">
+            <h3 className="font-serif text-[#062d32] text-xl font-semibold mb-6">Configuración del agente</h3>
+            <div className="max-w-sm space-y-0 divide-y divide-[#062d32]/8">
+              {[
+                { label: 'Agente activo', key: 'enabled' as const, desc: `Escanea cada ${config.scanIntervalHours}h y genera mensajes` },
+                { label: 'Envío automático', key: 'autoSend' as const, desc: 'Envía sin aprobación manual' },
+              ].map(({ label, key, desc }) => (
+                <div key={key} className="flex items-center justify-between py-4">
+                  <div>
+                    <p className="text-sm font-sans text-[#062d32]">{label}</p>
+                    <p className="text-[10px] text-[#062d32]/40 font-sans mt-0.5">{desc}</p>
+                  </div>
+                  <button
+                    onClick={() => saveConfig({ [key]: !config[key] })}
+                    className={`relative h-5 w-9 flex-shrink-0 transition-colors ${config[key] ? 'bg-[#062d32]' : 'bg-[#062d32]/15'}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white transition-all ${config[key] ? 'left-4.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
+              ))}
+              {[
+                { label: 'Días entre contactos', key: 'cooldownDays' as const, min: 1, max: 60, unit: 'd' },
+                { label: 'Máximo por día', key: 'maxActivePerDay' as const, min: 1, max: 50, unit: '' },
+              ].map(({ label, key, min, max, unit }) => (
+                <div key={key} className="py-4">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[12px] font-sans text-[#062d32]">{label}</span>
+                    <span className="text-[12px] font-sans font-bold text-[#062d32]">{config[key]}{unit}</span>
+                  </div>
+                  <input type="range" min={min} max={max} value={config[key]}
+                    onChange={e => saveConfig({ [key]: Number(e.target.value) })}
+                    className="w-full accent-[#062d32] h-0.5" />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ) : (
-        /* Estado vacío */
-        <div className="flex-1 flex flex-col items-center justify-center bg-[#f0ece4]" style={{ backgroundImage: 'radial-gradient(circle, rgba(6,45,50,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-          {showConfig ? (
-            /* Panel de configuración inline */
-            <div className="w-full max-w-md px-8 py-10">
-              <h3 className="font-serif text-2xl text-[#062d32] font-semibold mb-6">Configuración del agente</h3>
-              <div className="space-y-5">
-                {[
-                  { label: 'Agente activo', key: 'enabled' as const, desc: `Escanea cada ${config.scanIntervalHours}h y genera mensajes` },
-                  { label: 'Envío automático', key: 'autoSend' as const, desc: 'Sin aprobación manual — envía directo' },
-                ].map(({ label, key, desc }) => (
-                  <div key={key} className="flex items-center justify-between py-4 border-b border-[#062d32]/8">
-                    <div>
-                      <p className="text-sm font-sans font-semibold text-[#062d32]">{label}</p>
-                      <p className="text-[11px] text-[#062d32]/50 font-sans mt-0.5">{desc}</p>
-                    </div>
-                    <button
-                      onClick={() => saveConfig({ [key]: !config[key] })}
-                      className={`relative h-6 w-11 transition-colors ${config[key] ? 'bg-[#062d32]' : 'bg-[#062d32]/20'}`}
-                    >
-                      <span className={`absolute top-1 w-4 h-4 bg-white shadow transition-all ${config[key] ? 'left-6' : 'left-1'}`} />
-                    </button>
-                  </div>
-                ))}
-                {[
-                  { label: 'Días entre contactos', key: 'cooldownDays' as const, min: 1, max: 60, unit: 'días' },
-                  { label: 'Máximo por día', key: 'maxActivePerDay' as const, min: 1, max: 50, unit: '' },
-                ].map(({ label, key, min, max, unit }) => (
-                  <div key={key} className="py-3 border-b border-[#062d32]/8">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-[12px] font-sans text-[#062d32]">{label}</span>
-                      <span className="text-[12px] font-sans font-bold text-[#062d32]">{config[key]} {unit}</span>
-                    </div>
-                    <input type="range" min={min} max={max} value={config[key]}
-                      onChange={e => saveConfig({ [key]: Number(e.target.value) })}
-                      className="w-full accent-[#062d32] h-1" />
-                  </div>
-                ))}
-              </div>
+        ) : (
+          /* Estado vacío */
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#fbf9f5]">
+            <div className="w-12 h-12 border border-[#062d32]/10 flex items-center justify-center mb-4 bg-white">
+              <span className="material-symbols-outlined text-xl text-[#062d32]/25">forum</span>
             </div>
-          ) : (
-            <div className="text-center px-8">
-              <div className="w-16 h-16 bg-[#062d32]/8 flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-3xl text-[#062d32]/30">chat_bubble_outline</span>
-              </div>
-              <p className="font-serif text-xl text-[#062d32]/40 mb-1">Selecciona una conversación</p>
-              <p className="text-[12px] text-[#062d32]/30 font-sans">o pulsa el radar para detectar clientas en riesgo</p>
-            </div>
-          )}
-        </div>
-      )}
+            <p className="font-serif text-[#062d32]/35 text-lg mb-1">Selecciona una conversación</p>
+            <p className="text-[11px] text-[#062d32]/25 font-sans">
+              o pulsa <span className="font-bold">radar</span> para detectar clientas en riesgo
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
