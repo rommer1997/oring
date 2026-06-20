@@ -10,15 +10,9 @@ interface AgentViewProps {
 
 type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
 type CenterMode = 'chat' | 'campaign' | 'analyze' | 'settings';
-type AbsenceReason = 'economia' | 'competencia' | 'autoservicio' | 'tiempo' | 'personal' | null;
+type AbsenceReason = 'economia' | 'competencia' | 'autoservicio' | 'tiempo' | 'personal';
 
-interface ExtCampaign extends AgentCampaign {
-  absenceReason?: AbsenceReason;
-  absenceDetail?: string;
-  absenceDetectedText?: string;
-}
-
-const ABSENCE: Record<NonNullable<AbsenceReason>, { label: string; action: string; tone: string }> = {
+const ABSENCE: Record<AbsenceReason, { label: string; action: string; tone: string }> = {
   economia:     { label: 'Económico',         action: 'Lanzar oferta de reconexión',  tone: 'Oferta especial detectada' },
   competencia:  { label: 'Competencia',       action: 'Enviar propuesta de valor',    tone: 'Propuesta diferencial' },
   autoservicio: { label: 'Auto-servicio',     action: 'Destacar diferencial',         tone: 'Refuerzo de valor' },
@@ -52,7 +46,7 @@ const DEFAULT_CONFIG: AgentConfig = {
   minRiskLevel: 'Alto', cooldownDays: 7, maxActivePerDay: 10,
 };
 
-const DEMO: ExtCampaign[] = [
+const DEMO: AgentCampaign[] = [
   {
     id: 'd1', tenantId: 'demo', clientId: 'maria-gonzalez',
     clientName: 'María González', clientPhone: '666 111 222',
@@ -144,10 +138,10 @@ function formatHour(iso: string) {
 }
 
 export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = false, tenantSlug }: AgentViewProps) {
-  const [campaigns, setCampaigns] = useState<ExtCampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<AgentCampaign[]>([]);
   const [config, setConfig] = useState<AgentConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<ExtCampaign | null>(null);
+  const [selected, setSelected] = useState<AgentCampaign | null>(null);
   const [mode, setMode] = useState<CenterMode>('chat');
   const [waStatus, setWAStatus] = useState<WAStatus>('disconnected');
   const [waQR, setWAQR] = useState<string | null>(null);
@@ -196,7 +190,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected?.conversationLog?.length]);
 
-  const handleApprove = async (c: ExtCampaign) => {
+  const handleApprove = async (c: AgentCampaign) => {
     const optimistic = { ...c, status: 'enviado' as AgentCampaignStatus, sentAt: new Date().toISOString() };
     setCampaigns(prev => prev.map(x => x.id === c.id ? optimistic : x));
     setSelected(optimistic);
@@ -214,7 +208,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       onToastMessage(`✓ Enviado a ${c.clientName}.`);
     }
   };
-  const handleReject = async (c: ExtCampaign) => {
+  const handleReject = async (c: AgentCampaign) => {
     setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'rechazado' as AgentCampaignStatus } : x));
     setSelected(null);
     if (!isDemoMode) {
@@ -697,17 +691,23 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
               </div>
               <div className="mb-8">
                 <h3 className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-[#062d32]/35 mb-4 pb-2 border-b border-[#062d32]/8">Respuestas por motivo detectado</h3>
-                {(Object.entries(ABSENCE) as [NonNullable<AbsenceReason>, typeof ABSENCE[NonNullable<AbsenceReason>]][]).map(([key, meta]) => (
-                  <div key={key} className="flex items-center justify-between py-3 border-b border-[#062d32]/6 last:border-0">
-                    <span className="text-[9px] font-sans font-bold uppercase tracking-wider border border-[#c9a9b5]/50 text-[#c9a9b5] px-2 py-0.5 rounded">{meta.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-sans text-[#062d32]/40">{meta.action}</span>
-                      <button onClick={() => onToastMessage(`Configuración de "${meta.label}" — próximamente.`)} className="text-[#062d32]/20 hover:text-[#062d32] transition-colors">
-                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                      </button>
+                {(Object.entries(ABSENCE) as [AbsenceReason, typeof ABSENCE[AbsenceReason]][]).map(([key, meta]) => {
+                  const override = config.absenceActions?.[key];
+                  const enabled = override?.enabled !== false;
+                  return (
+                    <div key={key} className="flex items-center justify-between py-3 border-b border-[#062d32]/6 last:border-0">
+                      <span className="text-[9px] font-sans font-bold uppercase tracking-wider border border-[#c9a9b5]/50 text-[#c9a9b5] px-2 py-0.5 rounded">{meta.label}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-sans text-[#062d32]/40">{override?.customAction || meta.action}</span>
+                        <button onClick={() => saveConfig({
+                          absenceActions: { ...(config.absenceActions || {}), [key]: { ...(override || {}), enabled: !enabled } }
+                        })} className={`relative h-4 w-7 rounded-full flex-shrink-0 transition-colors ${enabled ? 'bg-[#062d32]' : 'bg-[#062d32]/15'}`}>
+                          <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all ${enabled ? 'left-[14px]' : 'left-0.5'}`} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {tenantSlug && (
                 <div>
@@ -764,9 +764,17 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 {selected.absenceDetail && (
                   <p className="text-[10px] font-sans text-white/40 leading-relaxed mb-4">{selected.absenceDetail}</p>
                 )}
-                <button onClick={() => onToastMessage(`Lanzando: ${ABSENCE[selected.absenceReason!].action}`)}
+                <button onClick={async () => {
+                    if (isDemoMode) { onToastMessage(`Demo: lanzando "${ABSENCE[selected.absenceReason as AbsenceReason]?.action}"`); return; }
+                    try {
+                      const r = await authFetch(`/api/agent/campaigns/${selected.id}/absence-action`, { method: 'POST' });
+                      const data = await r.json();
+                      onToastMessage('✓ Mensaje de reconexión generado y en cola para tu aprobación.');
+                      loadData();
+                    } catch { onToastMessage('Error generando acción.'); }
+                  }}
                   className="w-full bg-[#c9a9b5] text-[#062d32] text-[10px] font-sans font-bold uppercase tracking-wider py-2.5 rounded-lg hover:opacity-90 transition-opacity">
-                  {ABSENCE[selected.absenceReason].action}
+                  {ABSENCE[selected.absenceReason as AbsenceReason]?.action ?? 'Lanzar acción'}
                 </button>
               </div>
             )}
