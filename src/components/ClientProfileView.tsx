@@ -139,7 +139,12 @@ export default function ClientProfileView({
       status: 'enviado'
     };
     onUpdateClientLog(currentClient.id, userMsg);
-    onToastMessage('Mensaje enviado por WhatsApp.');
+    const phone = currentClient.phoneNumber?.replace(/\D/g, '') || '';
+    if (!isDemoMode && phone) {
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(queryText)}`, '_blank');
+    } else {
+      onToastMessage('Mensaje enviado por WhatsApp.');
+    }
 
     // ponytail: respuesta simulada solo en demo — en producción no escribir datos falsos a Firestore
     if (isDemoMode) {
