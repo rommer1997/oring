@@ -623,12 +623,10 @@ export default function AgentView({
               </p>
 
               <ConfigSection title="Comportamiento general">
-                {([
-                  { label: 'Modo autónomo', key: 'enabled' as const, desc: 'El agente detecta y contacta clientas en riesgo sin aprobación' },
-                  { label: 'Envío sin revisión', key: 'autoSend' as const, desc: 'Omite la cola de aprobación manual' },
-                ] as const).map(({ label, key, desc }) => (
-                  <ToggleRow key={key} label={label} desc={desc} value={config[key]} onChange={v => saveConfig({ [key]: v })} />
-                ))}
+                <ToggleRow label="Modo autónomo" desc="El agente detecta y contacta clientas en riesgo sin aprobación"
+                  value={config.enabled} onChange={v => saveConfig({ enabled: v })} />
+                <ToggleRow label="Envío sin revisión" desc="Omite la cola de aprobación manual"
+                  value={config.autoSend} onChange={v => saveConfig({ autoSend: v })} />
                 <SliderRow label="Días de espera entre contactos" value={config.cooldownDays} min={3} max={60} unit="d" onChange={v => saveConfig({ cooldownDays: v })} />
                 <SliderRow label="Máx. mensajes por día" value={config.maxActivePerDay} min={1} max={50} unit="" onChange={v => saveConfig({ maxActivePerDay: v })} />
               </ConfigSection>
