@@ -237,7 +237,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
     <div className="flex gap-2 min-h-0" style={{ height: 'calc(100vh - 112px)' }}>
 
       {/* ══ COLUMNA IZQUIERDA — oscura ══════════════════════════════════════════ */}
-      <div className="w-64 flex-shrink-0 flex flex-col bg-[#062d32]/85 rounded-xl overflow-hidden min-h-0">
+      <div className="w-64 flex-shrink-0 flex flex-col bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0">
 
         {/* WA status */}
         <div className="px-4 py-3 border-b border-white/8 flex-shrink-0">
@@ -636,7 +636,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
         {selected ? (
           <>
             {/* Ficha */}
-            <div className="bg-[#062d32]/85 rounded-xl px-5 py-5 flex-shrink-0">
+            <div className="bg-[#1c4a4e] rounded-xl px-5 py-5 flex-shrink-0">
               <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/30 mb-4">Inteligencia del Cliente</p>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-[#c9a9b5]/25 flex items-center justify-center font-sans text-white text-xs font-bold flex-shrink-0">
@@ -661,7 +661,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
 
             {/* Motivo + acción */}
             {selected.absenceReason && (
-              <div className="bg-[#062d32]/85 rounded-xl px-5 py-5 flex-shrink-0">
+              <div className="bg-[#1c4a4e] rounded-xl px-5 py-5 flex-shrink-0">
                 <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/30 mb-3">Motivo Detectado</p>
                 <span className="inline-block text-[9px] font-sans font-bold uppercase tracking-wider border border-[#c9a9b5]/50 text-[#c9a9b5] rounded px-2 py-0.5 mb-2">
                   {ABSENCE[selected.absenceReason].label}
@@ -677,7 +677,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             )}
 
             {/* Historia */}
-            <div className="bg-[#062d32]/85 rounded-xl px-5 py-5 flex-1 overflow-y-auto min-h-0">
+            <div className="bg-[#1c4a4e] rounded-xl px-5 py-5 flex-1 overflow-y-auto min-h-0">
               <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/30 mb-3">Historia</p>
               <div className="space-y-2.5">
                 {selected.conversationLog.map((msg, i) => (
@@ -702,7 +702,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             </div>
           </>
         ) : (
-          <div className="bg-[#062d32]/85 rounded-xl flex-1 flex flex-col items-center justify-center px-5 py-8">
+          <div className="bg-[#1c4a4e] rounded-xl flex-1 flex flex-col items-center justify-center px-5 py-8">
             <p className="text-[9px] font-sans font-bold uppercase tracking-[0.1em] text-white/20 text-center leading-relaxed">
               Selecciona un cliente para ver su inteligencia
             </p>
