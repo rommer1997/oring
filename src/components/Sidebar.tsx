@@ -36,7 +36,7 @@ export default function Sidebar({
   const baseItems = [
     { id: 'dashboard' as AppView, label: 'Panel', icon: 'dashboard' },
     { id: 'retention' as AppView, label: 'Clientas en Riesgo', icon: 'group' },
-    { id: 'agente' as AppView, label: 'Agente WhatsApp', icon: 'smart_toy' },
+    { id: 'agente' as AppView, label: 'WhatsApp', icon: 'smart_toy' },
     { id: 'agenda' as AppView, label: 'Agenda Siempre al Día', icon: 'calendar_month' },
   ];
 
