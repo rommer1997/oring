@@ -288,9 +288,10 @@ export interface AgentMessage {
 
 export interface AgentConfig {
   enabled: boolean;
-  autoSend: boolean;          // false = requiere aprobación del gerente
-  scanIntervalHours: number;  // cada cuántas horas escanea (default 24)
+  autoSend: boolean;
+  scanIntervalHours: number;
   minRiskLevel: 'Alto' | 'Crítico';
-  cooldownDays: number;       // días mínimos entre contactos al mismo cliente
-  maxActivePerDay: number;    // máx mensajes salientes por día
+  cooldownDays: number;
+  maxActivePerDay: number;
+  absenceActions?: Record<string, { enabled: boolean; customAction?: string; tone?: string }>;
 }
