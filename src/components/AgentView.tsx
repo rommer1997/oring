@@ -10,111 +10,106 @@ interface AgentViewProps {
 
 type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
 
-const STATUS_LABEL: Record<AgentCampaignStatus, string> = {
-  pendiente: 'Pendiente',
-  enviado: 'Enviado',
-  respondido: 'Respondió',
-  reservado: 'Reservado ✓',
-  rechazado: 'Descartado',
-  sin_respuesta: 'Sin respuesta',
-};
-
-const STATUS_STYLE: Record<AgentCampaignStatus, string> = {
-  pendiente: 'bg-amber-50 text-amber-800 border-amber-200',
-  enviado: 'bg-blue-50 text-blue-800 border-blue-200',
-  respondido: 'bg-violet-50 text-violet-800 border-violet-200',
-  reservado: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  rechazado: 'bg-gray-100 text-gray-500 border-gray-200',
-  sin_respuesta: 'bg-red-50 text-red-700 border-red-200',
+const STATUS_BADGE: Record<AgentCampaignStatus, { label: string; dot: string }> = {
+  pendiente:    { label: 'Pendiente',   dot: 'bg-amber-400' },
+  enviado:      { label: 'Enviado',     dot: 'bg-blue-400' },
+  respondido:   { label: 'Respondió',   dot: 'bg-violet-400' },
+  reservado:    { label: 'Reservado',   dot: 'bg-emerald-500' },
+  rechazado:    { label: 'Descartado',  dot: 'bg-gray-300' },
+  sin_respuesta:{ label: 'Sin respuesta', dot: 'bg-red-400' },
 };
 
 const DEFAULT_CONFIG: AgentConfig = {
-  enabled: false,
-  autoSend: false,
-  scanIntervalHours: 24,
-  minRiskLevel: 'Alto',
-  cooldownDays: 7,
-  maxActivePerDay: 10,
+  enabled: false, autoSend: false, scanIntervalHours: 24,
+  minRiskLevel: 'Alto', cooldownDays: 7, maxActivePerDay: 10,
 };
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
 const DEMO_CAMPAIGNS: AgentCampaign[] = [
   {
-    id: 'demo-1',
-    tenantId: 'demo',
-    clientId: 'carmen-ruiz',
-    clientName: 'Carmen Ruiz',
-    clientPhone: '666111222',
-    riskLevel: 'Crítico',
-    riskDays: 155,
-    suggestedService: 'Mechas Californianas',
-    message: '¡Hola Carmen! Te echamos de menos por el salón 💙 Han pasado más de 5 meses desde tus últimas mechas. ¿Te apetece que te busquemos un hueco esta semana para mimarte un poco?',
-    status: 'respondido',
-    autoSend: false,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    sentAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
-    repliedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    id: 'demo-1', tenantId: 'demo', clientId: 'carmen-ruiz',
+    clientName: 'Carmen Ruiz', clientPhone: '666111222',
+    riskLevel: 'Crítico', riskDays: 155, suggestedService: 'Mechas Californianas',
+    message: '¡Hola Carmen! Te echamos de menos por el salón 💙 Han pasado más de 5 meses desde tus últimas mechas. ¿Te apetece que te busquemos un hueco esta semana?',
+    status: 'respondido', autoSend: false,
+    createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+    sentAt: new Date(Date.now() - 90 * 60000).toISOString(),
+    repliedAt: new Date(Date.now() - 30 * 60000).toISOString(),
     lastReply: 'Ay sí, me apetece mucho! ¿Tienes el jueves por la tarde?',
     conversationLog: [
-      { role: 'agent', text: '¡Hola Carmen! Te echamos de menos por el salón 💙 Han pasado más de 5 meses desde tus últimas mechas. ¿Te apetece que te busquemos un hueco esta semana para mimarte un poco?', timestamp: new Date(Date.now() - 90 * 60 * 1000).toISOString() },
-      { role: 'client', text: 'Ay sí, me apetece mucho! ¿Tienes el jueves por la tarde?', timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
+      { role: 'agent', text: '¡Hola Carmen! Te echamos de menos por el salón 💙 Han pasado más de 5 meses desde tus últimas mechas. ¿Te apetece que te busquemos un hueco esta semana?', timestamp: new Date(Date.now() - 90 * 60000).toISOString() },
+      { role: 'client', text: 'Ay sí, me apetece mucho! ¿Tienes el jueves por la tarde?', timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
     ],
   },
   {
-    id: 'demo-2',
-    tenantId: 'demo',
-    clientId: 'sofia-martin',
-    clientName: 'Sofía Martín',
-    clientPhone: '666333444',
-    riskLevel: 'Alto',
-    riskDays: 75,
-    suggestedService: 'Keratina Brasileña',
-    message: 'Hola Sofía, ¡qué tal llevas el verano! Ya han pasado 75 días desde tu keratina. ¿Quieres que te reservemos para mantener ese liso tan bonito?',
-    status: 'pendiente',
-    autoSend: false,
-    createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    id: 'demo-2', tenantId: 'demo', clientId: 'sofia-martin',
+    clientName: 'Sofía Martín', clientPhone: '666333444',
+    riskLevel: 'Alto', riskDays: 75, suggestedService: 'Keratina Brasileña',
+    message: 'Hola Sofía, ¡qué tal llevas el verano! Ya han pasado 75 días desde tu keratina. ¿Quieres que te reservemos?',
+    status: 'pendiente', autoSend: false,
+    createdAt: new Date(Date.now() - 10 * 60000).toISOString(),
     conversationLog: [
-      { role: 'agent', text: 'Hola Sofía, ¡qué tal llevas el verano! Ya han pasado 75 días desde tu keratina. ¿Quieres que te reservemos para mantener ese liso tan bonito?', timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString() },
+      { role: 'agent', text: 'Hola Sofía, ¡qué tal llevas el verano! Ya han pasado 75 días desde tu keratina. ¿Quieres que te reservemos?', timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
     ],
   },
   {
-    id: 'demo-3',
-    tenantId: 'demo',
-    clientId: 'lucia-gomez',
-    clientName: 'Lucía Gómez',
-    clientPhone: '666555666',
-    riskLevel: 'Crítico',
-    riskDays: 200,
-    suggestedService: 'Coloración',
-    message: '¡Hola Lucía! Hace ya bastante que no sabemos de ti. Si quieres volver a ponerte en manos del equipo, esta semana tenemos hueco. ¿Te cuento las novedades?',
-    status: 'reservado',
-    autoSend: true,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    sentAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-    repliedAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
+    id: 'demo-3', tenantId: 'demo', clientId: 'lucia-gomez',
+    clientName: 'Lucía Gómez', clientPhone: '666555666',
+    riskLevel: 'Crítico', riskDays: 200, suggestedService: 'Coloración',
+    message: '¡Hola Lucía! Hace ya bastante que no sabemos de ti. Esta semana tenemos hueco. ¿Te cuento las novedades?',
+    status: 'reservado', autoSend: true,
+    createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
+    sentAt: new Date(Date.now() - 23 * 3600000).toISOString(),
+    repliedAt: new Date(Date.now() - 20 * 3600000).toISOString(),
     lastReply: 'Perfecto, el viernes a las 10 me va genial',
     conversationLog: [
-      { role: 'agent', text: '¡Hola Lucía! Hace ya bastante que no sabemos de ti. Si quieres volver a ponerte en manos del equipo, esta semana tenemos hueco. ¿Te cuento las novedades?', timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString() },
-      { role: 'client', text: 'Hola! Sí me gustaría volver, ¿tenéis el viernes?', timestamp: new Date(Date.now() - 21 * 60 * 60 * 1000).toISOString() },
-      { role: 'agent', text: '¡Perfecto! El viernes tenemos a las 10:00, 11:30 o 16:00. ¿Cuál te viene mejor?', timestamp: new Date(Date.now() - 21 * 60 * 60 * 1000 + 60000).toISOString() },
-      { role: 'client', text: 'Perfecto, el viernes a las 10 me va genial', timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString() },
-      { role: 'agent', text: '¡Anotado! Lucía, el viernes a las 10:00 para Coloración. Te esperamos 💙 Te mandamos confirmación por aquí.', timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000 + 30000).toISOString() },
+      { role: 'agent', text: '¡Hola Lucía! Hace ya bastante que no sabemos de ti. Esta semana tenemos hueco. ¿Te cuento las novedades?', timestamp: new Date(Date.now() - 23 * 3600000).toISOString() },
+      { role: 'client', text: 'Hola! Sí me gustaría volver, ¿tenéis el viernes?', timestamp: new Date(Date.now() - 21 * 3600000).toISOString() },
+      { role: 'agent', text: '¡Perfecto! El viernes tenemos a las 10:00, 11:30 o 16:00. ¿Cuál te viene mejor?', timestamp: new Date(Date.now() - 21 * 3600000 + 60000).toISOString() },
+      { role: 'client', text: 'Perfecto, el viernes a las 10 me va genial', timestamp: new Date(Date.now() - 20 * 3600000).toISOString() },
+      { role: 'agent', text: '¡Anotado! Lucía, el viernes a las 10:00 para Coloración. Te esperamos 💙', timestamp: new Date(Date.now() - 20 * 3600000 + 30000).toISOString() },
+    ],
+  },
+  {
+    id: 'demo-4', tenantId: 'demo', clientId: 'marta-ig',
+    clientName: 'Marta Iglesias', clientPhone: '666777888',
+    riskLevel: 'Alto', riskDays: 45, suggestedService: 'Manicura Semipermanente',
+    message: '¡Hola Marta! ¿Qué tal? Ya va siendo hora de mimar esas manos 💅 ¿Te apetece venir esta semana?',
+    status: 'enviado', autoSend: true,
+    createdAt: new Date(Date.now() - 3 * 3600000).toISOString(),
+    sentAt: new Date(Date.now() - 3 * 3600000).toISOString(),
+    conversationLog: [
+      { role: 'agent', text: '¡Hola Marta! ¿Qué tal? Ya va siendo hora de mimar esas manos 💅 ¿Te apetece venir esta semana?', timestamp: new Date(Date.now() - 3 * 3600000).toISOString() },
     ],
   },
 ];
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+}
+
+function formatHour(iso: string): string {
+  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = false, tenantSlug }: AgentViewProps) {
   const [campaigns, setCampaigns] = useState<AgentCampaign[]>([]);
   const [config, setConfig] = useState<AgentConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<AgentCampaign | null>(null);
-  const [activeTab, setActiveTab] = useState<'campañas' | 'configuracion'>('campañas');
-  const [savingConfig, setSavingConfig] = useState(false);
+  const [selected, setSelected] = useState<AgentCampaign | null>(null);
+  const [showConfig, setShowConfig] = useState(false);
   const [waStatus, setWAStatus] = useState<WAStatus>('disconnected');
   const [waQR, setWAQR] = useState<string | null>(null);
   const [waPhone, setWAPhone] = useState<string | null>(null);
+  const [filter, setFilter] = useState<AgentCampaignStatus | 'todas'>('todas');
   const waSSERef = useRef<EventSource | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = await getAuthToken();
@@ -138,31 +133,22 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       ]);
       if (campRes.ok) setCampaigns(await campRes.json());
       if (cfgRes.ok) setConfig(await cfgRes.json());
-    } catch {
-      onToastMessage('Error cargando datos del agente.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { onToastMessage('Error cargando datos.'); }
+    finally { setLoading(false); }
   }, [isDemoMode, authFetch, onToastMessage]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // SSE para estado de WhatsApp
+  // SSE estado WhatsApp
   useEffect(() => {
-    if (isDemoMode) {
-      setWAStatus('connected');
-      setWAPhone('34666123456');
-      return;
-    }
+    if (isDemoMode) { setWAStatus('connected'); setWAPhone('34666123456'); return; }
     const connectSSE = async () => {
       const token = await getAuthToken();
       if (!token) return;
       const es = new EventSource(`/api/agent/wa-status?token=${token}`);
       es.onmessage = (e) => {
         const d = JSON.parse(e.data);
-        setWAStatus(d.status);
-        setWAPhone(d.phone || null);
-        setWAQR(d.qr || null);
+        setWAStatus(d.status); setWAPhone(d.phone || null); setWAQR(d.qr || null);
       };
       waSSERef.current = es;
     };
@@ -170,418 +156,359 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
     return () => waSSERef.current?.close();
   }, [isDemoMode, getAuthToken]);
 
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selected?.conversationLog?.length]);
+
   const handleWAConnect = async () => {
-    if (isDemoMode) { onToastMessage('Demo: conexión WhatsApp simulada.'); return; }
-    try {
-      const res = await authFetch('/api/agent/wa-connect', { method: 'POST' });
-      if (!res.ok) onToastMessage('Error iniciando conexión WhatsApp.');
-    } catch { onToastMessage('Error de red.'); }
+    if (isDemoMode) { onToastMessage('Demo: escanea el QR con tu móvil para conectar.'); return; }
+    try { await authFetch('/api/agent/wa-connect', { method: 'POST' }); } catch { onToastMessage('Error de red.'); }
   };
 
   const handleWADisconnect = async () => {
     if (isDemoMode) { setWAStatus('disconnected'); setWAPhone(null); return; }
-    try {
-      await authFetch('/api/agent/wa-disconnect', { method: 'POST' });
-    } catch { onToastMessage('Error desconectando.'); }
+    try { await authFetch('/api/agent/wa-disconnect', { method: 'POST' }); } catch { onToastMessage('Error.'); }
   };
 
   const handleScan = async () => {
-    if (isDemoMode) {
-      onToastMessage('Demo: el agente escaneó 3 clientas en riesgo y generó 2 mensajes pendientes.');
-      return;
-    }
+    if (isDemoMode) { onToastMessage('Demo: agente escaneó 4 clientas en riesgo.'); return; }
     setScanning(true);
     try {
       const res = await authFetch('/api/agent/scan', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        onToastMessage(`✓ Escaneadas ${data.scanned} clientas. ${data.queued} mensajes ${data.autoSend ? 'enviados automáticamente' : 'en cola para aprobar'}.`);
-        loadData();
-      } else {
-        onToastMessage(`Error: ${data.error}`);
-      }
-    } catch {
-      onToastMessage('Error al lanzar el escaneo.');
-    } finally {
-      setScanning(false);
-    }
+      const d = await res.json();
+      if (res.ok) { onToastMessage(`✓ ${d.queued} mensajes generados de ${d.scanned} clientas escaneadas.`); loadData(); }
+    } catch { onToastMessage('Error al escanear.'); }
+    finally { setScanning(false); }
   };
 
-  const handleApprove = async (campaign: AgentCampaign) => {
+  const handleApprove = async (c: AgentCampaign) => {
     if (isDemoMode) {
-      setCampaigns(prev => prev.map(c => c.id === campaign.id ? { ...c, status: 'enviado', sentAt: new Date().toISOString() } : c));
-      onToastMessage(`✓ Mensaje enviado a ${campaign.clientName} por WhatsApp.`);
-      setSelectedCampaign(null);
+      setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'enviado', sentAt: new Date().toISOString() } : x));
+      setSelected(prev => prev?.id === c.id ? { ...prev, status: 'enviado' } : prev);
+      onToastMessage(`✓ Mensaje enviado a ${c.clientName}.`);
       return;
     }
-    try {
-      const res = await authFetch(`/api/agent/campaigns/${campaign.id}/approve`, { method: 'POST' });
-      if (res.ok) {
-        onToastMessage(`✓ Mensaje enviado a ${campaign.clientName}.`);
-        loadData();
-        setSelectedCampaign(null);
-      }
-    } catch {
-      onToastMessage('Error al enviar.');
-    }
+    await authFetch(`/api/agent/campaigns/${c.id}/approve`, { method: 'POST' });
+    onToastMessage(`✓ Enviado a ${c.clientName}.`);
+    loadData();
   };
 
-  const handleReject = async (campaign: AgentCampaign) => {
+  const handleReject = async (c: AgentCampaign) => {
     if (isDemoMode) {
-      setCampaigns(prev => prev.map(c => c.id === campaign.id ? { ...c, status: 'rechazado' } : c));
-      setSelectedCampaign(null);
+      setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'rechazado' } : x));
+      setSelected(null);
       return;
     }
-    try {
-      await authFetch(`/api/agent/campaigns/${campaign.id}/reject`, { method: 'POST' });
-      loadData();
-      setSelectedCampaign(null);
-    } catch {
-      onToastMessage('Error al descartar.');
-    }
+    await authFetch(`/api/agent/campaigns/${c.id}/reject`, { method: 'POST' });
+    loadData(); setSelected(null);
   };
 
   const saveConfig = async (patch: Partial<AgentConfig>) => {
     const next = { ...config, ...patch };
     setConfig(next);
-    if (isDemoMode) { onToastMessage('✓ Configuración guardada (demo).'); return; }
-    setSavingConfig(true);
-    try {
-      await authFetch('/api/agent/config', { method: 'PUT', body: JSON.stringify(next) });
-      onToastMessage('✓ Configuración del agente guardada.');
-    } catch {
-      onToastMessage('Error guardando configuración.');
-    } finally {
-      setSavingConfig(false);
+    if (!isDemoMode) {
+      try { await authFetch('/api/agent/config', { method: 'PUT', body: JSON.stringify(next) }); }
+      catch { onToastMessage('Error guardando config.'); }
     }
   };
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const stats = {
-    total: campaigns.length,
-    pendientes: campaigns.filter(c => c.status === 'pendiente').length,
-    enviados: campaigns.filter(c => c.status === 'enviado').length,
-    respondidos: campaigns.filter(c => c.status === 'respondido').length,
-    reservados: campaigns.filter(c => c.status === 'reservado').length,
-  };
+  const filtered = filter === 'todas' ? campaigns : campaigns.filter(c => c.status === filter);
 
+  const chatUrl = tenantSlug ? `${window.location.origin}/salon/${tenantSlug}/chat` : null;
+
+  // ── Layout WhatsApp-style ──────────────────────────────────────────────────
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="flex h-[calc(100vh-0px)] overflow-hidden -mx-4 -my-0" style={{ height: 'calc(100vh - 64px)' }}>
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h2 className="font-serif text-3xl font-semibold text-primary">Agente de Recuperación</h2>
-          <p className="text-sm text-on-surface-variant mt-1">
-            Elena detecta clientas en riesgo y las contacta por WhatsApp de forma autónoma.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold font-sans uppercase tracking-wide ${config.enabled ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gray-100 border-gray-200 text-gray-500'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${config.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-            {config.enabled ? 'Agente activo' : 'Agente inactivo'}
-          </div>
-          <button
-            onClick={handleScan}
-            disabled={scanning || !config.enabled}
-            className="bg-primary text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="material-symbols-outlined text-sm">{scanning ? 'sync' : 'radar'}</span>
-            <span>{scanning ? 'Escaneando…' : 'Escanear ahora'}</span>
-          </button>
-        </div>
-      </div>
+      {/* ── Panel izquierdo ─────────────────────────────────────────────────── */}
+      <div className="w-80 flex-shrink-0 flex flex-col border-r border-[#062d32]/10 bg-white">
 
-      {/* Panel de conexión WhatsApp */}
-      <div className="mb-6 bg-white border border-outline-variant/20 rounded-2xl p-5">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${waStatus === 'connected' ? 'bg-emerald-100' : waStatus === 'qr' ? 'bg-amber-100' : 'bg-gray-100'}`}>
-              <span className={`material-symbols-outlined text-lg ${waStatus === 'connected' ? 'text-emerald-600' : waStatus === 'qr' ? 'text-amber-600' : 'text-gray-400'}`}>
-                {waStatus === 'connected' ? 'check_circle' : waStatus === 'qr' ? 'qr_code' : 'smartphone'}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-primary">
-                {waStatus === 'connected' ? `WhatsApp conectado · +${waPhone}` : waStatus === 'qr' ? 'Escanea el QR con tu móvil' : waStatus === 'connecting' ? 'Conectando…' : 'WhatsApp no conectado'}
-              </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                {waStatus === 'connected' ? 'El agente enviará y recibirá mensajes con tu número.' : waStatus === 'qr' ? 'Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo' : 'Conecta tu WhatsApp para activar el agente de recuperación.'}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            {tenantSlug && (
-              <button
-                onClick={() => {
-                  const url = `${window.location.origin}/salon/${tenantSlug}/chat`;
-                  navigator.clipboard?.writeText(url).then(() => onToastMessage('✓ Enlace del chat copiado. Compártelo con tus clientas.'));
-                }}
-                className="border border-primary text-primary text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-primary/5 transition-all"
-              >
-                <span className="material-symbols-outlined text-sm">chat</span>
-                Compartir chat web
-              </button>
-            )}
-            {waStatus === 'connected' ? (
-              <button onClick={handleWADisconnect} className="border border-red-300 text-red-600 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:bg-red-50 transition-all">
-                Desconectar
-              </button>
-            ) : waStatus !== 'qr' && (
-              <button onClick={handleWAConnect} className="bg-primary text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-all flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
-                Conectar WhatsApp
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* QR Code */}
-        {waStatus === 'qr' && waQR && (
-          <div className="mt-5 flex flex-col items-center gap-3 border-t border-outline-variant/10 pt-5">
-            <img src={waQR} alt="QR WhatsApp" className="w-52 h-52 border border-outline-variant/20 rounded-xl p-2 bg-white" />
-            <p className="text-xs text-on-surface-variant text-center max-w-xs leading-relaxed">
-              Abre WhatsApp en tu móvil → toca los tres puntos → <strong>Dispositivos vinculados</strong> → <strong>Vincular un dispositivo</strong> → escanea este código.
+        {/* Header izquierdo */}
+        <div className="bg-[#062d32] px-4 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="font-serif text-white text-lg font-semibold leading-none">WhatsApp</h2>
+            <p className="text-[10px] font-sans uppercase tracking-[0.1em] text-[#c9a9b5] mt-0.5">
+              {waStatus === 'connected' ? `+${waPhone}` : 'Sin conexión'}
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleScan}
+              disabled={scanning || !config.enabled}
+              title="Escanear clientas en riesgo"
+              className="text-[#c9a9b5] hover:text-white transition-colors disabled:opacity-40"
+            >
+              <span className="material-symbols-outlined text-xl">{scanning ? 'sync' : 'radar'}</span>
+            </button>
+            <button onClick={() => setShowConfig(v => !v)} title="Configuración" className="text-[#c9a9b5] hover:text-white transition-colors">
+              <span className="material-symbols-outlined text-xl">settings</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Estado de conexión */}
+        {waStatus !== 'connected' && (
+          <div className="px-4 py-3 border-b border-[#062d32]/8 bg-[#fbf9f5]">
+            {waStatus === 'qr' && waQR ? (
+              <div className="flex flex-col items-center gap-2">
+                <img src={waQR} alt="QR" className="w-40 h-40 border border-[#062d32]/10 p-1.5 bg-white" />
+                <p className="text-[10px] text-[#062d32]/60 text-center font-sans leading-relaxed">
+                  WhatsApp → Dispositivos vinculados → Vincular dispositivo
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={handleWAConnect}
+                className="w-full border border-[#062d32] text-[#062d32] text-[11px] font-sans font-bold uppercase tracking-wider py-2.5 flex items-center justify-center gap-2 hover:bg-[#062d32] hover:text-white transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                {waStatus === 'connecting' ? 'Conectando…' : 'Conectar WhatsApp'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Filtros rápidos */}
+        <div className="flex overflow-x-auto gap-1 px-3 py-2.5 border-b border-[#062d32]/8 scrollbar-hide">
+          {(['todas', 'pendiente', 'enviado', 'respondido', 'reservado'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`flex-shrink-0 text-[10px] font-sans font-bold uppercase tracking-wider px-2.5 py-1 transition-all ${
+                filter === f
+                  ? 'bg-[#062d32] text-white'
+                  : 'text-[#062d32]/50 hover:text-[#062d32] border border-transparent hover:border-[#062d32]/20'
+              }`}
+            >
+              {f === 'todas' ? 'Todas' : STATUS_BADGE[f]?.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Lista de conversaciones */}
+        <div className="flex-1 overflow-y-auto">
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <span className="material-symbols-outlined animate-spin text-[#062d32]/30 text-2xl">sync</span>
+            </div>
+          )}
+          {!loading && filtered.length === 0 && (
+            <div className="px-6 py-12 text-center">
+              <span className="material-symbols-outlined text-3xl text-[#062d32]/20 block mb-2">chat_bubble_outline</span>
+              <p className="text-xs text-[#062d32]/40 font-sans">Sin conversaciones</p>
+            </div>
+          )}
+          {filtered.map(c => {
+            const last = c.conversationLog[c.conversationLog.length - 1];
+            const isActive = selected?.id === c.id;
+            const badge = STATUS_BADGE[c.status];
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className={`w-full text-left px-4 py-3.5 border-b border-[#062d32]/6 flex items-start gap-3 transition-colors ${
+                  isActive ? 'bg-[#062d32]/6' : 'hover:bg-[#062d32]/3'
+                }`}
+              >
+                {/* Avatar inicial */}
+                <div className="w-10 h-10 flex-shrink-0 bg-[#c9a9b5]/30 flex items-center justify-center text-[#062d32] font-serif font-semibold text-sm">
+                  {c.clientName.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="font-sans font-semibold text-[13px] text-[#062d32] truncate">{c.clientName}</span>
+                    <span className="text-[10px] text-[#062d32]/40 font-sans flex-shrink-0 ml-2">{timeAgo(last?.timestamp || c.createdAt)}</span>
+                  </div>
+                  <p className="text-[12px] text-[#062d32]/55 truncate font-sans leading-snug">{last?.text}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${badge.dot}`} />
+                    <span className="text-[10px] text-[#062d32]/40 font-sans">{badge.label}</span>
+                    <span className="text-[10px] text-[#062d32]/30 font-sans">·</span>
+                    <span className={`text-[10px] font-sans font-bold ${c.riskLevel === 'Crítico' ? 'text-red-500' : 'text-orange-500'}`}>
+                      {c.riskLevel} {c.riskDays}d
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Chat web link */}
+        {chatUrl && (
+          <div className="px-3 py-3 border-t border-[#062d32]/8">
+            <button
+              onClick={() => navigator.clipboard?.writeText(chatUrl).then(() => onToastMessage('✓ Enlace del chat copiado.'))}
+              className="w-full text-[10px] font-sans font-bold uppercase tracking-wider text-[#062d32]/50 hover:text-[#062d32] flex items-center justify-center gap-1.5 py-1.5 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">link</span>
+              Copiar enlace chat web
+            </button>
           </div>
         )}
       </div>
 
-      {isDemoMode && (
-        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">info</span>
-          <span>Modo demo — los mensajes no se envían por WhatsApp real. El chat web sí funciona con Gemini.</span>
-        </div>
-      )}
+      {/* ── Panel derecho: chat ─────────────────────────────────────────────── */}
+      {selected ? (
+        <div className="flex-1 flex flex-col min-w-0 bg-[#f0ece4]" style={{ backgroundImage: 'radial-gradient(circle, rgba(6,45,50,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-        {[
-          { label: 'Total', value: stats.total, icon: 'campaign' },
-          { label: 'Pendientes', value: stats.pendientes, icon: 'hourglass_empty' },
-          { label: 'Enviados', value: stats.enviados, icon: 'send' },
-          { label: 'Respondieron', value: stats.respondidos, icon: 'mark_chat_read' },
-          { label: 'Reservaron', value: stats.reservados, icon: 'event_available' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-outline-variant/20 rounded-2xl p-4 flex flex-col gap-1">
-            <span className="material-symbols-outlined text-primary/60 text-base">{s.icon}</span>
-            <span className="font-serif text-2xl font-bold text-primary">{s.value}</span>
-            <span className="text-[10px] font-sans uppercase tracking-wider text-on-surface-variant">{s.label}</span>
+          {/* Header chat */}
+          <div className="bg-[#062d32] px-5 py-3.5 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-[#c9a9b5]/20 flex items-center justify-center text-[#c9a9b5] font-serif font-semibold text-sm">
+                {selected.clientName.charAt(0)}
+              </div>
+              <div>
+                <p className="font-sans font-semibold text-white text-sm leading-none">{selected.clientName}</p>
+                <p className="text-[10px] text-[#c9a9b5] font-sans mt-0.5">{selected.clientPhone} · {selected.suggestedService}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {waStatus === 'connected' && (
+                <button onClick={handleWADisconnect} title="Desconectar" className="text-[#c9a9b5]/60 hover:text-[#c9a9b5] transition-colors">
+                  <span className="material-symbols-outlined text-base">phone_disabled</span>
+                </button>
+              )}
+              <button onClick={() => setSelected(null)} className="text-[#c9a9b5]/60 hover:text-[#c9a9b5] transition-colors">
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-surface-container-low p-1 rounded-2xl mb-6 max-w-xs border border-outline-variant/10">
-        {(['campañas', 'configuracion'] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold font-sans uppercase tracking-wider transition-all ${activeTab === tab ? 'bg-white shadow-sm text-primary border border-outline-variant/20' : 'text-on-surface-variant hover:text-primary'}`}
-          >
-            {tab === 'campañas' ? 'Campañas' : 'Configuración'}
-          </button>
-        ))}
-      </div>
+          {/* Mensajes */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-3">
+            {/* Badge de riesgo */}
+            <div className="flex justify-center mb-4">
+              <span className={`text-[10px] font-sans font-bold uppercase tracking-wider px-3 py-1 ${
+                selected.riskLevel === 'Crítico' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+              }`}>
+                {selected.riskLevel} · {selected.riskDays} días sin visita · {selected.suggestedService}
+              </span>
+            </div>
 
-      {/* ── Tab: Campañas ── */}
-      {activeTab === 'campañas' && (
-        <div className="flex gap-4">
-          {/* Lista */}
-          <div className="flex-1 space-y-3 min-w-0">
-            {loading && <p className="text-sm text-on-surface-variant">Cargando campañas…</p>}
-            {!loading && campaigns.length === 0 && (
-              <div className="bg-white border border-outline-variant/20 rounded-2xl p-10 text-center">
-                <span className="material-symbols-outlined text-4xl text-primary/30 block mb-3">radar</span>
-                <p className="text-sm text-on-surface-variant">Sin campañas todavía.</p>
-                <p className="text-xs text-on-surface-variant mt-1">Activa el agente y pulsa «Escanear ahora» para detectar clientas en riesgo.</p>
+            {selected.conversationLog.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[65%] flex flex-col gap-0.5 ${msg.role === 'agent' ? 'items-end' : 'items-start'}`}>
+                  <div className={`px-3.5 py-2.5 text-[13px] leading-relaxed font-sans shadow-sm ${
+                    msg.role === 'agent'
+                      ? 'bg-[#062d32] text-white'
+                      : 'bg-white text-[#062d32] border-l-2 border-[#c9a9b5]'
+                  }`}>
+                    {msg.text}
+                  </div>
+                  <span className="text-[10px] text-[#062d32]/35 font-sans px-0.5">{formatHour(msg.timestamp)}</span>
+                </div>
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Barra inferior de acciones */}
+          <div className="bg-white border-t border-[#062d32]/10 px-5 py-4 flex-shrink-0">
+            {selected.status === 'pendiente' && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-[#fbf9f5] border border-[#062d32]/10 px-4 py-2.5 text-[12px] text-[#062d32]/40 font-sans italic">
+                  El agente redactó este mensaje para ti
+                </div>
+                <button
+                  onClick={() => handleReject(selected)}
+                  className="border border-[#062d32]/20 text-[#062d32]/50 text-[11px] font-sans font-bold uppercase tracking-wider px-4 py-2.5 hover:border-red-300 hover:text-red-600 transition-all"
+                >
+                  Descartar
+                </button>
+                <button
+                  onClick={() => handleApprove(selected)}
+                  className="bg-[#062d32] text-white text-[11px] font-sans font-bold uppercase tracking-wider px-5 py-2.5 flex items-center gap-2 hover:bg-[#062d32]/85 transition-all"
+                >
+                  <span className="material-symbols-outlined text-sm">send</span>
+                  Enviar
+                </button>
               </div>
             )}
-            {campaigns.map(c => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedCampaign(c)}
-                className={`w-full text-left bg-white border rounded-2xl p-4 flex items-start gap-3 hover:shadow-sm transition-all ${selectedCampaign?.id === c.id ? 'border-primary/40 shadow-sm' : 'border-outline-variant/20'}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-bold text-sm text-primary">{c.clientName}</span>
-                    <span className={`text-[10px] font-bold font-sans uppercase tracking-wider px-2 py-0.5 rounded-full border ${STATUS_STYLE[c.status]}`}>
-                      {STATUS_LABEL[c.status]}
-                    </span>
-                    <span className={`text-[10px] font-bold font-sans uppercase tracking-wider px-2 py-0.5 rounded-full border ${c.riskLevel === 'Crítico' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
-                      {c.riskLevel} · {c.riskDays}d
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant line-clamp-2">{c.message}</p>
-                  {c.lastReply && (
-                    <p className="text-xs text-violet-700 mt-1 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">reply</span>
-                      {c.lastReply.substring(0, 60)}{c.lastReply.length > 60 ? '…' : ''}
-                    </p>
-                  )}
-                </div>
-                <span className="material-symbols-outlined text-sm text-on-surface-variant/50 flex-shrink-0 mt-0.5">chevron_right</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Panel de conversación */}
-          {selectedCampaign && (
-            <div className="w-80 flex-shrink-0 bg-white border border-outline-variant/20 rounded-2xl flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-outline-variant/15 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-sm text-primary">{selectedCampaign.clientName}</p>
-                  <p className="text-[10px] text-on-surface-variant">{selectedCampaign.clientPhone}</p>
-                </div>
-                <button onClick={() => setSelectedCampaign(null)} className="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary transition-colors">close</button>
+            {selected.status === 'enviado' && (
+              <div className="flex items-center gap-3 text-[#062d32]/50">
+                <span className="material-symbols-outlined text-base">schedule</span>
+                <span className="text-[12px] font-sans">Esperando respuesta de {selected.clientName}…</span>
               </div>
-
-              {/* Chat log */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-80">
-                {selectedCampaign.conversationLog.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${msg.role === 'agent' ? 'bg-primary text-white rounded-tr-sm' : 'bg-surface-container-low text-primary rounded-tl-sm border border-outline-variant/20'}`}>
-                      {msg.text}
+            )}
+            {selected.status === 'respondido' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[#062d32]/50">
+                  <span className="material-symbols-outlined text-base text-violet-500">smart_toy</span>
+                  <span className="text-[12px] font-sans">El agente gestiona la conversación</span>
+                </div>
+                <button
+                  onClick={() => onToastMessage('Intervención activada — el agente pausará esta conversación.')}
+                  className="border border-[#062d32]/20 text-[#062d32] text-[11px] font-sans font-bold uppercase tracking-wider px-4 py-2 hover:bg-[#062d32] hover:text-white transition-all"
+                >
+                  Intervenir
+                </button>
+              </div>
+            )}
+            {selected.status === 'reservado' && (
+              <div className="flex items-center gap-2 text-emerald-700">
+                <span className="material-symbols-outlined text-base">event_available</span>
+                <span className="text-[12px] font-sans font-semibold">Cita confirmada por el agente</span>
+              </div>
+            )}
+            {selected.status === 'rechazado' && (
+              <div className="flex items-center gap-2 text-[#062d32]/30">
+                <span className="material-symbols-outlined text-base">block</span>
+                <span className="text-[12px] font-sans">Mensaje descartado</span>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Estado vacío */
+        <div className="flex-1 flex flex-col items-center justify-center bg-[#f0ece4]" style={{ backgroundImage: 'radial-gradient(circle, rgba(6,45,50,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+          {showConfig ? (
+            /* Panel de configuración inline */
+            <div className="w-full max-w-md px-8 py-10">
+              <h3 className="font-serif text-2xl text-[#062d32] font-semibold mb-6">Configuración del agente</h3>
+              <div className="space-y-5">
+                {[
+                  { label: 'Agente activo', key: 'enabled' as const, desc: `Escanea cada ${config.scanIntervalHours}h y genera mensajes` },
+                  { label: 'Envío automático', key: 'autoSend' as const, desc: 'Sin aprobación manual — envía directo' },
+                ].map(({ label, key, desc }) => (
+                  <div key={key} className="flex items-center justify-between py-4 border-b border-[#062d32]/8">
+                    <div>
+                      <p className="text-sm font-sans font-semibold text-[#062d32]">{label}</p>
+                      <p className="text-[11px] text-[#062d32]/50 font-sans mt-0.5">{desc}</p>
                     </div>
+                    <button
+                      onClick={() => saveConfig({ [key]: !config[key] })}
+                      className={`relative h-6 w-11 transition-colors ${config[key] ? 'bg-[#062d32]' : 'bg-[#062d32]/20'}`}
+                    >
+                      <span className={`absolute top-1 w-4 h-4 bg-white shadow transition-all ${config[key] ? 'left-6' : 'left-1'}`} />
+                    </button>
+                  </div>
+                ))}
+                {[
+                  { label: 'Días entre contactos', key: 'cooldownDays' as const, min: 1, max: 60, unit: 'días' },
+                  { label: 'Máximo por día', key: 'maxActivePerDay' as const, min: 1, max: 50, unit: '' },
+                ].map(({ label, key, min, max, unit }) => (
+                  <div key={key} className="py-3 border-b border-[#062d32]/8">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-[12px] font-sans text-[#062d32]">{label}</span>
+                      <span className="text-[12px] font-sans font-bold text-[#062d32]">{config[key]} {unit}</span>
+                    </div>
+                    <input type="range" min={min} max={max} value={config[key]}
+                      onChange={e => saveConfig({ [key]: Number(e.target.value) })}
+                      className="w-full accent-[#062d32] h-1" />
                   </div>
                 ))}
               </div>
-
-              {/* Actions */}
-              {selectedCampaign.status === 'pendiente' && (
-                <div className="p-4 border-t border-outline-variant/15 flex gap-2">
-                  <button
-                    onClick={() => handleReject(selectedCampaign)}
-                    className="flex-1 border border-outline-variant/30 text-on-surface-variant text-xs font-bold uppercase tracking-wider py-2.5 rounded-xl hover:border-red-300 hover:text-red-600 transition-all"
-                  >
-                    Descartar
-                  </button>
-                  <button
-                    onClick={() => handleApprove(selectedCampaign)}
-                    className="flex-1 bg-primary text-white text-xs font-bold uppercase tracking-wider py-2.5 rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <span className="material-symbols-outlined text-xs">send</span>
-                    Enviar
-                  </button>
-                </div>
-              )}
-              {selectedCampaign.status === 'respondido' && (
-                <div className="p-4 border-t border-outline-variant/15">
-                  <p className="text-[10px] text-on-surface-variant text-center mb-2">El agente continúa la conversación automáticamente</p>
-                  <button
-                    onClick={() => { onToastMessage('Intervención manual activada — el agente pausará esta conversación.'); }}
-                    className="w-full border border-primary text-primary text-xs font-bold uppercase tracking-wider py-2.5 rounded-xl hover:bg-primary/5 transition-all"
-                  >
-                    Intervenir manualmente
-                  </button>
-                </div>
-              )}
-              {selectedCampaign.status === 'reservado' && (
-                <div className="p-4 border-t border-outline-variant/15 bg-emerald-50/50">
-                  <div className="flex items-center gap-2 text-emerald-700">
-                    <span className="material-symbols-outlined text-base">event_available</span>
-                    <p className="text-xs font-bold">Cita confirmada por el agente</p>
-                  </div>
-                </div>
-              )}
+            </div>
+          ) : (
+            <div className="text-center px-8">
+              <div className="w-16 h-16 bg-[#062d32]/8 flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-3xl text-[#062d32]/30">chat_bubble_outline</span>
+              </div>
+              <p className="font-serif text-xl text-[#062d32]/40 mb-1">Selecciona una conversación</p>
+              <p className="text-[12px] text-[#062d32]/30 font-sans">o pulsa el radar para detectar clientas en riesgo</p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ── Tab: Configuración ── */}
-      {activeTab === 'configuracion' && (
-        <div className="max-w-lg space-y-6">
-
-          {/* On/Off */}
-          <div className="bg-white border border-outline-variant/20 rounded-2xl p-5 flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-primary mb-1">Activar Agente</h4>
-              <p className="text-xs text-on-surface-variant">Elena escaneará clientas en riesgo cada {config.scanIntervalHours}h y preparará mensajes.</p>
-            </div>
-            <button
-              onClick={() => saveConfig({ enabled: !config.enabled })}
-              className={`relative inline-flex h-6 w-11 rounded-full transition-colors focus:outline-none ${config.enabled ? 'bg-primary' : 'bg-gray-300'}`}
-            >
-              <span className={`inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform mt-1 ${config.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
-
-          {/* Auto-send */}
-          <div className="bg-white border border-outline-variant/20 rounded-2xl p-5 flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-primary mb-1">Envío Automático</h4>
-              <p className="text-xs text-on-surface-variant">Si está desactivado, los mensajes quedan en cola para que los apruebes antes de enviar.</p>
-            </div>
-            <button
-              onClick={() => saveConfig({ autoSend: !config.autoSend })}
-              className={`relative inline-flex h-6 w-11 rounded-full transition-colors focus:outline-none ${config.autoSend ? 'bg-primary' : 'bg-gray-300'}`}
-            >
-              <span className={`inline-block w-4 h-4 transform rounded-full bg-white shadow transition-transform mt-1 ${config.autoSend ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
-
-          {/* Nivel de riesgo mínimo */}
-          <div className="bg-white border border-outline-variant/20 rounded-2xl p-5">
-            <h4 className="text-sm font-bold text-primary mb-3">Nivel mínimo de riesgo para contactar</h4>
-            <div className="flex gap-2">
-              {(['Alto', 'Crítico'] as const).map(level => (
-                <button
-                  key={level}
-                  onClick={() => saveConfig({ minRiskLevel: level })}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold font-sans uppercase tracking-wider border transition-all ${config.minRiskLevel === level ? 'bg-primary text-white border-primary' : 'bg-white text-on-surface-variant border-outline-variant/30 hover:border-primary/30'}`}
-                >
-                  {level === 'Alto' ? 'Alto y Crítico' : 'Solo Crítico'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Parámetros numéricos */}
-          <div className="bg-white border border-outline-variant/20 rounded-2xl p-5 space-y-5">
-            <h4 className="text-sm font-bold text-primary">Parámetros</h4>
-
-            {[
-              { label: 'Días de espera entre contactos', key: 'cooldownDays' as const, min: 1, max: 60, unit: 'días' },
-              { label: 'Máximo mensajes por día', key: 'maxActivePerDay' as const, min: 1, max: 50, unit: '' },
-              { label: 'Frecuencia de escaneo', key: 'scanIntervalHours' as const, min: 1, max: 168, unit: 'horas' },
-            ].map(({ label, key, min, max, unit }) => (
-              <div key={key}>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs text-on-surface-variant">{label}</label>
-                  <span className="text-xs font-bold text-primary">{config[key]} {unit}</span>
-                </div>
-                <input
-                  type="range"
-                  min={min}
-                  max={max}
-                  value={config[key]}
-                  onChange={e => saveConfig({ [key]: Number(e.target.value) })}
-                  className="w-full accent-primary h-1.5 rounded-full"
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* WhatsApp API status */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-amber-600 text-xl mt-0.5">warning</span>
-              <div>
-                <h4 className="text-sm font-bold text-amber-800 mb-1">WhatsApp Business API no conectada</h4>
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  Los mensajes se simulan en modo stub. Para envío real:
-                </p>
-                <ol className="text-xs text-amber-700 mt-2 space-y-1 list-decimal pl-4">
-                  <li>Crea una app en <strong>developers.facebook.com</strong></li>
-                  <li>Añade el producto «WhatsApp Business»</li>
-                  <li>Copia el <strong>Access Token</strong> y el <strong>Phone Number ID</strong></li>
-                  <li>Añádelos como secrets: <code className="bg-amber-100 px-1 rounded">META_WA_TOKEN</code> y <code className="bg-amber-100 px-1 rounded">META_PHONE_NUMBER_ID</code></li>
-                </ol>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
