@@ -1117,6 +1117,56 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   });
 
+  // ─── POST /api/agent/campaigns/:id/reply ─────────────────────────────────────
+  app.post('/api/agent/campaigns/:id/reply', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const { text } = req.body;
+      if (!text?.trim()) return res.status(400).json({ error: 'text requerido.' });
+      const db_ = adminRuntime!.admin.firestore();
+      const ref = db_.doc(`tenants/${tenantId}/agent_campaigns/${req.params.id}`);
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
+      const campaign = snap.data() as any;
+
+      let phone = campaign.clientPhone.replace(/\D/g, '');
+      if (phone.startsWith('0034')) phone = phone.slice(4);
+      else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
+      if (phone.length === 9) phone = '34' + phone;
+
+      const sock = waSockMap.get(tenantId);
+      let sent = false;
+      if (sock && waStatusMap.get(tenantId) === 'connected') {
+        try { await sock.sendMessage(`${phone}@s.whatsapp.net`, { text }); sent = true; } catch {}
+      }
+      if (!sent) sent = await sendWhatsAppMessage(phone, text);
+
+      const newEntry = { role: 'agent', text, timestamp: new Date().toISOString() };
+      const log = [...(campaign.conversationLog || []), newEntry];
+      await ref.update({ conversationLog: log, status: 'enviado', sentAt: new Date().toISOString() });
+      res.json({ ok: true, sent, entry: newEntry });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── POST /api/agent/refine ───────────────────────────────────────────────────
+  app.post('/api/agent/refine', aiLimiter, async (req, res) => {
+    try {
+      await resolveAuthenticatedTenant(req, adminRuntime);
+      const { text } = req.body;
+      if (!text?.trim()) return res.status(400).json({ error: 'text requerido.' });
+      const genAI = getGeminiClient();
+      const result = await genAI.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: `Eres un experto en comunicación para salones de belleza en España. Mejora este mensaje de campaña de WhatsApp para que suene más cálido, personal y menos comercial. Máximo 3 frases. Devuelve solo el texto mejorado, sin explicaciones:\n\n${text}`,
+      });
+      res.json({ refined: result.text?.trim() || text });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
   // ─── GET /api/agent/config ────────────────────────────────────────────────────
   app.get('/api/agent/config', apiLimiter, async (req, res) => {
     try {
