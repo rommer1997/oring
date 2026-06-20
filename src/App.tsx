@@ -40,6 +40,7 @@ import AdminView from './components/AdminView';
 import AgentView from './components/AgentView';
 import { AppLoadingScreen, DashboardSkeleton } from './components/LoadingStates';
 import PublicBookingView from './components/PublicBookingView';
+import PublicChatView from './components/PublicChatView';
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 import { useAuth } from './hooks/useAuth';
@@ -77,6 +78,7 @@ interface ActiveToast {
 
 export default function App() {
   const publicBookingMatch = window.location.pathname.match(/^\/salon\/([a-z0-9-]+)$/);
+  const publicChatMatch = window.location.pathname.match(/^\/salon\/([a-z0-9-]+)\/chat$/);
 
   // ─── Navigation & UI States ──────────────────────────────────────────────
   const [currentView, setCurrentView] = useState<AppView>('landing');
@@ -472,6 +474,9 @@ export default function App() {
     </div>
   );
 
+  if (publicChatMatch) {
+    return <PublicChatView slug={publicChatMatch[1]} />;
+  }
   if (publicBookingMatch) {
     return <PublicBookingView slug={publicBookingMatch[1]} />;
   }
@@ -703,6 +708,7 @@ export default function App() {
                   onToastMessage={triggerToast}
                   getAuthToken={getAuthToken}
                   isDemoMode={isDemoMode}
+                  tenantSlug={tenants.find(t => t.id === selectedTenantId)?.slug}
                 />
               )}
               {currentView === 'settings' && (
