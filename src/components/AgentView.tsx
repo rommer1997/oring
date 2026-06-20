@@ -157,9 +157,11 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const [campText, setCampText] = useState('');
   const [campRefined, setCampRefined] = useState('');
   const [campRefining, setCampRefining] = useState(false);
+  const [campImage, setCampImage] = useState<File | null>(null);
   const [riskSel, setRiskSel] = useState<Set<string>>(new Set());
   const waSSERef = useRef<EventSource | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const replyInputRef = useRef<HTMLInputElement>(null);
 
   const authFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
     const token = await getAuthToken();
@@ -507,7 +509,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                                 <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${config.autoSend ? 'left-[18px]' : 'left-0.5'}`} />
                               </button>
                             </label>
-                            <button onClick={() => onToastMessage('Intervención activada.')}
+                            <button onClick={() => setTimeout(() => replyInputRef.current?.focus(), 50)}
                               className="text-[10px] font-sans font-bold uppercase tracking-wider border border-[#062d32] text-[#062d32] px-3 py-1.5 hover:bg-[#062d32] hover:text-white transition-all">
                               Intervenir
                             </button>
@@ -515,7 +517,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                         </div>
                       )}
                       <div className="flex items-end gap-2 border-t border-[#062d32]/6 pt-3">
-                        <input value={replyDraft} onChange={e => setReplyDraft(e.target.value)}
+                        <input ref={replyInputRef} value={replyDraft} onChange={e => setReplyDraft(e.target.value)}
                           placeholder="Enviar un mensaje…"
                           className="flex-1 border border-[#062d32]/12 bg-[#fbf9f5] rounded-lg text-[#062d32] text-[13px] font-serif px-4 py-2.5 outline-none placeholder:text-[#062d32]/20 focus:border-[#062d32]/30 transition-colors" />
                         <button disabled={!replyDraft.trim()}
@@ -551,8 +553,10 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 rows={4} className="w-full border border-[#062d32]/12 bg-[#fbf9f5] rounded-lg text-[#062d32] text-[13px] font-serif px-4 py-3 outline-none resize-none placeholder:text-[#062d32]/20 mb-4" />
               <label className="flex items-center gap-3 border border-dashed border-[#062d32]/15 rounded-lg px-4 py-4 cursor-pointer hover:border-[#062d32]/30 transition-colors mb-5 group">
                 <span className="material-symbols-outlined text-[#062d32]/25 group-hover:text-[#062d32]/45">image</span>
-                <span className="text-[11px] font-sans text-[#062d32]/30">Subir imagen adjunta (opcional)</span>
-                <input type="file" accept="image/*" className="hidden" />
+                <span className="text-[11px] font-sans text-[#062d32]/30">
+                  {campImage ? campImage.name : 'Subir imagen adjunta (opcional)'}
+                </span>
+                <input type="file" accept="image/*" className="hidden" onChange={e => setCampImage(e.target.files?.[0] ?? null)} />
               </label>
               {!campRefined ? (
                 <button onClick={refineCampaign} disabled={!campText.trim() || campRefining}
@@ -578,7 +582,21 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-[#062d32]/35 border border-[#062d32]/12 rounded px-2 py-1">Todos</span>
               </div>
               <button disabled={!(campRefined || campText.trim())}
-                onClick={() => { onToastMessage(`✓ Campaña enviada a ${campaigns.length} clientes.`); setCampText(''); setCampRefined(''); setMode('chat'); }}
+                onClick={async () => {
+                  const msg = campRefined || campText.trim();
+                  if (isDemoMode) {
+                    onToastMessage(`✓ Campaña enviada a ${campaigns.length} clientes.`);
+                    setCampText(''); setCampRefined(''); setMode('chat');
+                    return;
+                  }
+                  try {
+                    const r = await authFetch('/api/agent/broadcast', { method: 'POST', body: JSON.stringify({ message: msg }) });
+                    const data = await r.json();
+                    onToastMessage(`✓ Enviado a ${data.sent}/${data.total} clientes.`);
+                    setCampText(''); setCampRefined(''); setMode('chat');
+                    loadData();
+                  } catch { onToastMessage('Error enviando campaña.'); }
+                }}
                 className="bg-[#062d32] text-white text-[10px] font-sans font-bold uppercase tracking-wider px-6 py-3 rounded-lg flex items-center gap-2 hover:opacity-85 transition-opacity disabled:opacity-25">
                 <span className="material-symbols-outlined text-sm">send</span>
                 Enviar por WhatsApp
