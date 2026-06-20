@@ -68,6 +68,7 @@ interface SettingsViewProps {
   clients?: ClientProfile[];
   onUpdateClient?: (clientId: string, fields: Partial<ClientProfile>) => void;
   onAddClient?: (client: ClientProfile) => void;
+  onNavigate?: (view: string) => void;
 }
 
 export default function SettingsView({
@@ -86,7 +87,8 @@ export default function SettingsView({
   onUpdateStaff,
   clients = [],
   onUpdateClient = () => {},
-  onAddClient
+  onAddClient,
+  onNavigate,
 }: SettingsViewProps) {
   // Local states for the thresholds
   const [highDays, setHighDays] = useState<number>(config.highRiskThresholdDays);
@@ -272,21 +274,18 @@ export default function SettingsView({
               En armonía con la RGPD de España y la seguridad sensible contra mensajes intrusivos, resguarda el proceso de consentimiento previo.
             </p>
 
-            {/* Toggle options */}
-            <div className="bg-surface-container-low/60 p-4 border border-outline-variant/25 rounded-xl flex items-start gap-4 justify-between">
+            {/* Enlace a ajustes del agente */}
+            <div className="bg-surface-container-low/60 p-4 border border-outline-variant/25 rounded-xl flex items-center justify-between gap-4">
               <div className="flex-1">
                 <h4 className="text-xs font-bold text-primary mb-1">Aprobación Manual Obligatoria</h4>
                 <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                  Todos los mensajes sugeridos por Gemini requerirán aprobación humana explícita por un miembro del equipo antes de ser emitidos. Esta opción evita spam automático sin consentimiento del titular.
+                  Configura si el agente envía mensajes automáticamente o requiere tu aprobación en el panel del Asistente IA.
                 </p>
               </div>
-
-              <div className="flex flex-col items-center gap-1">
-                <div className="relative inline-flex items-center h-6 rounded-full w-11 bg-primary cursor-not-allowed">
-                  <span className="translate-x-6 inline-block w-4 h-4 transform bg-white rounded-full transition-transform"></span>
-                </div>
-                <span className="text-[9px] text-on-surface-variant font-sans uppercase tracking-wide">Próximamente</span>
-              </div>
+              <button onClick={() => onNavigate?.('agente')} className="flex-shrink-0 text-[10px] font-sans font-bold uppercase tracking-wider border border-primary/20 text-primary/60 px-3 py-2 rounded hover:border-primary hover:text-primary transition-all whitespace-nowrap flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">smart_toy</span>
+                Ir al Asistente
+              </button>
             </div>
 
             <div className="mt-4 bg-surface-container-low/60 p-4 border border-outline-variant/25 rounded-xl flex items-start gap-4 justify-between">
