@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AgentCampaign, AgentCampaignStatus, AgentConfig } from '../types';
 
 interface AgentViewProps {
   onToastMessage: (msg: string) => void;
   getAuthToken: () => Promise<string | null>;
   isDemoMode?: boolean;
+  tenantSlug?: string;
 }
+
+type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
 
 const STATUS_LABEL: Record<AgentCampaignStatus, string> = {
   pendiente: 'Pendiente',
@@ -100,7 +103,7 @@ const DEMO_CAMPAIGNS: AgentCampaign[] = [
   },
 ];
 
-export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = false }: AgentViewProps) {
+export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = false, tenantSlug }: AgentViewProps) {
   const [campaigns, setCampaigns] = useState<AgentCampaign[]>([]);
   const [config, setConfig] = useState<AgentConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
@@ -108,6 +111,10 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const [selectedCampaign, setSelectedCampaign] = useState<AgentCampaign | null>(null);
   const [activeTab, setActiveTab] = useState<'campañas' | 'configuracion'>('campañas');
   const [savingConfig, setSavingConfig] = useState(false);
+  const [waStatus, setWAStatus] = useState<WAStatus>('disconnected');
+  const [waQR, setWAQR] = useState<string | null>(null);
+  const [waPhone, setWAPhone] = useState<string | null>(null);
+  const waSSERef = useRef<EventSource | null>(null);
 
   const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = await getAuthToken();
@@ -139,6 +146,44 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   }, [isDemoMode, authFetch, onToastMessage]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // SSE para estado de WhatsApp
+  useEffect(() => {
+    if (isDemoMode) {
+      setWAStatus('connected');
+      setWAPhone('34666123456');
+      return;
+    }
+    const connectSSE = async () => {
+      const token = await getAuthToken();
+      if (!token) return;
+      const es = new EventSource(`/api/agent/wa-status?token=${token}`);
+      es.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        setWAStatus(d.status);
+        setWAPhone(d.phone || null);
+        setWAQR(d.qr || null);
+      };
+      waSSERef.current = es;
+    };
+    connectSSE();
+    return () => waSSERef.current?.close();
+  }, [isDemoMode, getAuthToken]);
+
+  const handleWAConnect = async () => {
+    if (isDemoMode) { onToastMessage('Demo: conexión WhatsApp simulada.'); return; }
+    try {
+      const res = await authFetch('/api/agent/wa-connect', { method: 'POST' });
+      if (!res.ok) onToastMessage('Error iniciando conexión WhatsApp.');
+    } catch { onToastMessage('Error de red.'); }
+  };
+
+  const handleWADisconnect = async () => {
+    if (isDemoMode) { setWAStatus('disconnected'); setWAPhone(null); return; }
+    try {
+      await authFetch('/api/agent/wa-disconnect', { method: 'POST' });
+    } catch { onToastMessage('Error desconectando.'); }
+  };
 
   const handleScan = async () => {
     if (isDemoMode) {
@@ -247,10 +292,65 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
         </div>
       </div>
 
+      {/* Panel de conexión WhatsApp */}
+      <div className="mb-6 bg-white border border-outline-variant/20 rounded-2xl p-5">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${waStatus === 'connected' ? 'bg-emerald-100' : waStatus === 'qr' ? 'bg-amber-100' : 'bg-gray-100'}`}>
+              <span className={`material-symbols-outlined text-lg ${waStatus === 'connected' ? 'text-emerald-600' : waStatus === 'qr' ? 'text-amber-600' : 'text-gray-400'}`}>
+                {waStatus === 'connected' ? 'check_circle' : waStatus === 'qr' ? 'qr_code' : 'smartphone'}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-primary">
+                {waStatus === 'connected' ? `WhatsApp conectado · +${waPhone}` : waStatus === 'qr' ? 'Escanea el QR con tu móvil' : waStatus === 'connecting' ? 'Conectando…' : 'WhatsApp no conectado'}
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {waStatus === 'connected' ? 'El agente enviará y recibirá mensajes con tu número.' : waStatus === 'qr' ? 'Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo' : 'Conecta tu WhatsApp para activar el agente de recuperación.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            {tenantSlug && (
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/salon/${tenantSlug}/chat`;
+                  navigator.clipboard?.writeText(url).then(() => onToastMessage('✓ Enlace del chat copiado. Compártelo con tus clientas.'));
+                }}
+                className="border border-primary text-primary text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-primary/5 transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">chat</span>
+                Compartir chat web
+              </button>
+            )}
+            {waStatus === 'connected' ? (
+              <button onClick={handleWADisconnect} className="border border-red-300 text-red-600 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:bg-red-50 transition-all">
+                Desconectar
+              </button>
+            ) : waStatus !== 'qr' && (
+              <button onClick={handleWAConnect} className="bg-primary text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:bg-primary/90 transition-all flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                Conectar WhatsApp
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* QR Code */}
+        {waStatus === 'qr' && waQR && (
+          <div className="mt-5 flex flex-col items-center gap-3 border-t border-outline-variant/10 pt-5">
+            <img src={waQR} alt="QR WhatsApp" className="w-52 h-52 border border-outline-variant/20 rounded-xl p-2 bg-white" />
+            <p className="text-xs text-on-surface-variant text-center max-w-xs leading-relaxed">
+              Abre WhatsApp en tu móvil → toca los tres puntos → <strong>Dispositivos vinculados</strong> → <strong>Vincular un dispositivo</strong> → escanea este código.
+            </p>
+          </div>
+        )}
+      </div>
+
       {isDemoMode && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 flex items-center gap-2">
           <span className="material-symbols-outlined text-sm">info</span>
-          <span>Modo demo — los mensajes <strong>no</strong> se envían por WhatsApp. Conecta tu cuenta Meta para activarlo en producción.</span>
+          <span>Modo demo — los mensajes no se envían por WhatsApp real. El chat web sí funciona con Gemini.</span>
         </div>
       )}
 
