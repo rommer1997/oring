@@ -175,7 +175,7 @@ export default function Sidebar({
           
           {/* Feedback */}
           <button
-            onClick={() => onToastMessage('Canal de feedback abierto: Hemos enviado un formulario a tu correo para sugerencias semanales.')}
+            onClick={() => window.open('mailto:feedback@elena-os.web.app?subject=Feedback%20ElenaOS', '_blank')}
             title={isCollapsed ? "Buzón de Feedback" : undefined}
             className={`flex items-center rounded-xl hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground transition-all cursor-pointer ${isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3.5 px-3.5 py-3 text-left w-full'}`}
           >
