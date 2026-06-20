@@ -266,15 +266,18 @@ export interface AgentCampaign {
   riskLevel: 'Alto' | 'Crítico';
   riskDays: number;
   suggestedService: string;
-  message: string;           // mensaje generado por Gemini
+  message: string;
   status: AgentCampaignStatus;
-  autoSend: boolean;         // si se envió sin aprobación manual
+  autoSend: boolean;
   createdAt: string;
   sentAt?: string;
   repliedAt?: string;
-  lastReply?: string;        // último mensaje del cliente
+  lastReply?: string;
   conversationLog: AgentMessage[];
-  appointmentId?: string;    // si se creó cita
+  appointmentId?: string;
+  absenceReason?: string;
+  absenceDetail?: string;
+  absenceDetectedText?: string;
 }
 
 export interface AgentMessage {
