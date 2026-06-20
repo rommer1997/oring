@@ -194,15 +194,31 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected?.conversationLog?.length]);
 
-  const handleApprove = (c: ExtCampaign) => {
-    const updated = { ...c, status: 'enviado' as AgentCampaignStatus, sentAt: new Date().toISOString() };
-    setCampaigns(prev => prev.map(x => x.id === c.id ? updated : x));
-    setSelected(updated);
-    onToastMessage(`✓ Enviado a ${c.clientName}.`);
+  const handleApprove = async (c: ExtCampaign) => {
+    const optimistic = { ...c, status: 'enviado' as AgentCampaignStatus, sentAt: new Date().toISOString() };
+    setCampaigns(prev => prev.map(x => x.id === c.id ? optimistic : x));
+    setSelected(optimistic);
+    if (!isDemoMode) {
+      try {
+        const r = await authFetch(`/api/agent/campaigns/${c.id}/approve`, { method: 'POST' });
+        if (!r.ok) throw new Error();
+        onToastMessage(`✓ Enviado a ${c.clientName}.`);
+      } catch {
+        setCampaigns(prev => prev.map(x => x.id === c.id ? c : x));
+        setSelected(c);
+        onToastMessage('Error al enviar. Inténtalo de nuevo.');
+      }
+    } else {
+      onToastMessage(`✓ Enviado a ${c.clientName}.`);
+    }
   };
-  const handleReject = (c: ExtCampaign) => {
+  const handleReject = async (c: ExtCampaign) => {
     setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: 'rechazado' as AgentCampaignStatus } : x));
     setSelected(null);
+    if (!isDemoMode) {
+      try { await authFetch(`/api/agent/campaigns/${c.id}/reject`, { method: 'POST' }); }
+      catch { onToastMessage('Error al descartar.'); }
+    }
   };
   const saveConfig = async (patch: Partial<AgentConfig>) => {
     const next = { ...config, ...patch };
@@ -215,10 +231,55 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const refineCampaign = async () => {
     if (!campText.trim()) return;
     setCampRefining(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setCampRefined(`${campText.trim()} Esta semana en el salón tenemos un hueco especial para ti. ¡Escríbenos y lo reservamos juntas!`);
-    setCampRefining(false);
+    try {
+      if (isDemoMode) {
+        await new Promise(r => setTimeout(r, 1000));
+        setCampRefined(`${campText.trim()} Esta semana tenemos un hueco especial para ti. ¡Escríbenos y lo reservamos juntas! 💙`);
+      } else {
+        const r = await authFetch('/api/agent/refine', { method: 'POST', body: JSON.stringify({ text: campText }) });
+        const data = await r.json();
+        setCampRefined(data.refined || campText);
+      }
+    } catch {
+      onToastMessage('Error refinando con IA.');
+    } finally {
+      setCampRefining(false);
+    }
   };
+  const handleSendReply = async () => {
+    if (!selected || !replyDraft.trim()) return;
+    const text = replyDraft.trim();
+    setReplyDraft('');
+    const entry = { role: 'agent' as const, text, timestamp: new Date().toISOString() };
+    const updated = { ...selected, conversationLog: [...selected.conversationLog, entry], status: 'enviado' as AgentCampaignStatus };
+    setSelected(updated);
+    setCampaigns(prev => prev.map(x => x.id === selected.id ? updated : x));
+    if (!isDemoMode) {
+      try {
+        const r = await authFetch(`/api/agent/campaigns/${selected.id}/reply`, { method: 'POST', body: JSON.stringify({ text }) });
+        if (!r.ok) throw new Error();
+        onToastMessage('Mensaje enviado por WhatsApp.');
+      } catch {
+        onToastMessage('Error enviando mensaje.');
+      }
+    } else {
+      onToastMessage('Mensaje enviado.');
+    }
+  };
+
+  const handleScan = async () => {
+    if (isDemoMode) { onToastMessage('Demo: agente autorizado para clientes seleccionados.'); setRiskSel(new Set()); return; }
+    try {
+      const r = await authFetch('/api/agent/scan', { method: 'POST' });
+      const data = await r.json();
+      onToastMessage(`✓ Agente escaneó ${data.scanned} clientes, ${data.queued} en cola.`);
+      setRiskSel(new Set());
+      loadData();
+    } catch {
+      onToastMessage('Error al lanzar el agente.');
+    }
+  };
+
   const handleWAConnect = async () => {
     if (isDemoMode) { onToastMessage('Demo: escanea el QR con tu móvil.'); return; }
     try { await authFetch('/api/agent/wa-connect', { method: 'POST' }); } catch { onToastMessage('Error.'); }
@@ -458,7 +519,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                           placeholder="Enviar un mensaje…"
                           className="flex-1 border border-[#062d32]/12 bg-[#fbf9f5] rounded-lg text-[#062d32] text-[13px] font-serif px-4 py-2.5 outline-none placeholder:text-[#062d32]/20 focus:border-[#062d32]/30 transition-colors" />
                         <button disabled={!replyDraft.trim()}
-                          onClick={() => { onToastMessage('Mensaje enviado.'); setReplyDraft(''); }}
+                          onClick={handleSendReply}
                           className="bg-[#062d32] text-white p-2.5 rounded-lg hover:opacity-85 transition-opacity disabled:opacity-20 flex-shrink-0">
                           <span className="material-symbols-outlined text-sm">send</span>
                         </button>
@@ -527,65 +588,81 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
         )}
 
         {/* ── ANALIZAR RIESGO ─────────────────────────────────────────────────── */}
-        {mode === 'analyze' && (
-          <div className="flex-1 min-h-0 bg-white border border-[#062d32]/10 rounded-xl overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-[#062d32]/8 flex items-center justify-between flex-shrink-0">
-              <div>
-                <h2 className="font-serif text-[#062d32] text-base font-semibold leading-none">Clientes en Riesgo</h2>
-                <p className="text-[10px] font-sans text-[#062d32]/35 mt-1">{DEMO_RISK.length} detectadas · Selecciona para autorizar al agente</p>
+        {mode === 'analyze' && (() => {
+          const riskRows = isDemoMode
+            ? DEMO_RISK
+            : campaigns.filter(c => c.status === 'pendiente').map(c => ({ id: c.id, name: c.clientName, days: c.riskDays, service: c.suggestedService, risk: c.riskLevel }));
+          return (
+            <div className="flex-1 min-h-0 bg-white border border-[#062d32]/10 rounded-xl overflow-hidden flex flex-col">
+              <div className="px-6 py-4 border-b border-[#062d32]/8 flex items-center justify-between flex-shrink-0">
+                <div>
+                  <h2 className="font-serif text-[#062d32] text-base font-semibold leading-none">Clientes en Riesgo</h2>
+                  <p className="text-[10px] font-sans text-[#062d32]/35 mt-1">{riskRows.length} detectadas · Selecciona para autorizar al agente</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setRiskSel(new Set(riskRows.map(r => r.id)))}
+                    className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#062d32]/35 border border-[#062d32]/12 rounded px-3 py-1.5 hover:border-[#062d32]/30 hover:text-[#062d32] transition-all">
+                    Seleccionar todo
+                  </button>
+                  <button disabled={riskSel.size === 0}
+                    onClick={handleScan}
+                    className="bg-[#062d32] text-white text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-1.5 rounded flex items-center gap-1.5 hover:opacity-85 transition-opacity disabled:opacity-25">
+                    <span className="material-symbols-outlined text-sm">smart_toy</span>
+                    Autorizar ({riskSel.size})
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setRiskSel(new Set(DEMO_RISK.map(r => r.id)))}
-                  className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#062d32]/35 border border-[#062d32]/12 rounded px-3 py-1.5 hover:border-[#062d32]/30 hover:text-[#062d32] transition-all">
-                  Seleccionar todo
-                </button>
-                <button disabled={riskSel.size === 0}
-                  onClick={() => { onToastMessage(`✓ Agente autorizado para ${riskSel.size} clientes.`); setRiskSel(new Set()); }}
-                  className="bg-[#062d32] text-white text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-1.5 rounded flex items-center gap-1.5 hover:opacity-85 transition-opacity disabled:opacity-25">
-                  <span className="material-symbols-outlined text-sm">smart_toy</span>
-                  Autorizar ({riskSel.size})
-                </button>
+              <div className="flex-1 overflow-y-auto">
+                {riskRows.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3">
+                    <span className="material-symbols-outlined text-3xl text-[#062d32]/10">check_circle</span>
+                    <p className="text-[11px] font-sans text-[#062d32]/25">Sin clientes pendientes de autorización</p>
+                    <button onClick={handleScan} className="text-[10px] font-sans font-bold uppercase tracking-wider border border-[#062d32]/20 text-[#062d32]/40 rounded px-4 py-2 hover:border-[#062d32] hover:text-[#062d32] transition-all flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm">manage_search</span>
+                      Escanear ahora
+                    </button>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead><tr className="border-b border-[#062d32]/6">
+                      {['', 'Cliente', 'Servicio', 'Riesgo', ''].map((h, i) => (
+                        <th key={i} className="px-5 py-3 text-left text-[9px] font-sans font-bold uppercase tracking-wider text-[#062d32]/30">{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody className="divide-y divide-[#062d32]/5">
+                      {riskRows.map(r => (
+                        <tr key={r.id} className={`cursor-pointer transition-colors ${riskSel.has(r.id) ? 'bg-[#062d32]/3' : 'hover:bg-[#fbf9f5]'}`}
+                          onClick={() => setRiskSel(prev => { const n = new Set(prev); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}>
+                          <td className="px-5 py-3.5">
+                            <span className={`w-4 h-4 border flex items-center justify-center ${riskSel.has(r.id) ? 'bg-[#062d32] border-[#062d32]' : 'border-[#062d32]/20'}`}>
+                              {riskSel.has(r.id) && <span className="material-symbols-outlined text-white text-[10px]">check</span>}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-full bg-[#c9a9b5]/25 flex items-center justify-center font-sans text-[#062d32] text-[9px] font-bold">{initials(r.name)}</div>
+                              <span className="font-serif text-[13px] text-[#062d32] font-semibold">{r.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-[11px] font-sans text-[#062d32]/50">{r.service}</td>
+                          <td className="px-4 py-3.5">
+                            <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${RISK_STYLE[r.risk] || ''}`}>{r.days}d</span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <button onClick={e => { e.stopPropagation(); setRiskSel(new Set([r.id])); handleScan(); }}
+                              className="text-[9px] font-sans font-bold uppercase tracking-wider border border-[#062d32]/12 text-[#062d32]/40 rounded px-3 py-1.5 hover:border-[#062d32] hover:text-[#062d32] transition-all">
+                              Autorizar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <table className="w-full">
-                <thead><tr className="border-b border-[#062d32]/6">
-                  {['', 'Cliente', 'Servicio', 'Riesgo', ''].map((h, i) => (
-                    <th key={i} className="px-5 py-3 text-left text-[9px] font-sans font-bold uppercase tracking-wider text-[#062d32]/30">{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody className="divide-y divide-[#062d32]/5">
-                  {DEMO_RISK.map(r => (
-                    <tr key={r.id} className={`cursor-pointer transition-colors ${riskSel.has(r.id) ? 'bg-[#062d32]/3' : 'hover:bg-[#fbf9f5]'}`}
-                      onClick={() => setRiskSel(prev => { const n = new Set(prev); n.has(r.id) ? n.delete(r.id) : n.add(r.id); return n; })}>
-                      <td className="px-5 py-3.5">
-                        <span className={`w-4 h-4 border flex items-center justify-center ${riskSel.has(r.id) ? 'bg-[#062d32] border-[#062d32]' : 'border-[#062d32]/20'}`}>
-                          {riskSel.has(r.id) && <span className="material-symbols-outlined text-white text-[10px]">check</span>}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-[#c9a9b5]/25 flex items-center justify-center font-sans text-[#062d32] text-[9px] font-bold">{initials(r.name)}</div>
-                          <span className="font-serif text-[13px] text-[#062d32] font-semibold">{r.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-[11px] font-sans text-[#062d32]/50">{r.service}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full ${RISK_STYLE[r.risk] || ''}`}>{r.days}d</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <button onClick={e => { e.stopPropagation(); onToastMessage(`Agente autorizado para ${r.name}.`); }}
-                          className="text-[9px] font-sans font-bold uppercase tracking-wider border border-[#062d32]/12 text-[#062d32]/40 rounded px-3 py-1.5 hover:border-[#062d32] hover:text-[#062d32] transition-all">
-                          Autorizar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── AJUSTES ─────────────────────────────────────────────────────────── */}
         {mode === 'settings' && (
