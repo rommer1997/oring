@@ -7,6 +7,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { body, validationResult } from "express-validator";
 import Stripe from "stripe";
+import fs from "fs";
+import QRCode from "qrcode";
 
 dotenv.config();
 
@@ -1177,6 +1179,259 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       res.status(200).send(challenge);
     } else {
       res.sendStatus(403);
+    }
+  });
+
+  // ─── Baileys WhatsApp Session ────────────────────────────────────────────────
+  // ponytail: estado global del proceso; reiniciar servidor reconecta la sesión desde disco
+  type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
+  let waStatus: WAStatus = 'disconnected';
+  let waQR: string | null = null;        // base64 PNG del QR actual
+  let waSock: any = null;               // socket de Baileys
+  let waConnectedPhone: string | null = null;
+  const WA_AUTH_DIR = path.join(process.cwd(), '.wa-auth');
+
+  // SSE clients suscritos al estado WA (para el panel del gerente)
+  const waStatusClients = new Set<express.Response>();
+
+  function broadcastWAStatus() {
+    const payload = JSON.stringify({ status: waStatus, phone: waConnectedPhone, qr: waStatus === 'qr' ? waQR : null });
+    waStatusClients.forEach(res => res.write(`data: ${payload}\n\n`));
+  }
+
+  async function startBaileys(tenantId: string) {
+    try {
+      // Dynamic import — baileys es ESM puro
+      const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } =
+        await (new Function('s', 'return import(s)'))('@whiskeysockets/baileys');
+
+      const authDir = path.join(WA_AUTH_DIR, tenantId);
+      fs.mkdirSync(authDir, { recursive: true });
+
+      const { state, saveCreds } = await useMultiFileAuthState(authDir);
+      const { version } = await fetchLatestBaileysVersion();
+
+      const sock = makeWASocket({
+        version,
+        auth: state,
+        printQRInTerminal: false,
+        browser: ['Elena Salon', 'Chrome', '120.0'],
+        getMessage: async () => undefined,
+      });
+
+      waSock = sock;
+      waStatus = 'connecting';
+      broadcastWAStatus();
+
+      sock.ev.on('creds.update', saveCreds);
+
+      sock.ev.on('connection.update', async (update: any) => {
+        const { connection, lastDisconnect, qr } = update;
+        if (qr) {
+          waStatus = 'qr';
+          waQR = await QRCode.toDataURL(qr);
+          broadcastWAStatus();
+        }
+        if (connection === 'open') {
+          waStatus = 'connected';
+          waQR = null;
+          waConnectedPhone = sock.user?.id?.split(':')[0] || null;
+          broadcastWAStatus();
+          console.log(`[WA Baileys] Conectado: ${waConnectedPhone}`);
+        }
+        if (connection === 'close') {
+          const code = (lastDisconnect?.error as any)?.output?.statusCode;
+          const shouldReconnect = code !== DisconnectReason.loggedOut;
+          waStatus = shouldReconnect ? 'connecting' : 'disconnected';
+          waConnectedPhone = null;
+          broadcastWAStatus();
+          if (shouldReconnect) setTimeout(() => startBaileys(tenantId), 5000);
+          else { waSock = null; fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true }); }
+        }
+      });
+
+      // Mensajes entrantes de WhatsApp → agente Gemini
+      sock.ev.on('messages.upsert', async ({ messages }: any) => {
+        for (const msg of messages) {
+          if (msg.key.fromMe || !msg.message) continue;
+          const from = msg.key.remoteJid?.replace('@s.whatsapp.net', '') || '';
+          const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+          if (!text || !from || !adminRuntime) continue;
+
+          const db_ = adminRuntime.admin.firestore();
+
+          // Buscar campaña activa para este número
+          const campSnap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
+            .where('status', 'in', ['enviado', 'respondido'])
+            .get();
+          const campaignDoc = campSnap.docs.find((d: any) => {
+            const phone = d.data().clientPhone?.replace(/\D/g, '').slice(-9);
+            return from.slice(-9) === phone;
+          });
+
+          if (!campaignDoc) continue;
+          const campaign = campaignDoc.data() as any;
+          const tenantDoc = await db_.doc(`tenants/${tenantId}`).get();
+          const tenantName = tenantDoc.data()?.name || 'el salón';
+
+          const newLog = [...(campaign.conversationLog || []),
+            { role: 'client', text, timestamp: new Date().toISOString() }];
+          const { text: reply, intent } = await generateAgentReply(text, newLog, tenantName, [], ai);
+          newLog.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
+
+          await campaignDoc.ref.update({
+            status: intent === 'booking' ? 'reservado' : 'respondido',
+            repliedAt: new Date().toISOString(),
+            lastReply: text,
+            conversationLog: newLog,
+          });
+
+          // Responder por WhatsApp
+          await sock.sendMessage(`${from}@s.whatsapp.net`, { text: reply });
+        }
+      });
+    } catch (err) {
+      console.error('[WA Baileys] Error iniciando:', err);
+      waStatus = 'disconnected';
+      broadcastWAStatus();
+    }
+  }
+
+  // Reconectar si ya existe sesión guardada al arrancar
+  if (adminRuntime) {
+    const sessions = fs.existsSync(WA_AUTH_DIR) ? fs.readdirSync(WA_AUTH_DIR) : [];
+    if (sessions.length > 0) {
+      console.log(`[WA Baileys] Reconectando sesión: ${sessions[0]}`);
+      startBaileys(sessions[0]);
+    }
+  }
+
+  // Sobreescribir sendWhatsAppMessage para usar Baileys cuando esté conectado
+  const _sendWhatsAppMessageOriginal = sendWhatsAppMessage;
+  (global as any).__elenaSendWA = async (to: string, text: string): Promise<boolean> => {
+    if (waSock && waStatus === 'connected') {
+      try {
+        await waSock.sendMessage(`${to}@s.whatsapp.net`, { text });
+        return true;
+      } catch (err) {
+        console.error('[WA Baileys] Error send:', err);
+        return false;
+      }
+    }
+    return _sendWhatsAppMessageOriginal(to, text);
+  };
+
+  // ─── GET /api/agent/wa-status (SSE) ──────────────────────────────────────────
+  app.get('/api/agent/wa-status', async (req, res) => {
+    try {
+      await resolveAuthenticatedTenant(req, adminRuntime);
+    } catch {
+      return res.sendStatus(401);
+    }
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    // Enviar estado actual inmediatamente
+    res.write(`data: ${JSON.stringify({ status: waStatus, phone: waConnectedPhone, qr: waStatus === 'qr' ? waQR : null })}\n\n`);
+
+    waStatusClients.add(res);
+    req.on('close', () => waStatusClients.delete(res));
+  });
+
+  // ─── POST /api/agent/wa-connect ───────────────────────────────────────────────
+  app.post('/api/agent/wa-connect', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      if (waStatus !== 'disconnected') return res.json({ ok: true, status: waStatus });
+      startBaileys(tenantId);
+      res.json({ ok: true, status: 'connecting' });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── POST /api/agent/wa-disconnect ───────────────────────────────────────────
+  app.post('/api/agent/wa-disconnect', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      if (waSock) { await waSock.logout(); waSock = null; }
+      waStatus = 'disconnected'; waConnectedPhone = null; waQR = null;
+      fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true });
+      broadcastWAStatus();
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
+  // ─── Chat Web público (/salon/:slug/chat) ────────────────────────────────────
+  // SSE clients por sesión de chat {sessionId → res}
+  const chatSSEClients = new Map<string, express.Response>();
+
+  // GET /api/chat/:slug/stream?sessionId=xxx  — SSE para el cliente web
+  app.get('/api/chat/:slug/stream', (req, res) => {
+    const { sessionId } = req.query as { sessionId: string };
+    if (!sessionId) return res.sendStatus(400);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    chatSSEClients.set(sessionId, res);
+    req.on('close', () => chatSSEClients.delete(sessionId));
+  });
+
+  // POST /api/chat/:slug/message  — cliente envía mensaje
+  app.post('/api/chat/:slug/message', publicLimiter, express.json(), async (req, res) => {
+    const { slug } = req.params;
+    const { sessionId, clientName, text } = req.body as { sessionId: string; clientName: string; text: string };
+    if (!sessionId || !text?.trim()) return res.status(400).json({ error: 'sessionId y text requeridos.' });
+    if (!adminRuntime) return res.status(503).json({ error: 'Base de datos no disponible.' });
+
+    res.json({ ok: true }); // responder rápido, procesar async
+
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const tenant = await getTenantBySlug(db_, slug);
+      if (!tenant) return;
+      const tenantId = tenant.id;
+      const tenantName = tenant.data.name || 'el salón';
+
+      const sessionRef = db_.doc(`tenants/${tenantId}/chat_sessions/${sessionId}`);
+      const sessionSnap = await sessionRef.get();
+      const session = sessionSnap.exists ? sessionSnap.data() : { clientName, log: [] };
+      const log = session?.log || [];
+
+      log.push({ role: 'client', text, timestamp: new Date().toISOString() });
+
+      // Gemini responde
+      const { text: reply } = await generateAgentReply(text, log, tenantName, [], ai);
+      log.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
+
+      await sessionRef.set({ clientName, log, tenantId, updatedAt: new Date().toISOString() }, { merge: true });
+
+      // Push por SSE al cliente web
+      const sseRes = chatSSEClients.get(sessionId);
+      if (sseRes) sseRes.write(`data: ${JSON.stringify({ role: 'agent', text: reply, timestamp: new Date().toISOString() })}\n\n`);
+    } catch (err) {
+      console.error('[Chat Web] Error:', err);
+    }
+  });
+
+  // GET /api/chat/:slug/history?sessionId=xxx
+  app.get('/api/chat/:slug/history', publicLimiter, async (req, res) => {
+    const { slug } = req.params;
+    const { sessionId } = req.query as { sessionId: string };
+    if (!sessionId || !adminRuntime) return res.json({ log: [] });
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const tenant = await getTenantBySlug(db_, slug);
+      if (!tenant) return res.json({ log: [] });
+      const doc = await db_.doc(`tenants/${tenant.id}/chat_sessions/${sessionId}`).get();
+      res.json({ log: doc.exists ? doc.data()?.log || [] : [] });
+    } catch {
+      res.json({ log: [] });
     }
   });
 
