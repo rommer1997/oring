@@ -729,6 +729,7 @@ export default function App() {
                   clients={enrichedClients}
                   onUpdateClient={onUpdateClient}
                   onAddClient={onAddClient}
+                  onNavigate={handleNavigate}
                 />
               )}
               {currentView === 'admin' && (
