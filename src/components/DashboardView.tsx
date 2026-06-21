@@ -108,11 +108,11 @@ export default function DashboardView({
   const pendingDrafts = useMemo(() => clients.filter(c => (c.whatsappLog || []).some(m => m.status === 'borrador')), [clients]);
 
   const notifications = useMemo(() => {
-    const notifs = [];
-    if (todaysAppts.length > 0) notifs.push({ icon: 'calendar_today', text: `${todaysAppts.length} cita${todaysAppts.length > 1 ? 's' : ''} programada${todaysAppts.length > 1 ? 's' : ''} para hoy`, color: 'text-primary' });
-    if (criticalClients.length > 0) notifs.push({ icon: 'crisis_alert', text: `${criticalClients.length} clienta${criticalClients.length > 1 ? 's' : ''} que te echa${criticalClients.length > 1 ? 'n' : 's'} de menos en nivel crítico`, color: 'text-red-600' });
-    if (pendingDrafts.length > 0) notifs.push({ icon: 'mark_email_unread', text: `${pendingDrafts.length} borrador${pendingDrafts.length > 1 ? 'es' : ''} pendiente${pendingDrafts.length > 1 ? 's' : ''} de envío`, color: 'text-amber-600' });
-    if (notifs.length === 0) notifs.push({ icon: 'check_circle', text: 'Todo al día. Sin alertas activas.', color: 'text-emerald-600' });
+    const notifs: { icon: string; text: string; color: string; view: AppView }[] = [];
+    if (todaysAppts.length > 0) notifs.push({ icon: 'calendar_today', text: `${todaysAppts.length} cita${todaysAppts.length > 1 ? 's' : ''} programada${todaysAppts.length > 1 ? 's' : ''} para hoy`, color: 'text-primary', view: 'agenda' });
+    if (criticalClients.length > 0) notifs.push({ icon: 'crisis_alert', text: `${criticalClients.length} clienta${criticalClients.length > 1 ? 's' : ''} que te echa${criticalClients.length > 1 ? 'n' : 's'} de menos en nivel crítico`, color: 'text-red-600', view: 'retention' });
+    if (pendingDrafts.length > 0) notifs.push({ icon: 'mark_email_unread', text: `${pendingDrafts.length} borrador${pendingDrafts.length > 1 ? 'es' : ''} pendiente${pendingDrafts.length > 1 ? 's' : ''} de envío`, color: 'text-amber-600', view: 'retention' });
+    if (notifs.length === 0) notifs.push({ icon: 'check_circle', text: 'Todo al día. Sin alertas activas.', color: 'text-emerald-600', view: 'dashboard' });
     return notifs;
   }, [todaysAppts, criticalClients, pendingDrafts]);
 
@@ -278,7 +278,7 @@ export default function DashboardView({
                 {notifications.map((n, i) => (
                   <button
                     key={i}
-                    onClick={() => { setShowNotifications(false); onNavigate('dashboard'); }}
+                    onClick={() => { setShowNotifications(false); onNavigate(n.view); }}
                     className="w-full flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-surface-container-low text-left cursor-pointer transition-colors"
                   >
                     <span className={`material-symbols-outlined text-base mt-0.5 ${n.color}`}>{n.icon}</span>
@@ -310,13 +310,6 @@ export default function DashboardView({
               : "Sigue la actividad real de tu agenda, clientas y mensajes."}
           </p>
         </div>
-        <button
-          className="bg-white border border-border text-primary px-4 py-2 rounded-xl text-xs font-bold hover:bg-secondary/15 hover:shadow-sm transition-all cursor-pointer flex items-center gap-2 mb-1"
-          onClick={handleExportWeekly}
-        >
-          <span className="material-symbols-outlined text-sm">summarize</span>
-          <span>Revisión Semanal (CSV)</span>
-        </button>
       </div>
 
       {/* ─── NIVEL 1: EL CORAZÓN DE LA RETENCIÓN (MIMO URGENTE) ─── */}
@@ -441,71 +434,44 @@ export default function DashboardView({
           </div>
         </div>
 
-        {/* Agenda Siempre al Día Widget */}
+        {/* Embudo de recuperación */}
         <div className="lg:col-span-7 bg-white p-8 rounded-3xl border border-muted shadow-sm flex flex-col justify-between text-left">
           <div>
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="font-serif text-xl font-bold text-primary">Agenda Siempre al Día</h3>
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1 font-sans">Próximos tratamientos de hoy</p>
+                <h3 className="font-serif text-xl font-bold text-primary">Embudo de Recuperación</h3>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1 font-sans">De mensaje a cita pagada</p>
               </div>
-              <a
-                href="#agenda"
-                onClick={(e) => { e.preventDefault(); onNavigate('agenda'); }}
-                className="text-xs font-bold text-primary hover:underline underline-offset-4 cursor-pointer font-sans"
-              >
-                Ver agenda completa
-              </a>
+              <button onClick={handleExportWeekly} className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary/40 border border-primary/15 px-3 py-1.5 rounded-lg hover:border-primary/40 hover:text-primary transition-all flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-xs">summarize</span>
+                CSV
+              </button>
             </div>
-
-            <div className="space-y-1 max-h-[190px] overflow-y-auto pr-1">
-              {(() => {
-                const today = getTodayISO();
-                const todaysAppts = (appointments || [])
-                  .filter(item => item.date === today)
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                  .slice(0, 3);
-
-                if (todaysAppts.length === 0) {
-                  return (
-                    <div className="p-8 text-center bg-surface-container-low/40 rounded-2xl border border-dashed border-outline-variant/30 font-sans my-2">
-                      <span className="material-symbols-outlined text-outline text-2xl mb-1">calendar_today</span>
-                      <p className="text-xs font-bold text-primary mb-0.5">Sin citas para hoy</p>
-                      <p className="text-[10px] text-outline">No hay tratamientos agendados para este día.</p>
+            <div className="flex items-end gap-0 mt-2">
+              {[
+                { label: 'Mensajes enviados', value: totalSentMessages, color: 'bg-primary', pct: 100 },
+                { label: 'Respuestas recibidas', value: totalResponses, color: 'bg-[#c9a9b5]', pct: totalSentMessages > 0 ? Math.round((totalResponses / totalSentMessages) * 100) : 0 },
+                { label: 'Citas recuperadas', value: totalRecoveredCitas, color: 'bg-emerald-500', pct: totalSentMessages > 0 ? Math.round((totalRecoveredCitas / totalSentMessages) * 100) : 0 },
+              ].map((step, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 font-sans relative">
+                  {i > 0 && <div className="absolute left-0 top-1/2 -translate-y-8 w-px h-8 bg-muted" />}
+                  <span className="font-serif text-3xl font-bold text-primary">{step.value}</span>
+                  <div className="w-full px-2">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className={`h-full ${step.color} rounded-full transition-all`} style={{ width: `${step.pct}%` }} />
                     </div>
-                  );
-                }
-
-                return todaysAppts.map((item) => {
-                  const dotColor = item.status === 'Pagado' ? 'bg-emerald-600' : item.status === 'Cancelado' ? 'bg-rose-500' : 'bg-amber-500';
-                  return (
-                    <div
-                      key={item.id}
-                      className="py-3.5 border-b border-light-divider flex items-center justify-between gap-4 hover:bg-[#faf8f4] transition-colors rounded-xl px-2 cursor-pointer font-sans"
-                      onClick={() => onNavigate('agenda')}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-center min-w-[50px]">
-                          <span className="text-xs font-bold text-primary font-mono">{item.time}</span>
-                          <span className={`w-1.5 h-1.5 rounded-full ${dotColor} mt-1.5`}></span>
-                        </div>
-                        <div className="text-left">
-                          <h4 className="text-xs font-bold text-primary leading-none">{item.clientName}</h4>
-                          <p className="text-[11px] text-on-surface-variant mt-1">{item.serviceName} con {item.staffName}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-primary font-mono bg-secondary/35 px-2.5 py-1 rounded-lg">
-                        {item.price}€
-                      </span>
-                    </div>
-                  );
-                });
-              })()}
+                  </div>
+                  <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground text-center px-1">{step.label}</span>
+                  {i > 0 && <span className="text-[9px] font-bold text-primary/50">{step.pct}%</span>}
+                </div>
+              ))}
             </div>
           </div>
-
-          <div className="mt-6 pt-4 border-t border-light-divider text-center font-sans">
-            <p className="text-[11px] text-outline font-medium italic">Tus citas siempre al día</p>
+          <div className="mt-6 pt-4 border-t border-light-divider flex justify-between items-center font-sans">
+            <span className="text-[10px] text-outline font-medium">Ticket medio: {avgTicket.toFixed(0)}€ · ROI estimado: {estimatedROI.toLocaleString('es-ES')}€</span>
+            <button onClick={() => onNavigate('retention')} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1">
+              Ver clientas <span className="material-symbols-outlined text-xs">arrow_forward</span>
+            </button>
           </div>
         </div>
 
@@ -618,8 +584,8 @@ export default function DashboardView({
                 </span>
               </div>
               <div className="mt-4 flex items-center justify-between text-[11.5px] font-bold text-muted-foreground">
-                <span>Registrados por canal</span>
-                <span className="text-[10px] bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded border border-green-200">{totalSentMessages} enviados</span>
+                <span>Tasa de respuesta</span>
+                <span className="text-[10px] bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded border border-green-200">{responseRate}% contestaron</span>
               </div>
             </div>
 
