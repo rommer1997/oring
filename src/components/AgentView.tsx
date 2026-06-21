@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AgentCampaign, AgentCampaignStatus, AgentConfig } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface AgentViewProps {
   onToastMessage: (msg: string) => void;
@@ -159,7 +160,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
 
   const authFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
     const token = await getAuthToken();
-    return fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+    return fetch(apiUrl(url), { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
   }, [getAuthToken]);
 
   const loadData = useCallback(async () => {
@@ -180,7 +181,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
     const go = async () => {
       const token = await getAuthToken();
       if (!token) return;
-      const es = new EventSource(`/api/agent/wa-status?token=${token}`);
+      const es = new EventSource(apiUrl(`/api/agent/wa-status?token=${token}`));
       es.onmessage = e => { const d = JSON.parse(e.data); setWAStatus(d.status); setWAPhone(d.phone ?? null); setWAQR(d.qr ?? null); };
       waSSERef.current = es;
     };
