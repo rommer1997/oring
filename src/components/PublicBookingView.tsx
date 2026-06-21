@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Service, StaffMember, Tenant } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface PublicBookingViewProps {
   slug: string;
@@ -36,7 +37,7 @@ export default function PublicBookingView({ slug }: PublicBookingViewProps) {
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
-    fetch(`/api/public-booking/${slug}`)
+    fetch(apiUrl(`/api/public-booking/${slug}`))
       .then((response) => response.ok ? response.json() : Promise.reject(response))
       .then((payload) => {
         if (!isMounted) return;
@@ -59,7 +60,7 @@ export default function PublicBookingView({ slug }: PublicBookingViewProps) {
     if (!serviceId || !staffId || !date) return;
     setSelectedTime('');
     setSlots([]);
-    fetch(`/api/public-booking/${slug}/availability?serviceId=${encodeURIComponent(serviceId)}&staffId=${encodeURIComponent(staffId)}&date=${encodeURIComponent(date)}`)
+    fetch(apiUrl(`/api/public-booking/${slug}/availability?serviceId=${encodeURIComponent(serviceId)}&staffId=${encodeURIComponent(staffId)}&date=${encodeURIComponent(date)}`))
       .then((response) => response.ok ? response.json() : Promise.reject(response))
       .then((payload) => setSlots(payload.slots || []))
       .catch(() => setSlots([]));
@@ -82,7 +83,7 @@ export default function PublicBookingView({ slug }: PublicBookingViewProps) {
 
     try {
       setIsSaving(true);
-      const response = await fetch('/api/public-booking', {
+      const response = await fetch(apiUrl('/api/public-booking'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
