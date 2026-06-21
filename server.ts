@@ -169,6 +169,20 @@ async function startServer() {
   const isProduction = process.env.NODE_ENV === "production";
   const adminRuntime = await initializeFirebaseAdmin();
 
+  // CORS — allow Firebase Hosting origin + localhost in dev
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://elena-os.web.app,http://localhost:5173,http://localhost:3000').split(',').map(s => s.trim());
+  app.use((req, res, next) => {
+    const origin = req.headers.origin || '';
+    if (allowedOrigins.includes(origin) || !isProduction) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   app.set("trust proxy", 1);
 
   app.use(helmet({
