@@ -299,7 +299,7 @@ export default function SettingsView({
 
               <button
                 type="button"
-                onClick={() => setIsAiAuto(!isAiAuto)}
+                onClick={() => { setIsAiAuto(!isAiAuto); onUpdateConfig({ isAiAutoTriggerEnabled: !isAiAuto }); }}
                 className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors cursor-pointer ${
                   isAiAuto ? 'bg-primary' : 'bg-outline/50'
                 }`}
@@ -321,7 +321,7 @@ export default function SettingsView({
 
               <button
                 type="button"
-                onClick={() => setIsRotatingSchedule(!isRotatingSchedule)}
+                onClick={() => { setIsRotatingSchedule(!isRotatingSchedule); onUpdateConfig({ isRotatingScheduleEnabled: !isRotatingSchedule }); }}
                 className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors cursor-pointer ${
                   isRotatingSchedule ? 'bg-primary' : 'bg-[#dfced5]/40'
                 }`}
@@ -534,7 +534,7 @@ export default function SettingsView({
               </div>
               <button
                 type="button"
-                onClick={() => onToastMessage('Iniciando la guía de inicio para tu equipo (Enviando notificaciones...)')}
+                onClick={() => { onUpdateConfig({ isBeginnerMode: true }); onNavigate?.('dashboard'); onToastMessage('✓ Modo principiante activado. El equipo verá la guía en el dashboard.'); }}
                 className="bg-white/20 hover:bg-white/30 text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg cursor-pointer flex items-center gap-1.5 transition-all shadow-sm shrink-0"
               >
                 <span className="material-symbols-outlined text-sm">school</span>
