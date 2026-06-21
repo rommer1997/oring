@@ -297,9 +297,9 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const contactadosList = sorted.filter(c => ['enviado', 'reservado', 'sin_respuesta', 'rechazado'].includes(c.status));
   const listedClients = listTab === 'prioridad' ? priorityList : contactadosList;
 
-  // ponytail: altura móvil = -200px (header+padding+nav inferior); desktop -112px. Aproximado, el scroll interno absorbe el resto
+  // ponytail: flex-1 rellena el espacio disponible del contenedor padre — se ajusta solo a cualquier pantalla, sin restar píxeles a mano
   return (
-    <div className="flex gap-2 min-h-0 h-[calc(100dvh-200px)] md:h-[calc(100dvh-112px)]">
+    <div className="flex gap-2 min-h-0 flex-1">
 
       {/* ══ COLUMNA IZQUIERDA — oscura (solo escritorio) ════════════════════════ */}
       <div className="hidden md:flex md:flex-col md:w-64 md:flex-shrink-0 bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0">
@@ -493,7 +493,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
 
         {/* ── CHAT ─────────────────────────────────────────────────────────── */}
         {mode === 'chat' && (
-          <div className="flex-1 min-h-0 bg-white border border-[#062d32]/10 rounded-xl flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden md:bg-white md:border md:border-[#062d32]/10 md:rounded-xl">
             {selected ? (
               <>
                 <div className="px-5 py-3.5 border-b border-[#062d32]/8 flex items-center justify-between flex-shrink-0">
@@ -544,7 +544,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 </div>
 
                 {/* Barra inferior */}
-                <div className="flex-shrink-0 border-t border-[#062d32]/8 bg-white px-5 py-4">
+                <div className="flex-shrink-0 border-t border-[#062d32]/8 md:bg-white px-5 py-4">
                   {selected.status === 'pendiente' && (
                     <div className="flex items-center gap-3">
                       <p className="text-[10px] font-sans text-[#062d32]/40 italic flex-1">El agente ha redactado este mensaje — apruébalo</p>
@@ -597,7 +597,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                       <div className="flex items-end gap-2 border-t border-[#062d32]/6 pt-3">
                         <input ref={replyInputRef} value={replyDraft} onChange={e => setReplyDraft(e.target.value)}
                           placeholder="Enviar un mensaje…"
-                          className="flex-1 border border-[#062d32]/12 bg-[#fbf9f5] rounded-lg text-[#062d32] text-[13px] font-serif px-4 py-2.5 outline-none placeholder:text-[#062d32]/20 focus:border-[#062d32]/30 transition-colors" />
+                          className="flex-1 border border-[#062d32]/12 bg-white md:bg-[#fbf9f5] rounded-lg text-[#062d32] text-[13px] font-serif px-4 py-2.5 outline-none placeholder:text-[#062d32]/20 focus:border-[#062d32]/30 transition-colors" />
                         <button disabled={!replyDraft.trim()}
                           onClick={handleSendReply}
                           className="bg-[#062d32] text-white p-2.5 rounded-lg hover:opacity-85 transition-opacity disabled:opacity-20 flex-shrink-0">
