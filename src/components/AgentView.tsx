@@ -26,6 +26,14 @@ const RISK_STYLE: Record<string, string> = {
   'Bajo':    'bg-sky-100 text-sky-700',
 };
 
+// Anillo de color para avatares del carrusel móvil (más rojo = más urgente)
+const RISK_RING: Record<string, string> = {
+  'Crítico': 'bg-red-500',
+  'Alto':    'bg-red-400',
+  'Medio':   'bg-amber-400',
+  'Bajo':    'bg-sky-400',
+};
+
 const STATUS_PRIORITY: Record<AgentCampaignStatus, number> = {
   respondido: 0, pendiente: 1, enviado: 2, sin_respuesta: 3, reservado: 4, rechazado: 5,
 };
@@ -99,7 +107,7 @@ const DEMO: AgentCampaign[] = [
   {
     id: 'd4', tenantId: 'demo', clientId: 'ana-lopez',
     clientName: 'Ana López', clientPhone: '666 555 666',
-    riskLevel: 'Medio', riskDays: 48, suggestedService: 'Coloración',
+    riskLevel: 'Alto', riskDays: 52, suggestedService: 'Coloración',
     message: '¡Hola Ana! Esta semana tenemos hueco. ¿Nos vemos pronto?',
     status: 'pendiente', autoSend: false, absenceReason: 'personal',
     absenceDetail: 'Situación familiar complicada. Tono muy cercano y empático recomendado.',
@@ -146,7 +154,6 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const [waQR, setWAQR] = useState<string | null>(null);
   const [waPhone, setWAPhone] = useState<string | null>(null);
   const [listTab, setListTab] = useState<'prioridad' | 'contactados'>('prioridad');
-  const [mobilePanel, setMobilePanel] = useState<'list' | 'chat'>('list');
   const [replyDraft, setReplyDraft] = useState('');
   const [campText, setCampText] = useState('');
   const [campRefined, setCampRefined] = useState('');
@@ -290,13 +297,12 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const contactadosList = sorted.filter(c => ['enviado', 'reservado', 'sin_respuesta', 'rechazado'].includes(c.status));
   const listedClients = listTab === 'prioridad' ? priorityList : contactadosList;
 
+  // ponytail: altura móvil = -200px (header+padding+nav inferior); desktop -112px. Aproximado, el scroll interno absorbe el resto
   return (
-    <div className="flex gap-2 min-h-0" style={{ height: 'calc(100dvh - 112px)' }}>
+    <div className="flex gap-2 min-h-0 h-[calc(100dvh-200px)] md:h-[calc(100dvh-112px)]">
 
-      {/* ══ COLUMNA IZQUIERDA — oscura ══════════════════════════════════════════ */}
-      <div className={mobilePanel === 'list'
-        ? 'flex flex-col w-full md:w-64 md:flex-shrink-0 bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0'
-        : 'hidden md:flex md:flex-col md:w-64 md:flex-shrink-0 bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0'}>
+      {/* ══ COLUMNA IZQUIERDA — oscura (solo escritorio) ════════════════════════ */}
+      <div className="hidden md:flex md:flex-col md:w-64 md:flex-shrink-0 bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0">
 
         {/* WA status */}
         <div className="px-4 py-3 border-b border-white/8 flex-shrink-0">
@@ -347,7 +353,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             const active = selected?.id === c.id;
             const last = c.conversationLog[c.conversationLog.length - 1];
             return (
-              <button key={c.id} onClick={() => { setSelected(c); setMode('chat'); setMobilePanel('chat'); }}
+              <button key={c.id} onClick={() => { setSelected(c); setMode('chat'); }}
                 className={`w-full text-left p-3 rounded-lg transition-all ${active ? 'bg-white/15' : 'bg-white/5 hover:bg-white/10'}`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 rounded-full bg-[#c9a9b5]/30 flex items-center justify-center font-sans text-white text-[11px] font-bold flex-shrink-0">
@@ -383,11 +389,85 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       </div>
 
       {/* ══ COLUMNA CENTRAL ═════════════════════════════════════════════════════ */}
-      <div className={mobilePanel === 'chat'
-        ? 'flex flex-col flex-1 gap-2 min-w-0 min-h-0'
-        : 'hidden md:flex md:flex-col md:flex-1 md:gap-2 md:min-w-0 md:min-h-0'}>
+      <div className="flex flex-col flex-1 gap-2 min-w-0 min-h-0">
 
-        {/* Tarjetas de acción superiores */}
+        {/* ── MÓVIL: estado WhatsApp compacto (solo si no conectado) ─────────── */}
+        {waStatus !== 'connected' && (
+          <div className="md:hidden flex-shrink-0">
+            {waStatus === 'qr' && waQR ? (
+              <div className="bg-[#1c4a4e] rounded-xl flex items-center gap-3 px-4 py-3">
+                <img src={waQR} alt="QR" className="w-16 h-16 bg-white p-1 flex-shrink-0" />
+                <p className="text-[10px] font-sans text-white/50 leading-relaxed">Escanea desde WhatsApp → Dispositivos vinculados → Vincular un dispositivo</p>
+              </div>
+            ) : (
+              <button onClick={handleWAConnect}
+                className="w-full flex items-center justify-center gap-2 bg-[#1c4a4e] text-white text-[11px] font-sans font-bold uppercase tracking-wider py-3 rounded-xl">
+                <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                {waStatus === 'connecting' ? 'Conectando…' : 'Conectar WhatsApp'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── MÓVIL: fila de acciones (iconos) ──────────────────────────────── */}
+        <div className="md:hidden flex gap-2 flex-shrink-0">
+          {([
+            { id: 'analyze',  icon: 'manage_search', label: 'Riesgo' },
+            { id: 'campaign', icon: 'campaign',      label: 'Campaña' },
+            { id: 'settings', icon: 'tune',          label: 'Ajustes' },
+          ] as { id: CenterMode; icon: string; label: string }[]).map(card => {
+            const on = mode === card.id;
+            return (
+              <button key={card.id} onClick={() => setMode(on ? 'chat' : card.id)}
+                className={`flex-1 flex flex-col items-center gap-1 py-2.5 border rounded-xl transition-all ${
+                  on ? 'bg-[#062d32] border-[#062d32]' : 'bg-white border-[#062d32]/10'}`}>
+                <span className={`material-symbols-outlined text-xl ${on ? 'text-[#c9a9b5]' : 'text-[#062d32]/55'}`}>{card.icon}</span>
+                <span className={`text-[9px] font-sans font-bold uppercase tracking-wider ${on ? 'text-white' : 'text-[#062d32]/70'}`}>{card.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── MÓVIL: carrusel "Prioridad" (reemplaza la lista lateral) ──────── */}
+        {mode === 'chat' && (
+          <div className="md:hidden flex-shrink-0">
+            <div className="flex items-center justify-between mb-2 px-0.5">
+              <p className="font-serif text-[#062d32] text-base font-semibold">{listTab === 'prioridad' ? 'Prioridad Alta' : 'Contactados'}</p>
+              <div className="flex gap-1">
+                {(['prioridad', 'contactados'] as const).map(t => (
+                  <button key={t} onClick={() => setListTab(t)}
+                    className={`text-[9px] font-sans font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-all ${
+                      listTab === t ? 'bg-[#062d32] text-white' : 'text-[#062d32]/40'}`}>
+                    {t === 'prioridad' ? 'Prioridad' : 'Contactados'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {listedClients.length === 0 ? (
+              <p className="text-[11px] font-sans text-[#062d32]/30 py-3">Sin conversaciones en esta lista.</p>
+            ) : (
+              <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1">
+                {listedClients.map(c => {
+                  const on = selected?.id === c.id;
+                  return (
+                    <button key={c.id} onClick={() => { setSelected(c); setMode('chat'); }}
+                      className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[60px]">
+                      <div className={`w-14 h-14 rounded-full p-[2.5px] ${RISK_RING[c.riskLevel] || 'bg-white/20'} ${on ? 'ring-2 ring-offset-2 ring-[#062d32]' : ''}`}>
+                        <div className="w-full h-full rounded-full bg-[#1c4a4e] flex items-center justify-center font-sans text-white text-[13px] font-bold">
+                          {initials(c.clientName)}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-sans text-[#062d32] text-center leading-tight line-clamp-2">{c.clientName.split(' ')[0]}</span>
+                      <span className="text-[8px] font-sans font-bold text-[#062d32]/35">{c.riskDays}d</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tarjetas de acción superiores (solo escritorio) */}
         <div className="hidden md:flex gap-2 flex-shrink-0">
           {([
             { id: 'campaign', icon: 'campaign',       label: 'Lanzar Campaña Masiva', sub: 'Subir Imagen/Texto' },
@@ -418,9 +498,6 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
               <>
                 <div className="px-5 py-3.5 border-b border-[#062d32]/8 flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setMobilePanel('list')} className="md:hidden text-[#062d32]/40 hover:text-[#062d32] transition-colors mr-1">
-                      <span className="material-symbols-outlined text-xl">arrow_back</span>
-                    </button>
                     <div className="w-8 h-8 rounded-full bg-[#c9a9b5]/25 flex items-center justify-center font-sans text-[#062d32] text-[10px] font-bold">
                       {initials(selected.clientName)}
                     </div>
