@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { apiUrl } from './lib/api';
 import { analyzeChurnRisk, getTodayISO, buildNewClient } from './utils/riskEngine';
 import {
   AppView,
@@ -111,6 +112,16 @@ export default function App() {
   const [modalIsPhoneNewClient, setModalIsPhoneNewClient] = useState<boolean>(false);
   const [modalFoundClient, setModalFoundClient] = useState<ClientProfile | null>(null);
   const [modalNewClientName, setModalNewClientName] = useState<string>('');
+
+  // ─── Backend health check (solo cuando VITE_API_URL está configurado) ───────
+  const [backendDown, setBackendDown] = useState(false);
+  useEffect(() => {
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) return; // en dev el proxy maneja todo
+    fetch(apiUrl('/api/health'), { signal: AbortSignal.timeout(5000) })
+      .then(r => setBackendDown(!r.ok))
+      .catch(() => setBackendDown(true));
+  }, []);
 
   // ─── Toast helper ────────────────────────────────────────────────────────
   const triggerToast = (message: string) => {
@@ -579,6 +590,13 @@ export default function App() {
             </span>
           </div>
         </header>
+
+        {backendDown && (
+          <div className="bg-amber-500 text-white px-6 py-2 flex items-center justify-center gap-2 text-sm font-sans">
+            <span className="material-symbols-outlined text-base">warning</span>
+            <span>El servidor de IA no responde. Las funciones de WhatsApp y generación de mensajes no estarán disponibles temporalmente.</span>
+          </div>
+        )}
 
         {/* ponytail: aviso de fin de trial solo in-app. Email automático aplazado: necesita proveedor
             (SendGrid/Resend). Añadir cuando exista, disparado desde server.ts por cron sobre trialEndsAt. */}
