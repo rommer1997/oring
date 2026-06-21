@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiUrl } from '../lib/api';
 
 interface ChatMessage {
   role: 'client' | 'agent';
@@ -33,7 +34,7 @@ export default function PublicChatView({ slug }: PublicChatViewProps) {
 
   // Cargar historial y nombre del salón
   useEffect(() => {
-    fetch(`/api/public-booking/${slug}`)
+    fetch(apiUrl(`/api/public-booking/${slug}`))
       .then(r => r.json())
       .then(d => { if (d.tenant?.name) setTenantName(d.tenant.name); })
       .catch(() => {});
@@ -41,7 +42,7 @@ export default function PublicChatView({ slug }: PublicChatViewProps) {
     const saved = localStorage.getItem(`elena-chat-name-${slug}`);
     if (saved) { setClientName(saved); setNameConfirmed(true); }
 
-    fetch(`/api/chat/${slug}/history?sessionId=${sessionId.current}`)
+    fetch(apiUrl(`/api/chat/${slug}/history?sessionId=${sessionId.current}`))
       .then(r => r.json())
       .then(d => { if (d.log?.length) setMessages(d.log); })
       .catch(() => {});
@@ -50,7 +51,7 @@ export default function PublicChatView({ slug }: PublicChatViewProps) {
   // SSE para respuestas del agente
   useEffect(() => {
     if (!nameConfirmed) return;
-    const es = new EventSource(`/api/chat/${slug}/stream?sessionId=${sessionId.current}`);
+    const es = new EventSource(apiUrl(`/api/chat/${slug}/stream?sessionId=${sessionId.current}`));
     es.onmessage = (e) => {
       const msg: ChatMessage = JSON.parse(e.data);
       setMessages(prev => [...prev, msg]);
@@ -86,7 +87,7 @@ export default function PublicChatView({ slug }: PublicChatViewProps) {
     setMessages(prev => [...prev, userMsg]);
 
     try {
-      await fetch(`/api/chat/${slug}/message`, {
+      await fetch(apiUrl(`/api/chat/${slug}/message`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: sessionId.current, clientName, text }),
