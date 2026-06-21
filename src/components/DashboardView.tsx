@@ -625,7 +625,7 @@ export default function DashboardView({
 
             {/* Card 3: Responses count */}
             <div 
-              onClick={() => { onToastMessage(`Clientas que te Aman confirmaron interés: ${responseRate}%.`); }}
+              onClick={() => onNavigate('retention')}
               className="bg-white p-6 rounded-xl border border-muted flex flex-col justify-between transition-all duration-200 hover:shadow-md cursor-pointer"
             >
               <div className="flex items-start justify-between">
