@@ -47,78 +47,78 @@ const DEFAULT_CONFIG: AgentConfig = {
 
 const DEMO: AgentCampaign[] = [
   {
-    id: 'd1', tenantId: 'demo', clientId: 'maria-gonzalez',
+    id: 'd1', tenantId: 'demo', clientId: 'lucia-gomez',
+    clientName: 'Lucía Gómez', clientPhone: '666 777 888',
+    riskLevel: 'Crítico', riskDays: 210, suggestedService: 'Coloración + Corte',
+    message: '¡Hola Lucía! Llevamos 7 meses sin verte, te echamos de menos 💙 ¿Te busco hueco esta semana?',
+    status: 'reservado', autoSend: true, absenceReason: null,
+    createdAt: new Date(Date.now() - 26 * 3600000).toISOString(),
+    sentAt: new Date(Date.now() - 25 * 3600000).toISOString(),
+    repliedAt: new Date(Date.now() - 22 * 3600000).toISOString(),
+    lastReply: 'El viernes a las 10 perfecto',
+    conversationLog: [
+      { role: 'agent', text: '¡Hola Lucía! Llevamos 7 meses sin verte, te echamos de menos 💙 Esta semana tenemos huecos libres. ¿Te reservo uno para tu coloración y corte?', timestamp: new Date(Date.now() - 25 * 3600000).toISOString() },
+      { role: 'client', text: '¡Ay qué bien que me escribís! La verdad es que lo necesito ya. ¿Tenéis el viernes por la mañana?', timestamp: new Date(Date.now() - 23 * 3600000).toISOString() },
+      { role: 'agent', text: 'Sí, el viernes tenemos a las 10:00, 11:30 o 16:00. ¿Cuál te viene mejor?', timestamp: new Date(Date.now() - 23 * 3600000 + 60000).toISOString() },
+      { role: 'client', text: 'El viernes a las 10 perfecto', timestamp: new Date(Date.now() - 22 * 3600000).toISOString() },
+      { role: 'agent', text: '¡Perfecto Lucía! Viernes a las 10:00 para Coloración + Corte. ¡Te esperamos! 💙', timestamp: new Date(Date.now() - 22 * 3600000 + 30000).toISOString() },
+    ],
+  },
+  {
+    id: 'd2', tenantId: 'demo', clientId: 'maria-gonzalez',
     clientName: 'María González', clientPhone: '666 111 222',
     riskLevel: 'Alto', riskDays: 155, suggestedService: 'Mechas Californianas',
     message: '¡Hola María! Te echamos de menos 💙 Han pasado 5 meses. ¿Te busco un hueco esta semana?',
     status: 'respondido', autoSend: false, absenceReason: 'economia',
-    absenceDetail: 'Menciona dificultades económicas para venir al salón.',
-    absenceDetectedText: 'IA: Detectado motivo económico → Oferta de reconexión disponible',
+    absenceDetail: 'Menciona que está justa de dinero este mes. Potencial clienta si se ofrece promoción.',
+    absenceDetectedText: 'IA: Motivo económico detectado → Oferta de reconexión lista para enviar',
     createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
     sentAt: new Date(Date.now() - 90 * 60000).toISOString(),
     repliedAt: new Date(Date.now() - 30 * 60000).toISOString(),
-    lastReply: 'Ay sí me apetece pero ahora mismo estoy un poco justa de dinero...',
+    lastReply: 'Ay sí me apetece mucho pero este mes estoy bastante justa...',
     conversationLog: [
-      { role: 'agent', text: '¡Hola María! Te echamos de menos 💙 Han pasado 5 meses desde tus últimas mechas. ¿Te busco un hueco esta semana?', timestamp: new Date(Date.now() - 90 * 60000).toISOString() },
-      { role: 'client', text: 'Ay sí me apetece pero ahora mismo estoy un poco justa de dinero...', timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
-      { role: 'agent', text: 'Entendemos perfectamente María. Esta semana tenemos una promoción especial que podría venir bien. ¿Te cuento?', timestamp: new Date(Date.now() - 25 * 60000).toISOString() },
+      { role: 'agent', text: '¡Hola María! Han pasado 5 meses desde tus últimas mechas y te echamos de menos 💙 ¿Te busco un hueco esta semana?', timestamp: new Date(Date.now() - 90 * 60000).toISOString() },
+      { role: 'client', text: 'Ay sí me apetece mucho pero este mes estoy bastante justa...', timestamp: new Date(Date.now() - 35 * 60000).toISOString() },
+      { role: 'agent', text: 'Entendemos perfectamente María. Esta semana tenemos una promoción especial de bienvenida para clientas que llevan un tiempo sin venir. ¿Te cuento?', timestamp: new Date(Date.now() - 30 * 60000).toISOString() },
     ],
   },
   {
-    id: 'd2', tenantId: 'demo', clientId: 'carla-ruiz',
+    id: 'd3', tenantId: 'demo', clientId: 'carla-ruiz',
     clientName: 'Carla Ruiz', clientPhone: '666 333 444',
-    riskLevel: 'Alto', riskDays: 75, suggestedService: 'Keratina',
-    message: 'Hola Carla, ¡qué tal! Llevas 75 días sin tu keratina ¿quieres que reservemos?',
+    riskLevel: 'Alto', riskDays: 80, suggestedService: 'Keratina',
+    message: 'Hola Carla, ¡qué tal! Llevas tiempo sin tu keratina. Esta semana tenemos promoción exclusiva para clientas habituales ¿quieres que reservemos?',
     status: 'pendiente', autoSend: false, absenceReason: 'competencia',
-    absenceDetail: 'Probando salón de la competencia cerca de su casa.',
-    absenceDetectedText: 'IA: Detectada competencia → Propuesta de valor sugerida',
-    createdAt: new Date(Date.now() - 10 * 60000).toISOString(),
+    absenceDetail: 'Está probando un salón nuevo que abrió cerca de su casa. Precio similar pero menos experiencia.',
+    absenceDetectedText: 'IA: Competencia detectada → Propuesta de valor diferencial preparada',
+    createdAt: new Date(Date.now() - 15 * 60000).toISOString(),
     conversationLog: [
-      { role: 'agent', text: 'Hola Carla, ¡qué tal! Llevas 75 días sin tu keratina ¿quieres que reservemos?', timestamp: new Date(Date.now() - 10 * 60000).toISOString() },
-      { role: 'client', text: 'Hola, estoy probando un salón que abrió cerca de casa...', timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
+      { role: 'agent', text: 'Hola Carla, ¡qué tal! Llevas tiempo sin tu keratina. Esta semana tenemos promoción exclusiva para clientas habituales ¿quieres que reservemos?', timestamp: new Date(Date.now() - 15 * 60000).toISOString() },
+      { role: 'client', text: 'Hola, la verdad es que estoy probando un salón que abrió cerca de casa, más cómodo para llegar...', timestamp: new Date(Date.now() - 8 * 60000).toISOString() },
     ],
   },
   {
-    id: 'd3', tenantId: 'demo', clientId: 'ana-lopez',
+    id: 'd4', tenantId: 'demo', clientId: 'ana-lopez',
     clientName: 'Ana López', clientPhone: '666 555 666',
-    riskLevel: 'Alto', riskDays: 45, suggestedService: 'Coloración',
-    message: '¡Hola Ana! Esta semana tenemos hueco. ¿Te cuento las novedades?',
+    riskLevel: 'Medio', riskDays: 48, suggestedService: 'Coloración',
+    message: '¡Hola Ana! Esta semana tenemos hueco. ¿Nos vemos pronto?',
     status: 'pendiente', autoSend: false, absenceReason: 'personal',
-    absenceDetail: 'Situación familiar complicada, pide comprensión.',
-    absenceDetectedText: 'IA: Detectada imposibilidad personal → Tono Empático',
-    createdAt: new Date(Date.now() - 3 * 3600000).toISOString(),
+    absenceDetail: 'Situación familiar complicada. Tono muy cercano y empático recomendado.',
+    absenceDetectedText: 'IA: Situación personal detectada → Mensaje empático, sin presión',
+    createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
     conversationLog: [
-      { role: 'agent', text: '¡Hola Ana! Esta semana tenemos hueco. ¿Te cuento las novedades?', timestamp: new Date(Date.now() - 3 * 3600000).toISOString() },
-      { role: 'client', text: 'Hola, ahora mismo tengo una situación personal complicada, no puedo...', timestamp: new Date(Date.now() - 2 * 3600000).toISOString() },
-      { role: 'agent', text: 'Entendemos perfectamente Ana. Aquí estaremos cuando puedas, sin prisa. Ánimo 💙', timestamp: new Date(Date.now() - 110 * 60000).toISOString() },
-    ],
-  },
-  {
-    id: 'd4', tenantId: 'demo', clientId: 'lucia-gomez',
-    clientName: 'Lucía Gómez', clientPhone: '666 777 888',
-    riskLevel: 'Crítico', riskDays: 200, suggestedService: 'Coloración',
-    message: '¡Hola Lucía! Te echamos de menos. Esta semana tenemos hueco.',
-    status: 'reservado', autoSend: true, absenceReason: null,
-    createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
-    sentAt: new Date(Date.now() - 23 * 3600000).toISOString(),
-    repliedAt: new Date(Date.now() - 20 * 3600000).toISOString(),
-    lastReply: 'Perfecto, el viernes a las 10',
-    conversationLog: [
-      { role: 'agent', text: '¡Hola Lucía! Esta semana tenemos hueco. ¿Te cuento las novedades?', timestamp: new Date(Date.now() - 23 * 3600000).toISOString() },
-      { role: 'client', text: '¿Tenéis el viernes?', timestamp: new Date(Date.now() - 21 * 3600000).toISOString() },
-      { role: 'agent', text: 'Sí, el viernes a las 10:00, 11:30 o 16:00. ¿Cuál te viene?', timestamp: new Date(Date.now() - 21 * 3600000 + 60000).toISOString() },
-      { role: 'client', text: 'Perfecto, el viernes a las 10', timestamp: new Date(Date.now() - 20 * 3600000).toISOString() },
-      { role: 'agent', text: '¡Anotado! Lucía, viernes a las 10:00 para Coloración. Te esperamos 💙', timestamp: new Date(Date.now() - 20 * 3600000 + 30000).toISOString() },
+      { role: 'agent', text: '¡Hola Ana! Hace un tiempo que no sabemos de ti y queríamos saber cómo estás 💙 Cuando puedas y quieras, aquí tenemos tu hueco.',  timestamp: new Date(Date.now() - 4 * 3600000).toISOString() },
+      { role: 'client', text: 'Gracias por escribir, la verdad es que tengo una situación familiar complicada ahora...', timestamp: new Date(Date.now() - 3 * 3600000).toISOString() },
+      { role: 'agent', text: 'Entendemos perfectamente Ana. Aquí estaremos cuando puedas, sin prisa ninguna. Ánimo con todo 💙', timestamp: new Date(Date.now() - 170 * 60000).toISOString() },
     ],
   },
 ];
 
 const DEMO_RISK = [
-  { id: 'r1', name: 'Patricia Vega', days: 95, service: 'Balayage', risk: 'Alto' },
-  { id: 'r2', name: 'Cristina Mora', days: 180, service: 'Coloración', risk: 'Crítico' },
-  { id: 'r3', name: 'Laura Blanco', days: 62, service: 'Corte', risk: 'Medio' },
-  { id: 'r4', name: 'Elena Jiménez', days: 210, service: 'Keratina', risk: 'Crítico' },
-  { id: 'r5', name: 'Rosa Cano', days: 88, service: 'Manicura', risk: 'Alto' },
+  { id: 'r1', name: 'Cristina Mora', days: 195, service: 'Coloración', risk: 'Crítico' },
+  { id: 'r2', name: 'Elena Jiménez', days: 220, service: 'Keratina', risk: 'Crítico' },
+  { id: 'r3', name: 'Patricia Vega', days: 98, service: 'Balayage', risk: 'Alto' },
+  { id: 'r4', name: 'Rosa Cano', days: 91, service: 'Manicura + Color', risk: 'Alto' },
+  { id: 'r5', name: 'Laura Blanco', days: 63, service: 'Corte', risk: 'Medio' },
 ];
 
 function initials(name: string) {
@@ -146,6 +146,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const [waQR, setWAQR] = useState<string | null>(null);
   const [waPhone, setWAPhone] = useState<string | null>(null);
   const [listTab, setListTab] = useState<'prioridad' | 'contactados'>('prioridad');
+  const [mobilePanel, setMobilePanel] = useState<'list' | 'chat'>('list');
   const [replyDraft, setReplyDraft] = useState('');
   const [campText, setCampText] = useState('');
   const [campRefined, setCampRefined] = useState('');
@@ -290,10 +291,12 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   const listedClients = listTab === 'prioridad' ? priorityList : contactadosList;
 
   return (
-    <div className="flex gap-2 min-h-0" style={{ height: 'calc(100vh - 112px)' }}>
+    <div className="flex gap-2 min-h-0" style={{ height: 'calc(100dvh - 112px)' }}>
 
       {/* ══ COLUMNA IZQUIERDA — oscura ══════════════════════════════════════════ */}
-      <div className="w-64 flex-shrink-0 flex flex-col bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0">
+      <div className={mobilePanel === 'list'
+        ? 'flex flex-col w-full md:w-64 md:flex-shrink-0 bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0'
+        : 'hidden md:flex md:flex-col md:w-64 md:flex-shrink-0 bg-[#1c4a4e] rounded-xl overflow-hidden min-h-0'}>
 
         {/* WA status */}
         <div className="px-4 py-3 border-b border-white/8 flex-shrink-0">
@@ -344,7 +347,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
             const active = selected?.id === c.id;
             const last = c.conversationLog[c.conversationLog.length - 1];
             return (
-              <button key={c.id} onClick={() => { setSelected(c); setMode('chat'); }}
+              <button key={c.id} onClick={() => { setSelected(c); setMode('chat'); setMobilePanel('chat'); }}
                 className={`w-full text-left p-3 rounded-lg transition-all ${active ? 'bg-white/15' : 'bg-white/5 hover:bg-white/10'}`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 rounded-full bg-[#c9a9b5]/30 flex items-center justify-center font-sans text-white text-[11px] font-bold flex-shrink-0">
@@ -380,10 +383,12 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       </div>
 
       {/* ══ COLUMNA CENTRAL ═════════════════════════════════════════════════════ */}
-      <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0">
+      <div className={mobilePanel === 'chat'
+        ? 'flex flex-col flex-1 gap-2 min-w-0 min-h-0'
+        : 'hidden md:flex md:flex-col md:flex-1 md:gap-2 md:min-w-0 md:min-h-0'}>
 
         {/* Tarjetas de acción superiores */}
-        <div className="flex gap-2 flex-shrink-0">
+        <div className="hidden md:flex gap-2 flex-shrink-0">
           {([
             { id: 'campaign', icon: 'campaign',       label: 'Lanzar Campaña Masiva', sub: 'Subir Imagen/Texto' },
             { id: 'analyze',  icon: 'manage_search',  label: 'Analizar Riesgo',       sub: 'Ver clientes en riesgo' },
@@ -413,6 +418,9 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
               <>
                 <div className="px-5 py-3.5 border-b border-[#062d32]/8 flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-3">
+                    <button onClick={() => setMobilePanel('list')} className="md:hidden text-[#062d32]/40 hover:text-[#062d32] transition-colors mr-1">
+                      <span className="material-symbols-outlined text-xl">arrow_back</span>
+                    </button>
                     <div className="w-8 h-8 rounded-full bg-[#c9a9b5]/25 flex items-center justify-center font-sans text-[#062d32] text-[10px] font-bold">
                       {initials(selected.clientName)}
                     </div>
@@ -443,7 +451,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                           {initials(selected.clientName)}
                         </div>
                       )}
-                      <div className={`max-w-[60%] flex flex-col gap-1 ${msg.role === 'agent' ? 'items-end' : 'items-start'}`}>
+                      <div className={`max-w-[85%] md:max-w-[65%] flex flex-col gap-1 ${msg.role === 'agent' ? 'items-end' : 'items-start'}`}>
                         <div className={`px-4 py-2.5 text-[13px] leading-relaxed font-serif rounded-xl ${
                           msg.role === 'agent'
                             ? 'bg-[#062d32] text-white rounded-br-sm'
@@ -726,7 +734,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
       </div>
 
       {/* ══ COLUMNA DERECHA — oscura ═════════════════════════════════════════════ */}
-      <div className="w-56 flex-shrink-0 flex flex-col gap-2 min-h-0">
+      <div className="hidden md:flex w-56 flex-shrink-0 flex-col gap-2 min-h-0">
         {selected ? (
           <>
             {/* Ficha */}
