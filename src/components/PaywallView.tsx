@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tenant, User } from '../types';
+import { apiUrl } from '../lib/api';
 
 interface PaywallViewProps {
   tenant: Tenant | null;
@@ -28,7 +29,7 @@ export default function PaywallView({
     try {
       const token = getAuthToken ? await getAuthToken() : null;
       // In live environment, we call create-checkout-session
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await fetch(apiUrl('/api/create-checkout-session'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
