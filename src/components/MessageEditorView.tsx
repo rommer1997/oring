@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppView, ClientProfile, MessageDraft, WhatsAppMessage } from '../types';
 import { buildFallbackTemplates } from '../data';
+import { apiUrl } from '../lib/api';
 
 interface MessageEditorViewProps {
   clients: ClientProfile[];
@@ -120,7 +121,7 @@ export default function MessageEditorView({
     onToastMessage('Conectando con el especialista de comunicación IA...');
     try {
       const token = getAuthToken ? await getAuthToken() : null;
-      const response = await fetch('/api/generate-whatsapp', {
+      const response = await fetch(apiUrl('/api/generate-whatsapp'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
