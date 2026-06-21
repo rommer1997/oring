@@ -249,6 +249,8 @@ export interface AuditLog {
 
 // ─── Agente Proactivo ─────────────────────────────────────────────────────────
 
+export type AbsenceReason = 'economia' | 'competencia' | 'autoservicio' | 'tiempo' | 'personal';
+
 export type AgentCampaignStatus =
   | 'pendiente'   // generado, esperando aprobación del gerente
   | 'enviado'     // enviado por WhatsApp al cliente
