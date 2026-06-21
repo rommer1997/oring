@@ -7,27 +7,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: "3000"
       - key: GEMINI_API_KEY
         sync: false
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: STRIPE_PRICE_MONTHLY
-        sync: false
-      - key: STRIPE_PRICE_YEARLY
-        sync: false
-      - key: META_WA_TOKEN
-        sync: false
-      - key: META_PHONE_NUMBER_ID
-        sync: false
-      - key: META_WA_VERIFY_TOKEN
-        sync: false
-    disk:
-      name: wa-auth
-      mountPath: /opt/render/project/src/.wa-auth
-      sizeGB: 1
+      - key: ALLOWED_ORIGINS
+        value: https://elena-os.web.app
