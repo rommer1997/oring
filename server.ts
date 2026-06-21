@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import helmet from "helmet";
@@ -1644,6 +1643,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
   // Vite middleware for development
   if (!isProduction) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
