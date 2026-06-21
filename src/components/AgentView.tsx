@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AgentCampaign, AgentCampaignStatus, AgentConfig } from '../types';
+import { AgentCampaign, AgentCampaignStatus, AgentConfig, AbsenceReason } from '../types';
 import { apiUrl } from '../lib/api';
 
 interface AgentViewProps {
@@ -11,8 +11,6 @@ interface AgentViewProps {
 
 type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
 type CenterMode = 'chat' | 'campaign' | 'analyze' | 'settings';
-type AbsenceReason = 'economia' | 'competencia' | 'autoservicio' | 'tiempo' | 'personal';
-
 const ABSENCE: Record<AbsenceReason, { label: string; action: string; tone: string }> = {
   economia:     { label: 'Económico',         action: 'Lanzar oferta de reconexión',  tone: 'Oferta especial detectada' },
   competencia:  { label: 'Competencia',       action: 'Enviar propuesta de valor',    tone: 'Propuesta diferencial' },
