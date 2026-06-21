@@ -369,7 +369,7 @@ export default function MessageEditorView({
               <button
                 type="button"
                 onClick={generateAiMessage}
-                disabled={isGenerating}
+                disabled={isGenerating || !!currentClient.marketingOptOut || currentClient.contactConsent === false}
                 className={`py-2.5 px-4.5 shadow-sm text-[11px] font-bold rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 whitespace-nowrap self-center ${
                   isGenerating 
                     ? 'bg-primary/20 text-primary animate-pulse' 
