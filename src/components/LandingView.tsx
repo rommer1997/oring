@@ -92,30 +92,30 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 Recupera clientas antes de perderlas
               </h1>
               <p className="text-lg text-on-surface-variant max-w-lg leading-relaxed">
-                La herramienta que cuida tu salón y tus clientas. Genera mensajes personalizados con IA y envíalos tú misma con un clic para rescatar visitas en riesgo.
+                Elena detecta qué clientas llevan demasiado tiempo sin venir, escribe el mensaje por ti y te avisa para que lo envíes con un toque. Sin complicaciones.
               </p>
               <div className="flex flex-wrap items-center gap-4">
-                <button 
+                <button
                   id="btn-hero-start"
                   onClick={() => openAuth('sign-up')}
                   className="inline-flex items-center justify-center bg-primary text-white font-bold text-base px-8 py-4 rounded-full hover:bg-primary/90 transition-all duration-300 shadow-md cursor-pointer"
                 >
-                  {currentUser ? 'Entrar a mi salón' : isSigningIn ? 'Creando cuenta...' : 'Crear cuenta gratis'}
+                  {currentUser ? 'Entrar a mi salón' : isSigningIn ? 'Creando cuenta...' : 'Pruébalo gratis 14 días'}
                 </button>
                 <button
                   type="button"
                   onClick={onStartDemo}
                   className="inline-flex items-center justify-center border border-primary/25 text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-primary/5 transition-all duration-300 cursor-pointer"
                 >
-                  Ver demo aislada
+                  Ver el salón de ejemplo
                 </button>
                 <span className="text-sm font-semibold text-outline-variant flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary font-bold text-lg">check_circle</span>
-                  Cuenta individual sin tarjeta
+                  Sin tarjeta de crédito
                 </span>
                 <span className="text-sm font-semibold text-outline-variant flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary font-bold text-lg">shield</span>
-                  Cumple el RGPD — tus datos y los de tus clientas, protegidos
+                  Tus datos y los de tus clientas, protegidos
                 </span>
               </div>
             </div>
@@ -136,13 +136,30 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                       <span className="material-symbols-outlined font-bold text-2xl">auto_awesome</span>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">IA ACTIVA</p>
-                      <p className="text-base text-on-surface-variant font-medium">3 clientas recuperadas esta semana</p>
+                      <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Asistente activo</p>
+                      <p className="text-base text-on-surface-variant font-medium">Elena acaba de escribirle a Carmen — lleva 87 días sin venir</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Trust bar */}
+        <section className="border-y border-surface-container-high bg-surface-container-low/40 py-6 mb-24 md:mb-32">
+          <div className="max-w-[1280px] mx-auto px-4 md:px-16 flex flex-wrap items-center justify-center gap-8 md:gap-16">
+            {[
+              { icon: 'storefront', text: 'Pensado para salones españoles' },
+              { icon: 'gavel', text: 'Cumple la ley de protección de datos (RGPD)' },
+              { icon: 'support_agent', text: 'Soporte real por email' },
+              { icon: 'lock', text: 'Tus datos solo son tuyos' },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-2.5 text-on-surface-variant">
+                <span className="material-symbols-outlined text-primary text-lg">{icon}</span>
+                <span className="text-sm font-semibold">{text}</span>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -242,84 +259,55 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-12 text-left">
-            {/* Feature 1: riskEngine */}
-            <div className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-bold">insights</span>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Alertas de clientas ausentes</h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-semibold font-sans">
-                  Identifica a tus clientas que te echan de menos y prepara mensajes para que vuelvan a tu salón.
-                </p>
-              </div>
+          {/* Card destacada: Asistente Autónomo */}
+          <div className="mt-12 bg-primary text-on-primary rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-3xl font-bold text-[#fdf6ec]">smart_toy</span>
             </div>
+            <div className="flex-1 relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[9px] font-bold uppercase tracking-widest bg-[#fdf6ec]/15 text-[#fdf6ec] px-2.5 py-1 rounded-full border border-white/20">Lo más diferente de Elena</span>
+              </div>
+              <h3 className="font-serif text-2xl md:text-3xl font-bold text-on-primary mb-3">Tu asistente trabaja mientras tú atiendes</h3>
+              <p className="text-sm text-primary-fixed-dim leading-relaxed max-w-2xl">
+                Elena revisa sola quién lleva demasiado tiempo sin venir, detecta el motivo (precio, competencia, falta de tiempo...) y prepara el mensaje perfecto para cada clienta. Tú lo apruebas y ella lo envía por WhatsApp. Sin que tengas que acordarte de nadie.
+              </p>
+            </div>
+            <button onClick={() => openAuth('sign-up')} className="shrink-0 bg-[#fdf6ec] text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-white transition-colors cursor-pointer whitespace-nowrap">
+              Activar el asistente
+            </button>
+          </div>
 
-            {/* Feature 2: Gemini 3.5 */}
-            <div className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-bold">magic_button</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-8 text-left">
+            {[
+              { icon: 'insights', title: 'Aviso antes de perder a una clienta', desc: 'Elena te dice quién lleva demasiado tiempo sin venir y qué puedes hacer para que vuelva.' },
+              { icon: 'magic_button', title: 'Mensajes escritos para ti', desc: 'Te prepara tres versiones del mensaje adaptadas a la última visita de tu clienta. Tú eliges cuál enviar.' },
+              { icon: 'public', title: 'Reservas desde cualquier lugar', desc: 'Tus clientas pueden pedir cita desde su móvil en cualquier momento. La agenda se actualiza sola.' },
+              { icon: 'calendar_month', title: 'Agenda sencilla y sin errores', desc: 'Gestiona las citas de todo tu equipo. Elena comprueba la disponibilidad y evita que dos citas se solapen.' },
+              { icon: 'inventory_2', title: 'Siempre sabes lo que tienes en stock', desc: 'Controla tus productos de cabina y reventa. Te avisamos antes de que te quedes sin nada.' },
+              { icon: 'receipt_long', title: 'Facturación sin papeleos', desc: 'Registra cobros, genera informes y ten todo en orden para cuando lo necesites.' },
+              { icon: 'shield', title: 'Protección de datos de serie', desc: 'Los datos de tus clientas están protegidos por ley. Si alguien pide que lo borres, lo haces en un clic.' },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
+                    <span className="material-symbols-outlined text-2xl font-bold">{icon}</span>
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-primary mb-2.5">{title}</h3>
+                  <p className="text-xs text-on-surface-variant leading-relaxed font-semibold font-sans">{desc}</p>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Asistente para escribir mensajes</h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
-                  Redacta borradores de WhatsApp hiper-personalizados adaptados al último servicio recibido en 3 tonos estéticos (Cercano, Profesional, Elegante) gracias al modelo Gemini 3.5.
-                </p>
               </div>
-            </div>
+            ))}
+          </div>
 
-            {/* Feature 3: Public Booking */}
-            <div className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-bold">public</span>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Reservas Online</h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
-                  Tu propio enlace público (/salon/tu-slug) interactivo y sofisticado para que tus clientas agenden online. Sincronización atómica y cálculo de slots inteligente.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature 4: Scheduler Express */}
-            <div className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-bold">calendar_month</span>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Agenda & Scheduler Express</h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
-                  Una agenda digital interactiva y veloz que valida en tiempo real la disponibilidad de estilistas y respeta sus turnos continuos o partidos de manera automática.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature 5: Inventory */}
-            <div className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-bold">inventory_2</span>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">Control de Stock Estético</h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
-                  Gestiona existencias de productos de cabina y reventa, calcula costes reales del stock del salón y recibe alertas inmediatas cuando un producto baja del mínimo.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature 6: RGPD Compliant */}
-            <div className="bg-white border border-border/70 p-6 md:p-8 rounded-3xl hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2 transition-all duration-300 flex flex-col justify-between group">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#faf6f0] text-primary border border-primary/5 flex items-center justify-center mb-6 group-hover:bg-[#4A2C40] group-hover:text-white transition-all duration-300 shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-bold">shield</span>
-                </div>
-                <h3 className="font-serif text-xl font-bold text-primary mb-2.5">RGPD y Derecho al Olvido</h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
-                  Los datos de tus clientas protegidos según la ley. Exporta todo en CSV y borra datos personales en un solo clic si alguien te lo pide.
-                </p>
-              </div>
-            </div>
+          {/* CTA entre secciones */}
+          <div className="mt-14 text-center">
+            <button onClick={() => openAuth('sign-up')} className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-8 py-4 rounded-full hover:bg-primary/90 transition-all shadow-md cursor-pointer">
+              <span>Empezar gratis — sin tarjeta</span>
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </button>
+            <p className="text-xs text-outline mt-3">14 días de prueba · Cancela cuando quieras</p>
           </div>
         </section>
 
@@ -540,33 +528,38 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-variant/50 text-on-surface-variant font-medium">
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Sistema de alertas de clientas</td>
+                    <tr className="transition-colors hover:bg-surface-container-low/20 bg-primary/3">
+                      <td className="px-6 py-4 text-primary font-bold">Asistente que actúa solo — detecta, escribe y avisa</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
                       <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
                     </tr>
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Generación de mensajes WhatsApp por IA (3 tonos)</td>
+                      <td className="px-6 py-4 text-primary font-bold">Aviso cuando una clienta lleva tiempo sin venir</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
                       <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
                     </tr>
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Agenda & Scheduler interactivos express</td>
+                      <td className="px-6 py-4 text-primary font-bold">Mensajes de WhatsApp escritos por IA (3 estilos)</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">Agenda estática simple</td>
+                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
                     </tr>
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Métricas reales de Facturación y recuperación estimada</td>
+                      <td className="px-6 py-4 text-primary font-bold">Agenda con control de disponibilidad del equipo</td>
+                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
+                      <td className="px-6 py-4 text-center text-xs">Agenda básica</td>
+                    </tr>
+                    <tr className="transition-colors hover:bg-surface-container-low/20">
+                      <td className="px-6 py-4 text-primary font-bold">Informes reales de lo que has ganado recuperando clientas</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
                       <td className="px-6 py-4 text-center text-xs">Solo informes contables básicos</td>
                     </tr>
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Control de stock e inventario con alertas bajas</td>
+                      <td className="px-6 py-4 text-primary font-bold">Control de stock con aviso cuando te quedas sin producto</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">Requiere add-on de pago adicional</td>
+                      <td className="px-6 py-4 text-center text-xs">De pago aparte</td>
                     </tr>
                     <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Cumplimiento RGPD y anonimización en 1 clic</td>
+                      <td className="px-6 py-4 text-primary font-bold">Protección de datos de clientas y borrado en 1 clic</td>
                       <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
                       <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
                     </tr>
