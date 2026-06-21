@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppConfig, StaffMember, Tenant, User, ClientProfile } from '../types';
 import { buildNewClient } from '../utils/riskEngine';
+import { apiUrl } from '../lib/api';
 
 // ponytail: import CSV real. Detecta delimitador (Excel ES usa ';'), mapea columnas por nombre difuso
 // (nombre/teléfono/email obligatorio el nombre+teléfono), y crea una ficha por fila vía onAddClient.
@@ -721,7 +722,7 @@ export default function SettingsView({
                     onClick={async () => {
                       try {
                         const token = getAuthToken ? await getAuthToken() : null;
-                        const response = await fetch('/api/create-portal-session', {
+                        const response = await fetch(apiUrl('/api/create-portal-session'), {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -751,7 +752,7 @@ export default function SettingsView({
                       onClick={async () => {
                         try {
                           const token = getAuthToken ? await getAuthToken() : null;
-                          const response = await fetch('/api/create-checkout-session', {
+                          const response = await fetch(apiUrl('/api/create-checkout-session'), {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
