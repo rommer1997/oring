@@ -283,6 +283,17 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
     }
   };
 
+  const handleManualSend = async (c: AgentCampaign) => {
+    await navigator.clipboard.writeText(c.message).catch(() => {});
+    const optimistic = { ...c, status: 'enviado' as AgentCampaignStatus, sentAt: new Date().toISOString() };
+    setCampaigns(prev => prev.map(x => x.id === c.id ? optimistic : x));
+    setSelected(optimistic);
+    onToastMessage(`Mensaje copiado — pégalo en WhatsApp para ${c.clientName}.`);
+    if (!isDemoMode) {
+      try { await authFetch(`/api/agent/campaigns/${c.id}/approve`, { method: 'POST' }); } catch { /* best effort */ }
+    }
+  };
+
   const handleWAConnect = async () => {
     if (isDemoMode) { onToastMessage('Demo: escanea el QR con tu móvil.'); return; }
     try { await authFetch('/api/agent/wa-connect', { method: 'POST' }); } catch { onToastMessage('Error.'); }
@@ -291,6 +302,9 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
     if (isDemoMode) { setWAStatus('disconnected'); setWAPhone(null); return; }
     try { await authFetch('/api/agent/wa-disconnect', { method: 'POST' }); } catch { onToastMessage('Error.'); }
   };
+
+  const waDown = waStatus !== 'connected' && !isDemoMode;
+  const pendingCount = campaigns.filter(c => c.status === 'pendiente').length;
 
   const sorted = [...campaigns].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
   const priorityList = sorted.filter(c => ['respondido', 'pendiente'].includes(c.status));
@@ -406,6 +420,17 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                 {waStatus === 'connecting' ? 'Conectando…' : 'Conectar WhatsApp'}
               </button>
             )}
+          </div>
+        )}
+
+        {/* ── BANNER WhatsApp caído ─────────────────────────────────────────── */}
+        {waDown && pendingCount > 0 && (
+          <div className="flex-shrink-0 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <span className="material-symbols-outlined text-amber-500 flex-shrink-0 text-base">warning</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-sans font-bold text-amber-700">{pendingCount} mensaje{pendingCount > 1 ? 's' : ''} pendiente{pendingCount > 1 ? 's' : ''} · WhatsApp desconectado</p>
+              <p className="text-[10px] font-sans text-amber-600/70">Usa "Copiar mensaje" para enviarlos manualmente desde tu móvil.</p>
+            </div>
           </div>
         )}
 
@@ -552,11 +577,19 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                         className="text-[10px] font-sans font-bold uppercase tracking-wider border border-[#062d32]/15 text-[#062d32]/40 px-3 py-2 hover:border-red-300 hover:text-red-500 transition-all">
                         Descartar
                       </button>
-                      <button onClick={() => handleApprove(selected)}
-                        className="bg-[#062d32] text-white text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 hover:opacity-85 transition-opacity">
-                        <span className="material-symbols-outlined text-sm">send</span>
-                        Enviar por WhatsApp
-                      </button>
+                      {waDown ? (
+                        <button onClick={() => handleManualSend(selected)}
+                          className="bg-amber-600 text-white text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 hover:opacity-85 transition-opacity">
+                          <span className="material-symbols-outlined text-sm">content_copy</span>
+                          Copiar mensaje
+                        </button>
+                      ) : (
+                        <button onClick={() => handleApprove(selected)}
+                          className="bg-[#062d32] text-white text-[10px] font-sans font-bold uppercase tracking-wider px-4 py-2 flex items-center gap-1.5 hover:opacity-85 transition-opacity">
+                          <span className="material-symbols-outlined text-sm">send</span>
+                          Enviar por WhatsApp
+                        </button>
+                      )}
                     </div>
                   )}
                   {(selected.status === 'respondido' || selected.status === 'reservado' || selected.status === 'enviado') && (
