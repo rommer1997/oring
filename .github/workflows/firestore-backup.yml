@@ -1,0 +1,32 @@
+name: Firestore Weekly Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Domingo 3am UTC
+  workflow_dispatch:      # permite lanzarlo manualmente
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin --no-save
+
+      - name: Export Firestore collections
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/firestore-backup.mjs
+
+      - name: Commit backup
+        run: |
+          git config user.name "elenaos-backup"
+          git config user.email "backup@elenaos.internal"
+          git add backups/
+          git diff --cached --quiet || git commit -m "Firestore backup $(date -u +%Y-%m-%d)"
+          git push
