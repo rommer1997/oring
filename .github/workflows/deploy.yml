@@ -13,6 +13,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - run: node scripts/test-risk.mjs
       - run: npm run lint
       - run: npm run build
         env:
