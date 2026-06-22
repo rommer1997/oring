@@ -125,6 +125,7 @@ async function resolveAuthenticatedTenant(req: any, adminRuntime: FirebaseAdminR
     email: decodedToken.email || userData.email || "",
     tenantId: userData.tenantId as string,
     db,
+    adminRuntime,
   };
 }
 
@@ -434,6 +435,20 @@ async function startServer() {
     return ai;
   };
 
+  // ponytail: circuit breaker por usuario para Gemini — evita que un tenant agote la cuota global
+  const geminiUserCalls = new Map<string, { count: number; resetAt: number }>();
+  function checkGeminiQuota(uid: string): boolean {
+    const now = Date.now();
+    const entry = geminiUserCalls.get(uid);
+    if (!entry || now >= entry.resetAt) {
+      geminiUserCalls.set(uid, { count: 1, resetAt: now + 3600000 });
+      return true;
+    }
+    if (entry.count >= 60) return false;
+    entry.count++;
+    return true;
+  }
+
   // ─── WhatsApp per-tenant state (defined early so health endpoint can read it) ──
   type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
   const WA_AUTH_DIR = path.join(process.cwd(), '.wa-auth');
@@ -723,6 +738,9 @@ async function startServer() {
         }
 
         const decodedToken = await adminRuntime.admin.auth().verifyIdToken(token);
+        if (!checkGeminiQuota(decodedToken.uid)) {
+          return res.status(429).json({ error: "Límite de generaciones IA alcanzado. Inténtalo en una hora." });
+        }
         const userDoc = await adminRuntime.admin.firestore().doc(`users/${decodedToken.uid}`).get();
         if (!userDoc.exists || userDoc.data()?.status !== "Activo") {
           return res.status(403).json({ error: "Usuario sin acceso activo." });
@@ -1289,7 +1307,8 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   // ─── POST /api/agent/refine ───────────────────────────────────────────────────
   app.post('/api/agent/refine', aiLimiter, async (req, res) => {
     try {
-      await resolveAuthenticatedTenant(req, adminRuntime);
+      const { uid } = await resolveAuthenticatedTenant(req, adminRuntime);
+      if (!checkGeminiQuota(uid)) return res.status(429).json({ error: 'Límite de generaciones IA alcanzado. Inténtalo en una hora.' });
       const { text } = req.body;
       if (!text?.trim()) return res.status(400).json({ error: 'text requerido.' });
       const genAI = getGeminiClient();
