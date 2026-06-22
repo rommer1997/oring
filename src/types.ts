@@ -265,7 +265,7 @@ export interface AgentCampaign {
   clientId: string;
   clientName: string;
   clientPhone: string;
-  riskLevel: 'Alto' | 'Crítico';
+  riskLevel: 'Bajo' | 'Medio' | 'Alto' | 'Crítico';
   riskDays: number;
   suggestedService: string;
   message: string;
