@@ -89,7 +89,9 @@ export function useAuth(triggerToast: (msg: string) => void): UseAuthReturn {
             resolvedUser = userSnap.data() as User;
             resolvedTenantId = resolvedUser.tenantId;
           } else {
-            const ownerName = user.displayName || user.email?.split('@')[0] || 'Propietaria';
+            // H05: no derivar el nombre del email (genera "prueba.cro.elena"). Si no hay
+            // displayName real (registro por email), dejar vacío para que el onboarding pida "Tu nombre".
+            const ownerName = user.displayName || '';
             const now = new Date();
             const createdAt = now.toISOString();
             const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
