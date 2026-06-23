@@ -1346,6 +1346,52 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   });
 
+  // ─── POST /api/client/:id/hard-delete ────────────────────────────────────────
+  // LEG-03: RGPD right-to-erasure — deletes all client PII and leaves audit trail
+  app.post('/api/client/:id/hard-delete', express.json(), async (req, res) => {
+    try {
+      const { tenantId, uid, db } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const clientId = req.params.id;
+      const clientRef = db.doc(`tenants/${tenantId}/clients/${clientId}`);
+      const clientSnap = await clientRef.get();
+      if (!clientSnap.exists) { res.status(404).json({ error: 'Client not found' }); return; }
+
+      const db_ = adminRuntime!.admin.firestore();
+      const batch = db_.batch();
+
+      // Delete all appointments referencing this client
+      const apptSnap = await db.collection(`tenants/${tenantId}/appointments`)
+        .where('clientId', '==', clientId).get();
+      apptSnap.docs.forEach(d => batch.delete(d.ref));
+
+      // Delete agent campaigns
+      const campSnap = await db.collection(`tenants/${tenantId}/agent_campaigns`)
+        .where('clientId', '==', clientId).get();
+      campSnap.docs.forEach(d => batch.delete(d.ref));
+
+      // Replace client doc with erasure tombstone (no PII)
+      batch.set(clientRef, {
+        __erased: true,
+        erasedAt: new Date().toISOString(),
+        erasedBy: uid,
+      });
+
+      await batch.commit();
+
+      // Append-only audit log
+      await db.collection(`tenants/${tenantId}/audit_log`).add({
+        action: 'client.hard_delete',
+        clientId,
+        performedBy: uid,
+        at: new Date().toISOString(),
+      });
+
+      res.json({ ok: true, deletedAppointments: apptSnap.size, deletedCampaigns: campSnap.size });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
   // ─── POST /webhook/whatsapp ───────────────────────────────────────────────────
   app.post('/webhook/whatsapp', express.json(), async (req, res) => {
     // SEC-01: HMAC-SHA256 signature verification
