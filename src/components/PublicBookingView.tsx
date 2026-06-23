@@ -181,7 +181,9 @@ export default function PublicBookingView({ slug }: PublicBookingViewProps) {
 
             <label className="flex items-start gap-3 text-xs text-on-surface-variant font-semibold">
               <input type="checkbox" checked={contactConsent} onChange={(event) => setContactConsent(event.target.checked)} className="mt-0.5 accent-primary" />
-              Acepto que el salón me contacte para confirmar esta reserva.
+              <span>
+                Acepto que <strong>{data?.tenant.name || 'el salón'}</strong> trate mis datos para gestionar y confirmar esta reserva, y que me contacte por teléfono o WhatsApp con ese fin (RGPD). Puedo pedir que se borren mis datos en cualquier momento.
+              </span>
             </label>
 
             {error && <p className="text-sm font-bold text-red-700 bg-red-50 border border-red-100 rounded-xl p-3">{error}</p>}
