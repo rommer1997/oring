@@ -23,10 +23,19 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: node scripts/firestore-backup.mjs
 
-      # SEC-04: Upload as encrypted artifact — never commit PII to git
-      - name: Upload backup artifact
+      # SEC-04: encrypt PII before it leaves the runner (AES-256, key from secrets).
+      # The plaintext JSON never reaches the artifact store — only the .enc blob does.
+      - name: Encrypt backup
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          test -n "$BACKUP_ENCRYPTION_KEY" || { echo "::error::BACKUP_ENCRYPTION_KEY no configurado"; exit 1; }
+          tar -czf - backups/ | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:BACKUP_ENCRYPTION_KEY -out firestore-backup.tar.gz.enc
+          rm -rf backups/  # no dejar PII en claro en el runner/artefacto
+
+      - name: Upload encrypted backup artifact
         uses: actions/upload-artifact@v4
         with:
           name: firestore-backup-${{ github.run_id }}
-          path: backups/
+          path: firestore-backup.tar.gz.enc
           retention-days: 90

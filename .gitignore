@@ -8,4 +8,6 @@ coverage/
 !.env.example
 
 # Firestore backups — never commit PII to git (SEC-04)
-backups/
+backups/*
+!backups/.gitkeep
+!backups/README.md
