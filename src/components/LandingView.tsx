@@ -114,14 +114,14 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   onClick={() => openAuth('sign-up')}
                   className="inline-flex items-center justify-center bg-primary text-white font-bold text-base px-8 py-4 rounded-full hover:bg-primary/90 transition-all duration-300 shadow-md cursor-pointer"
                 >
-                  {currentUser ? 'Entrar a mi salón' : isSigningIn ? 'Creando cuenta...' : 'Pruébalo gratis 14 días'}
+                  {currentUser ? 'Entrar a mi salón' : isSigningIn ? 'Creando cuenta...' : 'Probar Elena 14 días gratis'}
                 </button>
                 <button
                   type="button"
                   onClick={onStartDemo}
-                  className="inline-flex items-center justify-center border border-primary/25 text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-primary/5 transition-all duration-300 cursor-pointer"
+                  className="text-sm font-medium text-primary/70 hover:text-primary underline underline-offset-4 cursor-pointer transition-colors"
                 >
-                  Ver el salón de ejemplo
+                  ¿Prefieres verlo primero? Ver demo →
                 </button>
                 <span className="text-sm font-semibold text-outline-variant flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary font-bold text-lg">check_circle</span>
@@ -167,7 +167,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               { icon: 'storefront', text: 'Pensado para salones españoles' },
               { icon: 'gavel', text: 'Cumple la ley de protección de datos (RGPD)' },
               { icon: 'support_agent', text: 'Soporte real por email' },
-              { icon: 'lock', text: 'Tus datos solo son tuyos' },
+              { icon: 'lock', text: 'Datos en la UE · Cifrados · Borrado RGPD en 1 clic' },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2.5 text-on-surface-variant">
                 <span className="material-symbols-outlined text-primary text-lg">{icon}</span>
@@ -252,7 +252,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   onClick={() => openAuth('sign-up')}
                   className="w-full bg-surface text-primary font-bold text-sm py-3 px-6 rounded-full hover:bg-surface-bright transition-all duration-300 relative z-10 hover:shadow-md cursor-pointer"
                 >
-                  Crear mi cuenta
+                  Probar Elena 14 días gratis
                 </button>
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               </p>
             </div>
             <button onClick={() => openAuth('sign-up')} className="shrink-0 bg-[#fdf6ec] text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-white transition-colors cursor-pointer whitespace-nowrap">
-              Activar el asistente
+              Probar Elena 14 días gratis
             </button>
           </div>
 
@@ -318,10 +318,13 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           {/* CTA entre secciones */}
           <div className="mt-14 text-center">
             <button onClick={() => openAuth('sign-up')} className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-8 py-4 rounded-full hover:bg-primary/90 transition-all shadow-md cursor-pointer">
-              <span>Empezar gratis — sin tarjeta</span>
+              <span>Probar Elena 14 días gratis</span>
               <span className="material-symbols-outlined text-base">arrow_forward</span>
             </button>
             <p className="text-xs text-outline mt-3">14 días de prueba · Cancela cuando quieras</p>
+            <p className="text-xs text-primary/50 mt-1">
+              <button type="button" onClick={onStartDemo} className="hover:text-primary underline underline-offset-2 cursor-pointer transition-colors">¿Prefieres verlo antes? Ver demo →</button>
+            </p>
           </div>
         </section>
 
@@ -344,7 +347,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   <div className="w-12 h-12 rounded-full bg-secondary/80 text-primary flex items-center justify-center font-serif text-xl font-bold mb-6">
                     1
                   </div>
-                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Agenda Siempre al Día</h3>
+                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Elena vigila tu lista de clientas</h3>
                   <p className="text-xs text-on-surface-variant mb-6 leading-relaxed font-sans">
                     Integración fluida de tus reservas del día. Una vista limpia y aireada para un control operativo sin esfuerzo.
                   </p>
@@ -377,7 +380,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   <div className="w-12 h-12 rounded-full bg-secondary/80 text-primary flex items-center justify-center font-serif text-xl font-bold mb-6">
                     2
                   </div>
-                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Monitor de Mimo</h3>
+                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Clientas en riesgo</h3>
                   <p className="text-xs text-on-surface-variant mb-6 leading-relaxed font-sans">
                     Nuestra IA analiza de forma silenciosa el ciclo ideal del salón e identifica al instante clientas que te echan de menos.
                   </p>
@@ -524,6 +527,9 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             </div>
 
             <p className="text-center text-xs text-on-surface-variant mt-6">Todos los planes incluyen 14 días de prueba gratuita · Sin tarjeta de crédito para empezar</p>
+            <p className="text-center text-xs text-primary/50 mt-2">
+              <button type="button" onClick={onStartDemo} className="hover:text-primary underline underline-offset-2 cursor-pointer transition-colors">¿Prefieres verlo antes? Ver demo →</button>
+            </p>
 
             {/* Features Comparison Table */}
             <div className="mt-20 border-t border-primary/5 pt-16 text-left">
@@ -536,7 +542,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 <table className="w-full text-left text-xs sm:text-sm font-medium border-collapse">
                   <thead>
                     <tr className="border-b border-[#bfa982]/20 bg-surface-container-low/40">
-                      <th className="px-6 py-4 text-primary font-bold">Funcionalidad de Autor</th>
+                      <th className="px-6 py-4 text-primary font-bold">Lo que hace Elena</th>
                       <th className="px-6 py-4 text-primary font-bold text-center bg-primary/5">ElenaOS Premium</th>
                       <th className="px-6 py-4 text-on-surface-variant font-bold text-center">CRM Tradicional</th>
                     </tr>
@@ -592,7 +598,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             type="button"
             aria-label="Cerrar"
             onClick={() => { setAuthMode(null); setForgotSent(false); setAuthError(null); }}
-            className="absolute inset-0 bg-primary/35 backdrop-blur-sm cursor-default"
+            className="absolute inset-0 bg-primary/35 backdrop-blur-sm cursor-pointer"
           />
           <form onSubmit={handleEmailSubmit} className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl border border-primary/15">
             <div className="flex items-start justify-between gap-4 mb-6">
