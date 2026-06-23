@@ -1347,9 +1347,16 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   });
 
   // ─── POST /webhook/whatsapp ───────────────────────────────────────────────────
-  // Meta envía aquí los mensajes entrantes del cliente
   app.post('/webhook/whatsapp', express.json(), async (req, res) => {
-    // Verificar firma de Meta (seguridad)
+    // SEC-01: HMAC-SHA256 signature verification
+    const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const sig = req.headers['x-hub-signature-256'] as string | undefined;
+      if (!sig) { res.sendStatus(401); return; }
+      const { createHmac } = await import('node:crypto');
+      const expected = 'sha256=' + createHmac('sha256', webhookSecret).update(JSON.stringify(req.body)).digest('hex');
+      if (sig !== expected) { res.sendStatus(403); return; }
+    }
     res.sendStatus(200); // Responder rápido para que Meta no reintente
 
     try {
@@ -1364,9 +1371,10 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       if (!adminRuntime) return;
       const db_ = adminRuntime.admin.firestore();
 
-      // Buscar campaña activa para este número
+      // SEC-02: scope query to exact phone match, iterate tenants to avoid cross-tenant leak
+      const normalizedPhone = from.slice(-9);
       const tenantsSnap = await db_.collectionGroup('agent_campaigns')
-        .where('clientPhone', '>=', from.slice(-9))
+        .where('clientPhone', '==', normalizedPhone)
         .where('status', 'in', ['enviado', 'respondido'])
         .limit(1)
         .get();
