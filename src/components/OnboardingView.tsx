@@ -58,6 +58,7 @@ export default function OnboardingView({
 }: OnboardingViewProps) {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [dpaAccepted, setDpaAccepted] = useState(false);
 
   const [salonName, setSalonName] = useState(tenant?.name || '');
   const [salonCity, setSalonCity] = useState(tenant?.city || '');
@@ -373,7 +374,26 @@ export default function OnboardingView({
               </div>
             )}
 
-            <div className="flex justify-between pt-8 mt-8 border-t border-outline-variant/20">
+            {/* LEG-02: DPA mandatory acceptance before completing onboarding */}
+            {step === 4 && (
+              <label className="flex items-start gap-3 mt-6 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={dpaAccepted}
+                  onChange={e => setDpaAccepted(e.target.checked)}
+                  className="mt-0.5 flex-shrink-0 accent-primary"
+                />
+                <span className="text-xs text-on-surface-variant leading-relaxed">
+                  He leído y acepto el{' '}
+                  <a href="https://elena-os.web.app/dpa" target="_blank" rel="noopener noreferrer" className="underline text-primary">Acuerdo de Tratamiento de Datos (DPA)</a>
+                  {' '}y la{' '}
+                  <a href="https://elena-os.web.app/privacy" target="_blank" rel="noopener noreferrer" className="underline text-primary">Política de Privacidad</a>.
+                  Como responsable del salón, me comprometo a tratar los datos de mis clientas conforme al RGPD y la LOPDGDD.
+                </span>
+              </label>
+            )}
+
+            <div className="flex justify-between pt-8 mt-4 border-t border-outline-variant/20">
               <button
                 type="button"
                 onClick={() => setStep((current) => Math.max(1, current - 1))}
@@ -387,7 +407,7 @@ export default function OnboardingView({
                   Continuar
                 </button>
               ) : (
-                <button type="button" onClick={handleComplete} disabled={isSaving} className="px-5 py-3 bg-primary text-white rounded-xl text-xs font-bold disabled:opacity-60">
+                <button type="button" onClick={handleComplete} disabled={isSaving || !dpaAccepted} className="px-5 py-3 bg-primary text-white rounded-xl text-xs font-bold disabled:opacity-60">
                   {isSaving ? 'Guardando...' : 'Entrar al panel'}
                 </button>
               )}
