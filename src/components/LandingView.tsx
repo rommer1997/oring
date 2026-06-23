@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
 
 interface LandingViewProps {
@@ -19,7 +19,15 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [forgotSent, setForgotSent] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [legalView, setLegalView] = useState<'privacy' | 'terms' | 'cookies' | null>(null);
+  const [cookieConsent, setCookieConsent] = useState<'accepted' | 'rejected' | null>(() => {
+    try { return localStorage.getItem('elena_cookie_consent') as 'accepted' | 'rejected' | null; } catch { return null; }
+  });
+
+  useEffect(() => {
+    if (cookieConsent) localStorage.setItem('elena_cookie_consent', cookieConsent);
+  }, [cookieConsent]);
 
   // Live calculator calculations
   const totalLoss = inactiveClients * averageTicket;
@@ -31,6 +39,8 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
       return;
     }
     setAuthMode(mode);
+    setForgotSent(false);
+    setAuthError(null);
   };
 
   const handleGoogleClick = async () => {
@@ -44,6 +54,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
 
   const handleEmailSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setAuthError(null);
     try {
       setIsSigningIn(true);
       if (authMode === 'sign-up') {
@@ -51,6 +62,9 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
       } else {
         await onSignInWithEmail(email, password);
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al autenticar';
+      setAuthError(msg.replace(/\(auth\/[^)]+\)\s*/, ''));
     } finally {
       setIsSigningIn(false);
     }
@@ -577,7 +591,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           <button
             type="button"
             aria-label="Cerrar"
-            onClick={() => setAuthMode(null)}
+            onClick={() => { setAuthMode(null); setForgotSent(false); setAuthError(null); }}
             className="absolute inset-0 bg-primary/35 backdrop-blur-sm cursor-default"
           />
           <form onSubmit={handleEmailSubmit} className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl border border-primary/15">
@@ -590,7 +604,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   {authMode === 'sign-up' ? 'Crea tu salón privado con email o Google.' : 'Entra con tu email o continúa con Google.'}
                 </p>
               </div>
-              <button type="button" onClick={() => setAuthMode(null)} className="text-primary hover:text-primary/70 cursor-pointer">
+              <button type="button" onClick={() => { setAuthMode(null); setForgotSent(false); setAuthError(null); }} className="text-primary hover:text-primary/70 cursor-pointer">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -637,6 +651,10 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 </div>
               )}
             </div>
+
+            {authError && (
+              <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{authError}</p>
+            )}
 
             <button
               type="submit"
@@ -726,6 +744,28 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   <p><strong>Gestión:</strong> Puedes eliminar las cookies técnicas limpiando el almacenamiento de tu navegador, lo que cerrará tu sesión activa.</p>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LEG-01: Cookie consent banner */}
+      {!cookieConsent && (
+        <div className="fixed bottom-0 left-0 right-0 z-[80] bg-white border-t border-outline-variant/30 shadow-lg px-4 py-4">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <p className="flex-1 text-xs text-on-surface-variant">
+              Usamos cookies técnicas necesarias para el funcionamiento de la app (sesión de Firebase). No usamos cookies de seguimiento ni publicidad.{' '}
+              <button className="underline hover:text-primary" onClick={() => setLegalView('cookies')}>Más info</button>
+            </p>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => setCookieConsent('rejected')}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+              >Rechazar</button>
+              <button
+                onClick={() => setCookieConsent('accepted')}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-primary text-white hover:bg-primary/90"
+              >Aceptar</button>
             </div>
           </div>
         </div>
