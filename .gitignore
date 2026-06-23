@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Firestore backups — never commit PII to git (SEC-04)
+backups/
