@@ -84,6 +84,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#calculadora">Calculadora</a>
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#maravillas">Lo que Elena hace</a>
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#precios">Precios</a>
+          <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#faq">Preguntas</a>
         </div>
 
         <button 
@@ -535,58 +536,87 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             <div className="mt-20 border-t border-primary/5 pt-16 text-left">
               <h3 className="font-serif text-3xl font-bold text-center text-primary mb-4">¿Por qué ElenaOS es diferente?</h3>
               <p className="text-sm text-on-surface-variant text-center max-w-2xl mx-auto mb-10 font-medium font-sans">
-                Compara nuestra suite activa de rescate frente a las agendas y CRM de reservas tradicionales.
+                Frente a la agenda de papel o a apps de reservas como Booksy o Treatwell, Elena no solo guarda las citas: trabaja sola para que tus clientas vuelvan.
               </p>
-              
+
               <div className="bg-white rounded-2xl border border-[#bfa982]/20 overflow-hidden shadow-sm max-w-4xl mx-auto font-sans">
                 <table className="w-full text-left text-xs sm:text-sm font-medium border-collapse">
                   <thead>
                     <tr className="border-b border-[#bfa982]/20 bg-surface-container-low/40">
-                      <th className="px-6 py-4 text-primary font-bold">Lo que hace Elena</th>
-                      <th className="px-6 py-4 text-primary font-bold text-center bg-primary/5">ElenaOS Premium</th>
-                      <th className="px-6 py-4 text-on-surface-variant font-bold text-center">CRM Tradicional</th>
+                      <th className="px-4 sm:px-6 py-4 text-primary font-bold">Lo que necesita tu salón</th>
+                      <th className="px-3 sm:px-6 py-4 text-on-surface-variant font-bold text-center">Papel / Google Calendar</th>
+                      <th className="px-3 sm:px-6 py-4 text-on-surface-variant font-bold text-center">Booksy / Treatwell</th>
+                      <th className="px-3 sm:px-6 py-4 text-primary font-bold text-center bg-primary/5">Elena</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-variant/50 text-on-surface-variant font-medium">
-                    <tr className="transition-colors hover:bg-surface-container-low/20 bg-primary/3">
-                      <td className="px-6 py-4 text-primary font-bold">Asistente que actúa solo — detecta, escribe y avisa</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Aviso cuando una clienta lleva tiempo sin venir</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Mensajes de WhatsApp escritos por IA (3 estilos)</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Agenda con control de disponibilidad del equipo</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">Agenda básica</td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Informes reales de lo que has ganado recuperando clientas</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">Solo informes contables básicos</td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Control de stock con aviso cuando te quedas sin producto</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">De pago aparte</td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Protección de datos de clientas y borrado en 1 clic</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
+                    {[
+                      { f: 'Asistente que actúa solo — detecta, escribe y avisa', a: false, b: false },
+                      { f: 'Aviso cuando una clienta lleva tiempo sin venir', a: false, b: false },
+                      { f: 'Mensajes de WhatsApp escritos por IA (3 estilos)', a: false, b: false },
+                      { f: 'Reservas online para tus clientas', a: false, b: true },
+                      { f: 'Agenda con control de disponibilidad del equipo', a: 'Manual', b: true },
+                      { f: 'Informes de lo que ganas recuperando clientas', a: false, b: 'Básicos' },
+                      { f: 'Protección de datos de clientas y borrado en 1 clic', a: false, b: 'Parcial' },
+                    ].map(({ f, a, b }) => {
+                      const cell = (v: boolean | string) =>
+                        typeof v === 'string'
+                          ? <span className="text-xs">{v}</span>
+                          : <span className={`material-symbols-outlined font-extrabold text-base select-none ${v ? 'text-emerald-600' : 'text-red-500'}`}>{v ? 'check' : 'close'}</span>;
+                      return (
+                        <tr key={f} className="transition-colors hover:bg-surface-container-low/20">
+                          <td className="px-4 sm:px-6 py-4 text-primary font-bold">{f}</td>
+                          <td className="px-3 sm:px-6 py-4 text-center">{cell(a)}</td>
+                          <td className="px-3 sm:px-6 py-4 text-center">{cell(b)}</td>
+                          <td className="px-3 sm:px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* H03: prueba social honesta (sin clientes reales todavía — no inventar testimonios) */}
+        <section className="px-4 md:px-16 max-w-[1280px] mx-auto mb-24 md:mb-32">
+          <div className="bg-surface-container-lowest rounded-3xl border border-surface-container/50 p-8 md:p-12 text-center max-w-3xl mx-auto">
+            <span className="material-symbols-outlined text-primary text-3xl mb-3">verified</span>
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-primary mb-3">
+              En pruebas con salones de Madrid antes del lanzamiento
+            </h2>
+            <p className="text-sm md:text-base text-on-surface-variant leading-relaxed max-w-xl mx-auto">
+              Estamos afinando Elena junto a un grupo reducido de salones reales. ¿Quieres ser de las primeras y conseguir el precio de fundadora? Pruébala 14 días gratis y cuéntanos qué necesitas.
+            </p>
+          </div>
+        </section>
+
+        {/* H07: FAQ — <details> nativo, sin JS de acordeón */}
+        <section id="faq" className="px-4 md:px-16 max-w-[1280px] mx-auto mb-24 md:mb-32">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary text-center mb-12">Preguntas frecuentes</h2>
+          <div className="max-w-3xl mx-auto divide-y divide-surface-container-high border-y border-surface-container-high">
+            {[
+              { q: '¿Mis clientas tienen que instalar una app?', a: 'No. Tus clientas reservan desde el navegador de su móvil, sin descargar nada. Reciben tus mensajes por WhatsApp, como siempre.' },
+              { q: '¿Cómo funciona lo de WhatsApp? ¿Tiene coste extra?', a: 'Elena prepara el mensaje, tú lo apruebas y se envía por WhatsApp. Los mensajes están incluidos en tu cuota: no pagas nada aparte por enviarlos.' },
+              { q: '¿Puedo cancelar cuando quiera?', a: 'Sí. No hay permanencia. Cancelas desde tu panel en cualquier momento, sin penalización. No se reembolsan periodos ya facturados.' },
+              { q: '¿Necesito tarjeta para empezar la prueba?', a: 'No. Los 14 días de prueba no piden tarjeta de crédito. Solo pones tus datos de pago si decides seguir.' },
+              { q: '¿Están seguros los datos de mis clientas?', a: 'Sí. Los datos se alojan cifrados en servidores de la Unión Europea (Google Cloud) y cumplimos el RGPD. Si una clienta pide que borres sus datos, lo haces en un clic.' },
+              { q: '¿Necesito conocimientos técnicos para usar Elena?', a: 'No. El alta tarda unos 2 minutos y te guiamos paso a paso. Si te atascas, escríbenos por email y te ayudamos.' },
+            ].map(({ q, a }) => (
+              <details key={q} className="group py-5">
+                <summary className="flex items-center justify-between cursor-pointer list-none font-serif text-lg font-bold text-primary">
+                  {q}
+                  <span className="material-symbols-outlined text-primary transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p className="mt-3 text-sm text-on-surface-variant leading-relaxed font-sans">{a}</p>
+              </details>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <button onClick={() => openAuth('sign-up')} className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-8 py-4 rounded-full hover:bg-primary/90 transition-all shadow-md cursor-pointer">
+              Probar Elena 14 días gratis
+            </button>
           </div>
         </section>
 
