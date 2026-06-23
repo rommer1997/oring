@@ -122,6 +122,13 @@ export default function OnboardingView({
   };
 
   const handleNext = () => {
+    // H02: en paso 2, si el usuario rellenó el servicio pero no pulsó "Añadir",
+    // lo añadimos automáticamente en vez de bloquear el botón en silencio.
+    if (step === 2 && servicesDraft.length === 0 && serviceName.trim() && servicePrice >= 0 && serviceDuration > 0) {
+      addServiceDraft();
+      setStep(3);
+      return;
+    }
     if (!canContinue) {
       onToastMessage('Completa los campos obligatorios para continuar.');
       return;
@@ -298,7 +305,7 @@ export default function OnboardingView({
               <div className="space-y-5">
                 <h2 className="font-serif text-2xl font-bold">Primer profesional</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Nombre *" value={staffName} onChange={setStaffName} />
+                  <Field label="Nombre *" value={staffName} onChange={setStaffName} placeholder="Tu nombre" />
                   <div>
                     <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Rol *</label>
                     <select
