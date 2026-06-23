@@ -346,7 +346,14 @@ export default function OnboardingView({
             {step === 4 && (
               <div className="space-y-5">
                 <h2 className="font-serif text-2xl font-bold">Horarios básicos</h2>
-                <p className="text-sm text-on-surface-variant">Configura días laborables, jornada continua o partida. Estos horarios se aplicarán al profesional inicial.</p>
+                <p className="text-sm text-on-surface-variant">Pulsa "Usar horario habitual" y listo, o ajusta los días que necesites. Estos horarios se aplicarán al profesional inicial (puedes afinarlos luego en Ajustes).</p>
+                <button
+                  type="button"
+                  onClick={() => setSchedule(defaultSchedule)}
+                  className="w-full px-4 py-3 rounded-xl border border-primary text-primary text-xs font-bold hover:bg-primary/5 transition-colors"
+                >
+                  Usar horario habitual (L-V 9-18 · S 10-14 · D cerrado)
+                </button>
                 <div className="space-y-3">
                   {(Object.entries(schedule) as [string, ScheduleDay][]).map(([day, daySchedule]) => (
                     <div key={day} className="p-4 rounded-xl border border-outline-variant/20 bg-[#faf8f4] space-y-3 text-sm">
@@ -359,20 +366,11 @@ export default function OnboardingView({
                       </label>
                       {daySchedule.isWorking && (
                         <>
+                          {/* ponytail: horario partido se configura luego en Ajustes; aquí solo entrada/salida para reducir fricción en el alta */}
                           <div className="grid grid-cols-2 gap-3">
                             <TimeField label="Entrada" value={daySchedule.start} onChange={(value) => updateSchedule(day, { start: value })} />
                             <TimeField label="Salida" value={daySchedule.end} onChange={(value) => updateSchedule(day, { end: value })} />
                           </div>
-                          <label className="flex items-center gap-2 text-xs font-bold text-primary">
-                            <input type="checkbox" checked={daySchedule.splitShift} onChange={(e) => updateSchedule(day, { splitShift: e.target.checked })} className="accent-primary" />
-                            Añadir horario partido
-                          </label>
-                          {daySchedule.splitShift && (
-                            <div className="grid grid-cols-2 gap-3">
-                              <TimeField label="Segunda entrada" value={daySchedule.secondStart || '16:00'} onChange={(value) => updateSchedule(day, { secondStart: value })} />
-                              <TimeField label="Segunda salida" value={daySchedule.secondEnd || '20:00'} onChange={(value) => updateSchedule(day, { secondEnd: value })} />
-                            </div>
-                          )}
                         </>
                       )}
                     </div>
