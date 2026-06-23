@@ -23,17 +23,16 @@ function appt(date: string, clientId = 'c1'): Appointment {
   return {
     id: `a-${date}`,
     clientId,
+    clientName: 'Test',
     staffId: 's1',
+    staffName: 'Staff',
     serviceId: 'svc1',
+    serviceName: 'Corte',
     tenantId: 'tenant-1',
     date,
-    startTime: '10:00',
-    endTime: '11:00',
+    time: '10:00',
     status: 'Pagado',
     price: 50,
-    notes: '',
-    createdAt: date,
-    updatedAt: date,
   };
 }
 

@@ -59,6 +59,7 @@ export default function OnboardingView({
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [dpaAccepted, setDpaAccepted] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
 
   const [salonName, setSalonName] = useState(tenant?.name || '');
   const [salonCity, setSalonCity] = useState(tenant?.city || '');
@@ -121,30 +122,57 @@ export default function OnboardingView({
     }));
   };
 
+  const getStepError = (): string | null => {
+    if (step === 1) {
+      if (!salonName.trim()) return 'Escribe el nombre comercial de tu salón.';
+      if (!salonCity.trim()) return 'Indica la ciudad del salón.';
+      if (!salonEmail.trim()) return 'Añade un email de contacto del salón.';
+    }
+    if (step === 2) {
+      if (servicesDraft.length === 0 && !serviceName.trim()) return 'Añade al menos un servicio antes de continuar.';
+    }
+    if (step === 3) {
+      if (!staffName.trim()) return 'Escribe tu nombre.';
+      if (!staffEmail.trim()) return 'Añade un email para este profesional.';
+      if (!staffSpecialty.trim()) return 'Indica la especialidad del profesional.';
+    }
+    if (step === 4) {
+      const hasWorkingDay = (Object.values(schedule) as ScheduleDay[]).some((d) => d.isWorking);
+      if (!hasWorkingDay) return 'Marca al menos un día de trabajo en los horarios.';
+      if (!dpaAccepted) return 'Acepta el Acuerdo de Tratamiento de Datos (DPA) para entrar al panel.';
+    }
+    return null;
+  };
+
   const handleNext = () => {
     // H02: en paso 2, si el usuario rellenó el servicio pero no pulsó "Añadir",
     // lo añadimos automáticamente en vez de bloquear el botón en silencio.
     if (step === 2 && servicesDraft.length === 0 && serviceName.trim() && servicePrice >= 0 && serviceDuration > 0) {
       addServiceDraft();
+      setStepError(null);
       setStep(3);
       return;
     }
-    if (!canContinue) {
-      onToastMessage('Completa los campos obligatorios para continuar.');
+    const err = getStepError();
+    if (err) {
+      setStepError(err);
       return;
     }
+    setStepError(null);
     setStep((current) => Math.min(4, current + 1));
   };
 
   const handleComplete = async () => {
     if (!tenantId || !user) {
-      onToastMessage('No se pudo identificar tu cuenta. Vuelve a iniciar sesión.');
+      setStepError('No se pudo identificar tu cuenta. Vuelve a iniciar sesión.');
       return;
     }
-    if (!canContinue) {
-      onToastMessage('Completa los campos obligatorios para finalizar.');
+    const err = getStepError();
+    if (err) {
+      setStepError(err);
       return;
     }
+    setStepError(null);
 
     const now = new Date().toISOString();
     const finalServices = servicesDraft.length > 0 ? servicesDraft : [{
@@ -197,6 +225,8 @@ export default function OnboardingView({
     try {
       setIsSaving(true);
       await onComplete(payload);
+    } catch (err) {
+      setStepError(err instanceof Error ? err.message : 'No se pudo guardar la configuración. Inténtalo de nuevo.');
     } finally {
       setIsSaving(false);
     }
@@ -231,7 +261,7 @@ export default function OnboardingView({
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setStep(number)}
+                    onClick={() => { setStep(number); setStepError(null); }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
                       active ? 'bg-primary text-white' : done ? 'bg-emerald-50 text-emerald-800' : 'text-on-surface-variant'
                     }`}
@@ -398,10 +428,17 @@ export default function OnboardingView({
               </label>
             )}
 
-            <div className="flex justify-between pt-8 mt-4 border-t border-outline-variant/20">
+            {stepError && (
+              <div className="mt-6 flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+                <span className="material-symbols-outlined text-red-500 text-base mt-0.5 shrink-0">error</span>
+                {stepError}
+              </div>
+            )}
+
+            <div className="flex justify-between pt-6 mt-4 border-t border-outline-variant/20">
               <button
                 type="button"
-                onClick={() => setStep((current) => Math.max(1, current - 1))}
+                onClick={() => { setStep((current) => Math.max(1, current - 1)); setStepError(null); }}
                 disabled={step === 1}
                 className="px-4 py-2 text-xs font-bold text-on-surface-variant disabled:opacity-30"
               >
@@ -412,7 +449,7 @@ export default function OnboardingView({
                   Continuar
                 </button>
               ) : (
-                <button type="button" onClick={handleComplete} disabled={isSaving || !dpaAccepted} className="px-5 py-3 bg-primary text-white rounded-xl text-xs font-bold disabled:opacity-60">
+                <button type="button" onClick={handleComplete} disabled={isSaving} className="px-5 py-3 bg-primary text-white rounded-xl text-xs font-bold disabled:opacity-60">
                   {isSaving ? 'Guardando...' : 'Entrar al panel'}
                 </button>
               )}
