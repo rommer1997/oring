@@ -664,6 +664,12 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               {isSigningIn ? 'Conectando...' : authMode === 'sign-up' ? 'Crear cuenta con email' : 'Entrar con email'}
             </button>
 
+            {authMode === 'sign-up' && (
+              <p className="mt-2 text-center text-[11px] text-on-surface-variant">
+                Tardarás 2 minutos en preparar tu salón. Te guiamos paso a paso.
+              </p>
+            )}
+
             <button
               type="button"
               disabled={isSigningIn}
@@ -700,7 +706,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             <button className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" onClick={() => setLegalView('terms')}>Aviso Legal</button>
             <button className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" onClick={() => setLegalView('privacy')}>Privacidad</button>
             <button className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" onClick={() => setLegalView('cookies')}>Cookies</button>
-            <a className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" href="#soluciones">Contacto</a>
+            <a className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" href="mailto:hola@elena-os.com">Contacto</a>
           </div>
         </div>
       </footer>
