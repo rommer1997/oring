@@ -13,3 +13,9 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         value: https://elena-os.web.app
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: WHATSAPP_WEBHOOK_SECRET
+        sync: false

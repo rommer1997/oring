@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,7 +12,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// ignoreUndefinedProperties: Firestore rechaza valores `undefined` y rompía el onboarding
+// (stripeCustomerId undefined en tenants nuevos). Esto los descarta en vez de lanzar.
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
 // ponytail: getAuth lanza con apiKey vacía y deja la página en blanco. Sin config dejamos auth=null
 // para que la landing y la demo (que no usan Firebase) carguen igual.
 export const firebaseReady = Boolean(firebaseConfig.apiKey);

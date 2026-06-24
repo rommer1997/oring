@@ -58,6 +58,9 @@ export default function OnboardingView({
 }: OnboardingViewProps) {
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [dpaAccepted, setDpaAccepted] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [serviceFieldError, setServiceFieldError] = useState(false);
 
   const [salonName, setSalonName] = useState(tenant?.name || '');
   const [salonCity, setSalonCity] = useState(tenant?.city || '');
@@ -93,9 +96,10 @@ export default function OnboardingView({
 
   const addServiceDraft = () => {
     if (!serviceName.trim() || servicePrice < 0 || serviceDuration <= 0) {
-      onToastMessage('Completa nombre, precio y duración del servicio.');
+      setServiceFieldError(true);
       return;
     }
+    setServiceFieldError(false);
     const service: Service = {
       id: `serv-${Date.now()}-${servicesDraft.length}`,
       name: serviceName.trim(),
@@ -120,23 +124,57 @@ export default function OnboardingView({
     }));
   };
 
+  const getStepError = (): string | null => {
+    if (step === 1) {
+      if (!salonName.trim()) return 'Escribe el nombre comercial de tu salón.';
+      if (!salonCity.trim()) return 'Indica la ciudad del salón.';
+      if (!salonEmail.trim()) return 'Añade un email de contacto del salón.';
+    }
+    if (step === 2) {
+      if (servicesDraft.length === 0 && !serviceName.trim()) return 'Añade al menos un servicio antes de continuar.';
+    }
+    if (step === 3) {
+      if (!staffName.trim()) return 'Escribe tu nombre.';
+      if (!staffEmail.trim()) return 'Añade un email para este profesional.';
+      if (!staffSpecialty.trim()) return 'Indica la especialidad del profesional.';
+    }
+    if (step === 4) {
+      const hasWorkingDay = (Object.values(schedule) as ScheduleDay[]).some((d) => d.isWorking);
+      if (!hasWorkingDay) return 'Marca al menos un día de trabajo en los horarios.';
+      if (!dpaAccepted) return 'Acepta el Acuerdo de Tratamiento de Datos (DPA) para entrar al panel.';
+    }
+    return null;
+  };
+
   const handleNext = () => {
-    if (!canContinue) {
-      onToastMessage('Completa los campos obligatorios para continuar.');
+    // H02: en paso 2, si el usuario rellenó el servicio pero no pulsó "Añadir",
+    // lo añadimos automáticamente en vez de bloquear el botón en silencio.
+    if (step === 2 && servicesDraft.length === 0 && serviceName.trim() && servicePrice >= 0 && serviceDuration > 0) {
+      addServiceDraft();
+      setStepError(null);
+      setStep(3);
       return;
     }
+    const err = getStepError();
+    if (err) {
+      setStepError(err);
+      return;
+    }
+    setStepError(null);
     setStep((current) => Math.min(4, current + 1));
   };
 
   const handleComplete = async () => {
     if (!tenantId || !user) {
-      onToastMessage('No se pudo identificar tu cuenta. Vuelve a iniciar sesión.');
+      setStepError('No se pudo identificar tu cuenta. Vuelve a iniciar sesión.');
       return;
     }
-    if (!canContinue) {
-      onToastMessage('Completa los campos obligatorios para finalizar.');
+    const err = getStepError();
+    if (err) {
+      setStepError(err);
       return;
     }
+    setStepError(null);
 
     const now = new Date().toISOString();
     const finalServices = servicesDraft.length > 0 ? servicesDraft : [{
@@ -189,6 +227,8 @@ export default function OnboardingView({
     try {
       setIsSaving(true);
       await onComplete(payload);
+    } catch (err) {
+      setStepError(err instanceof Error ? err.message : 'No se pudo guardar la configuración. Inténtalo de nuevo.');
     } finally {
       setIsSaving(false);
     }
@@ -223,7 +263,7 @@ export default function OnboardingView({
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setStep(number)}
+                    onClick={() => { setStep(number); setStepError(null); }}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
                       active ? 'bg-primary text-white' : done ? 'bg-emerald-50 text-emerald-800' : 'text-on-surface-variant'
                     }`}
@@ -259,7 +299,10 @@ export default function OnboardingView({
                 <h2 className="font-serif text-2xl font-bold">Servicios iniciales</h2>
                 <p className="text-sm text-on-surface-variant">Añade todos los servicios que quieras mostrar desde el primer día. Necesitas al menos uno.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Nombre del servicio *" value={serviceName} onChange={setServiceName} placeholder="Corte y peinado" />
+                  <div>
+                    <Field label="Nombre del servicio *" value={serviceName} onChange={(v) => { setServiceName(v); setServiceFieldError(false); }} placeholder="Ej: Corte y peinado" />
+                    {serviceFieldError && <p className="mt-1 text-xs font-bold text-red-600">Escribe el nombre del servicio antes de añadirlo.</p>}
+                  </div>
                   <div>
                     <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Categoría *</label>
                     <select value={serviceCategory} onChange={(e) => setServiceCategory(e.target.value as Service['category'])} className="w-full h-11 px-3 bg-white border border-outline-variant/30 rounded-xl text-sm font-semibold outline-none">
@@ -297,7 +340,7 @@ export default function OnboardingView({
               <div className="space-y-5">
                 <h2 className="font-serif text-2xl font-bold">Primer profesional</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Nombre *" value={staffName} onChange={setStaffName} />
+                  <Field label="Nombre *" value={staffName} onChange={setStaffName} placeholder="Tu nombre" />
                   <div>
                     <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Rol *</label>
                     <select
@@ -338,7 +381,14 @@ export default function OnboardingView({
             {step === 4 && (
               <div className="space-y-5">
                 <h2 className="font-serif text-2xl font-bold">Horarios básicos</h2>
-                <p className="text-sm text-on-surface-variant">Configura días laborables, jornada continua o partida. Estos horarios se aplicarán al profesional inicial.</p>
+                <p className="text-sm text-on-surface-variant">Pulsa "Usar horario habitual" y listo, o ajusta los días que necesites. Estos horarios se aplicarán al profesional inicial (puedes afinarlos luego en Ajustes).</p>
+                <button
+                  type="button"
+                  onClick={() => setSchedule(defaultSchedule)}
+                  className="w-full px-4 py-3 rounded-xl border border-primary text-primary text-xs font-bold hover:bg-primary/5 transition-colors"
+                >
+                  Usar horario habitual (L-V 9-18 · S 10-14 · D cerrado)
+                </button>
                 <div className="space-y-3">
                   {(Object.entries(schedule) as [string, ScheduleDay][]).map(([day, daySchedule]) => (
                     <div key={day} className="p-4 rounded-xl border border-outline-variant/20 bg-[#faf8f4] space-y-3 text-sm">
@@ -351,20 +401,11 @@ export default function OnboardingView({
                       </label>
                       {daySchedule.isWorking && (
                         <>
+                          {/* ponytail: horario partido se configura luego en Ajustes; aquí solo entrada/salida para reducir fricción en el alta */}
                           <div className="grid grid-cols-2 gap-3">
                             <TimeField label="Entrada" value={daySchedule.start} onChange={(value) => updateSchedule(day, { start: value })} />
                             <TimeField label="Salida" value={daySchedule.end} onChange={(value) => updateSchedule(day, { end: value })} />
                           </div>
-                          <label className="flex items-center gap-2 text-xs font-bold text-primary">
-                            <input type="checkbox" checked={daySchedule.splitShift} onChange={(e) => updateSchedule(day, { splitShift: e.target.checked })} className="accent-primary" />
-                            Añadir horario partido
-                          </label>
-                          {daySchedule.splitShift && (
-                            <div className="grid grid-cols-2 gap-3">
-                              <TimeField label="Segunda entrada" value={daySchedule.secondStart || '16:00'} onChange={(value) => updateSchedule(day, { secondStart: value })} />
-                              <TimeField label="Segunda salida" value={daySchedule.secondEnd || '20:00'} onChange={(value) => updateSchedule(day, { secondEnd: value })} />
-                            </div>
-                          )}
                         </>
                       )}
                     </div>
@@ -373,10 +414,36 @@ export default function OnboardingView({
               </div>
             )}
 
-            <div className="flex justify-between pt-8 mt-8 border-t border-outline-variant/20">
+            {/* LEG-02: DPA mandatory acceptance before completing onboarding */}
+            {step === 4 && (
+              <label className="flex items-start gap-3 mt-6 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={dpaAccepted}
+                  onChange={e => setDpaAccepted(e.target.checked)}
+                  className="mt-0.5 flex-shrink-0 accent-primary"
+                />
+                <span className="text-xs text-on-surface-variant leading-relaxed">
+                  He leído y acepto el{' '}
+                  <a href="https://elena-os.web.app/dpa" target="_blank" rel="noopener noreferrer" className="underline text-primary">Acuerdo de Tratamiento de Datos (DPA)</a>
+                  {' '}y la{' '}
+                  <a href="https://elena-os.web.app/privacy" target="_blank" rel="noopener noreferrer" className="underline text-primary">Política de Privacidad</a>.
+                  Como responsable del salón, me comprometo a tratar los datos de mis clientas conforme al RGPD y la LOPDGDD.
+                </span>
+              </label>
+            )}
+
+            {stepError && (
+              <div className="mt-6 flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700">
+                <span className="material-symbols-outlined text-red-500 text-base mt-0.5 shrink-0">error</span>
+                {stepError}
+              </div>
+            )}
+
+            <div className="flex justify-between pt-6 mt-4 border-t border-outline-variant/20">
               <button
                 type="button"
-                onClick={() => setStep((current) => Math.max(1, current - 1))}
+                onClick={() => { setStep((current) => Math.max(1, current - 1)); setStepError(null); }}
                 disabled={step === 1}
                 className="px-4 py-2 text-xs font-bold text-on-surface-variant disabled:opacity-30"
               >

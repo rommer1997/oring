@@ -1346,10 +1346,63 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   });
 
+  // ─── POST /api/client/:id/hard-delete ────────────────────────────────────────
+  // LEG-03: RGPD right-to-erasure — deletes all client PII and leaves audit trail
+  app.post('/api/client/:id/hard-delete', express.json(), async (req, res) => {
+    try {
+      const { tenantId, uid, db } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const clientId = req.params.id;
+      const clientRef = db.doc(`tenants/${tenantId}/clients/${clientId}`);
+      const clientSnap = await clientRef.get();
+      if (!clientSnap.exists) { res.status(404).json({ error: 'Client not found' }); return; }
+
+      const db_ = adminRuntime!.admin.firestore();
+      const batch = db_.batch();
+
+      // Delete all appointments referencing this client
+      const apptSnap = await db.collection(`tenants/${tenantId}/appointments`)
+        .where('clientId', '==', clientId).get();
+      apptSnap.docs.forEach(d => batch.delete(d.ref));
+
+      // Delete agent campaigns
+      const campSnap = await db.collection(`tenants/${tenantId}/agent_campaigns`)
+        .where('clientId', '==', clientId).get();
+      campSnap.docs.forEach(d => batch.delete(d.ref));
+
+      // Replace client doc with erasure tombstone (no PII)
+      batch.set(clientRef, {
+        __erased: true,
+        erasedAt: new Date().toISOString(),
+        erasedBy: uid,
+      });
+
+      await batch.commit();
+
+      // Append-only audit log
+      await db.collection(`tenants/${tenantId}/audit_log`).add({
+        action: 'client.hard_delete',
+        clientId,
+        performedBy: uid,
+        at: new Date().toISOString(),
+      });
+
+      res.json({ ok: true, deletedAppointments: apptSnap.size, deletedCampaigns: campSnap.size });
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
+
   // ─── POST /webhook/whatsapp ───────────────────────────────────────────────────
-  // Meta envía aquí los mensajes entrantes del cliente
   app.post('/webhook/whatsapp', express.json(), async (req, res) => {
-    // Verificar firma de Meta (seguridad)
+    // SEC-01: HMAC-SHA256 signature verification
+    const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const sig = req.headers['x-hub-signature-256'] as string | undefined;
+      if (!sig) { res.sendStatus(401); return; }
+      const { createHmac } = await import('node:crypto');
+      const expected = 'sha256=' + createHmac('sha256', webhookSecret).update(JSON.stringify(req.body)).digest('hex');
+      if (sig !== expected) { res.sendStatus(403); return; }
+    }
     res.sendStatus(200); // Responder rápido para que Meta no reintente
 
     try {
@@ -1364,9 +1417,10 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       if (!adminRuntime) return;
       const db_ = adminRuntime.admin.firestore();
 
-      // Buscar campaña activa para este número
+      // SEC-02: scope query to exact phone match, iterate tenants to avoid cross-tenant leak
+      const normalizedPhone = from.slice(-9);
       const tenantsSnap = await db_.collectionGroup('agent_campaigns')
-        .where('clientPhone', '>=', from.slice(-9))
+        .where('clientPhone', '==', normalizedPhone)
         .where('status', 'in', ['enviado', 'respondido'])
         .limit(1)
         .get();

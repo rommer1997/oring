@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
 
 interface LandingViewProps {
@@ -19,7 +19,15 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [forgotSent, setForgotSent] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [legalView, setLegalView] = useState<'privacy' | 'terms' | 'cookies' | null>(null);
+  const [cookieConsent, setCookieConsent] = useState<'accepted' | 'rejected' | null>(() => {
+    try { return localStorage.getItem('elena_cookie_consent') as 'accepted' | 'rejected' | null; } catch { return null; }
+  });
+
+  useEffect(() => {
+    if (cookieConsent) localStorage.setItem('elena_cookie_consent', cookieConsent);
+  }, [cookieConsent]);
 
   // Live calculator calculations
   const totalLoss = inactiveClients * averageTicket;
@@ -31,6 +39,8 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
       return;
     }
     setAuthMode(mode);
+    setForgotSent(false);
+    setAuthError(null);
   };
 
   const handleGoogleClick = async () => {
@@ -44,6 +54,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
 
   const handleEmailSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setAuthError(null);
     try {
       setIsSigningIn(true);
       if (authMode === 'sign-up') {
@@ -51,6 +62,9 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
       } else {
         await onSignInWithEmail(email, password);
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al autenticar';
+      setAuthError(msg.replace(/\(auth\/[^)]+\)\s*/, ''));
     } finally {
       setIsSigningIn(false);
     }
@@ -70,6 +84,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#calculadora">Calculadora</a>
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#maravillas">Lo que Elena hace</a>
           <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#precios">Precios</a>
+          <a className="text-on-surface-variant text-sm font-medium hover:text-primary transition-colors duration-300" href="#faq">Preguntas</a>
         </div>
 
         <button 
@@ -100,14 +115,14 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   onClick={() => openAuth('sign-up')}
                   className="inline-flex items-center justify-center bg-primary text-white font-bold text-base px-8 py-4 rounded-full hover:bg-primary/90 transition-all duration-300 shadow-md cursor-pointer"
                 >
-                  {currentUser ? 'Entrar a mi salón' : isSigningIn ? 'Creando cuenta...' : 'Pruébalo gratis 14 días'}
+                  {currentUser ? 'Entrar a mi salón' : isSigningIn ? 'Creando cuenta...' : 'Probar Elena 14 días gratis'}
                 </button>
                 <button
                   type="button"
                   onClick={onStartDemo}
-                  className="inline-flex items-center justify-center border border-primary/25 text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-primary/5 transition-all duration-300 cursor-pointer"
+                  className="text-sm font-medium text-primary/70 hover:text-primary underline underline-offset-4 cursor-pointer transition-colors"
                 >
-                  Ver el salón de ejemplo
+                  ¿Prefieres verlo primero? Ver demo →
                 </button>
                 <span className="text-sm font-semibold text-outline-variant flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary font-bold text-lg">check_circle</span>
@@ -153,7 +168,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               { icon: 'storefront', text: 'Pensado para salones españoles' },
               { icon: 'gavel', text: 'Cumple la ley de protección de datos (RGPD)' },
               { icon: 'support_agent', text: 'Soporte real por email' },
-              { icon: 'lock', text: 'Tus datos solo son tuyos' },
+              { icon: 'lock', text: 'Datos en la UE · Cifrados · Borrado RGPD en 1 clic' },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2.5 text-on-surface-variant">
                 <span className="material-symbols-outlined text-primary text-lg">{icon}</span>
@@ -238,7 +253,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   onClick={() => openAuth('sign-up')}
                   className="w-full bg-surface text-primary font-bold text-sm py-3 px-6 rounded-full hover:bg-surface-bright transition-all duration-300 relative z-10 hover:shadow-md cursor-pointer"
                 >
-                  Crear mi cuenta
+                  Probar Elena 14 días gratis
                 </button>
               </div>
             </div>
@@ -275,7 +290,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               </p>
             </div>
             <button onClick={() => openAuth('sign-up')} className="shrink-0 bg-[#fdf6ec] text-primary font-bold text-sm px-6 py-3 rounded-full hover:bg-white transition-colors cursor-pointer whitespace-nowrap">
-              Activar el asistente
+              Probar Elena 14 días gratis
             </button>
           </div>
 
@@ -304,117 +319,13 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           {/* CTA entre secciones */}
           <div className="mt-14 text-center">
             <button onClick={() => openAuth('sign-up')} className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-8 py-4 rounded-full hover:bg-primary/90 transition-all shadow-md cursor-pointer">
-              <span>Empezar gratis — sin tarjeta</span>
+              <span>Probar Elena 14 días gratis</span>
               <span className="material-symbols-outlined text-base">arrow_forward</span>
             </button>
             <p className="text-xs text-outline mt-3">14 días de prueba · Cancela cuando quieras</p>
-          </div>
-        </section>
-
-        {/* Automated Step-by-Step Flow */}
-        <section className="bg-surface-container-low py-20 px-4 md:px-16 mb-24 md:mb-32">
-          <div className="max-w-[1280px] mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary mb-4 text-center">
-                Recuperar clientas, en un clic
-              </h2>
-              <p className="text-base text-on-surface-variant max-w-2xl mx-auto font-sans">
-                Elena detecta quién está a punto de irse y te prepara el mensaje. Tú solo lo revisas y lo envías por WhatsApp con un clic.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Step 1: Agenda Siempre al Día */}
-              <div className="bg-[#fdf6ec] rounded-3xl p-8 shadow-sm border border-[#bfa982]/20 flex flex-col justify-between min-h-[380px] text-left">
-                <div>
-                  <div className="w-12 h-12 rounded-full bg-secondary/80 text-primary flex items-center justify-center font-serif text-xl font-bold mb-6">
-                    1
-                  </div>
-                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Agenda Siempre al Día</h3>
-                  <p className="text-xs text-on-surface-variant mb-6 leading-relaxed font-sans">
-                    Integración fluida de tus reservas del día. Una vista limpia y aireada para un control operativo sin esfuerzo.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-white p-4 border border-muted shadow-inner space-y-3 font-sans">
-                  <div className="flex items-center justify-between border-b border-light-divider pb-2.5">
-                    <span className="text-[10px] font-bold text-primary">HOY · CITAS DESTACADAS</span>
-                    <span className="text-[9px] bg-secondary text-primary font-bold px-2 py-0.5 rounded">Sincronizado</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2 bg-[#faf6f0] rounded-xl border border-[#bfa982]/10">
-                    <span className="text-xs font-bold text-primary font-mono shrink-0">10:30</span>
-                    <div className="text-left flex-1">
-                      <p className="text-[11px] font-bold text-primary leading-none">Marta Gómez</p>
-                      <p className="text-[9.5px] text-muted-foreground mt-0.5">Corte de Autor + Color</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-2 bg-[#faf6f0] rounded-xl border border-[#bfa982]/10">
-                    <span className="text-xs font-bold text-primary font-mono shrink-0">12:15</span>
-                    <div className="text-left flex-1">
-                      <p className="text-[11px] font-bold text-primary leading-none">Lucía Pérez</p>
-                      <p className="text-[9.5px] text-muted-foreground mt-0.5">Tratamiento Hidratación Profunda</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 2: Monitor de Mimo en Acción */}
-              <div className="bg-[#fdf6ec] rounded-3xl p-8 shadow-sm border border-[#bfa982]/20 flex flex-col justify-between min-h-[380px] text-left md:translate-y-4">
-                <div>
-                  <div className="w-12 h-12 rounded-full bg-secondary/80 text-primary flex items-center justify-center font-serif text-xl font-bold mb-6">
-                    2
-                  </div>
-                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Monitor de Mimo</h3>
-                  <p className="text-xs text-on-surface-variant mb-6 leading-relaxed font-sans">
-                    Nuestra IA analiza de forma silenciosa el ciclo ideal del salón e identifica al instante clientas que te echan de menos.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-white p-4 border border-muted shadow-inner space-y-3 font-sans">
-                  <div className="flex items-center gap-3 border-b border-light-divider pb-2.5">
-                    <div className="w-9 h-9 rounded-full bg-[#faf6f0] border border-[#bfa982]/30 flex items-center justify-center text-xs font-bold text-primary shrink-0 select-none">
-                      CR
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-[11px] font-bold text-primary">Carmen Ruiz</p>
-                        <span className="text-[7.5px] font-bold uppercase bg-red-50 text-red-700 px-1 rounded border border-red-200">Crítico</span>
-                      </div>
-                      <p className="text-[9px] text-muted-foreground mt-0.5">Inactiva hace 103 días</p>
-                    </div>
-                  </div>
-                  <button 
-                    type="button"
-                    className="w-full bg-[#4A2C40] hover:bg-[#2E1927] text-[#fdf6ec] text-[9.5px] font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-1 cursor-default"
-                  >
-                    <span className="material-symbols-outlined text-xs font-bold">auto_awesome</span>
-                    <span>Mimar a Carmen con IA</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Step 3: Cita Recuperada con Éxito */}
-              <div className="bg-[#fdf6ec] rounded-3xl p-8 shadow-sm border border-[#bfa982]/20 flex flex-col justify-between min-h-[380px] text-left md:translate-y-8 font-sans">
-                <div>
-                  <div className="w-12 h-12 rounded-full bg-secondary/80 text-primary flex items-center justify-center font-serif text-xl font-bold mb-6">
-                    3
-                  </div>
-                  <h3 className="font-serif text-2xl font-bold text-primary mb-3">Reencuentro Exitoso</h3>
-                  <p className="text-xs text-on-surface-variant mb-6 leading-relaxed font-sans">
-                    Envía el mensaje personalizado por WhatsApp con un solo clic. La clienta responde y confirma su cita de retorno.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-white p-3 border border-muted shadow-inner space-y-2 text-[10.5px]">
-                  {/* Sent WhatsApp suggested message */}
-                  <div className="bg-[#E2F7CB] text-on-surface p-2.5 rounded-2xl rounded-tr-none max-w-[85%] ml-auto border border-[#cbe4b2]">
-                    <span className="block font-bold text-primary text-[7.5px] uppercase tracking-wider mb-0.5 select-none">Propuesta Enviada</span>
-                    "Hola Carmen, te echamos de menos en el salón. Queremos obsequiarte un Masaje de Ojos de autor en tu próxima visita..."
-                  </div>
-                  {/* Client response */}
-                  <div className="bg-[#F0F0F0] text-on-surface p-2.5 rounded-2xl rounded-tl-none max-w-[85%] mr-auto border border-[#e0e0e0]">
-                    "¡Hola! Qué ilusión recibir tu mensaje. Justo pensaba en reservar. ¿Me guardas hueco para el jueves por la tarde?"
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p className="text-xs text-primary/50 mt-1">
+              <button type="button" onClick={onStartDemo} className="hover:text-primary underline underline-offset-2 cursor-pointer transition-colors">¿Prefieres verlo antes? Ver demo →</button>
+            </p>
           </div>
         </section>
 
@@ -510,63 +421,95 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             </div>
 
             <p className="text-center text-xs text-on-surface-variant mt-6">Todos los planes incluyen 14 días de prueba gratuita · Sin tarjeta de crédito para empezar</p>
+            <p className="text-center text-xs text-primary/50 mt-2">
+              <button type="button" onClick={onStartDemo} className="hover:text-primary underline underline-offset-2 cursor-pointer transition-colors">¿Prefieres verlo antes? Ver demo →</button>
+            </p>
 
             {/* Features Comparison Table */}
             <div className="mt-20 border-t border-primary/5 pt-16 text-left">
               <h3 className="font-serif text-3xl font-bold text-center text-primary mb-4">¿Por qué ElenaOS es diferente?</h3>
               <p className="text-sm text-on-surface-variant text-center max-w-2xl mx-auto mb-10 font-medium font-sans">
-                Compara nuestra suite activa de rescate frente a las agendas y CRM de reservas tradicionales.
+                Frente a la agenda de papel o a apps de reservas como Booksy o Treatwell, Elena no solo guarda las citas: trabaja sola para que tus clientas vuelvan.
               </p>
-              
+
               <div className="bg-white rounded-2xl border border-[#bfa982]/20 overflow-hidden shadow-sm max-w-4xl mx-auto font-sans">
                 <table className="w-full text-left text-xs sm:text-sm font-medium border-collapse">
                   <thead>
                     <tr className="border-b border-[#bfa982]/20 bg-surface-container-low/40">
-                      <th className="px-6 py-4 text-primary font-bold">Funcionalidad de Autor</th>
-                      <th className="px-6 py-4 text-primary font-bold text-center bg-primary/5">ElenaOS Premium</th>
-                      <th className="px-6 py-4 text-on-surface-variant font-bold text-center">CRM Tradicional</th>
+                      <th className="px-4 sm:px-6 py-4 text-primary font-bold">Lo que necesita tu salón</th>
+                      <th className="px-3 sm:px-6 py-4 text-on-surface-variant font-bold text-center">Papel / Google Calendar</th>
+                      <th className="px-3 sm:px-6 py-4 text-on-surface-variant font-bold text-center">Booksy / Treatwell</th>
+                      <th className="px-3 sm:px-6 py-4 text-primary font-bold text-center bg-primary/5">Elena</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-variant/50 text-on-surface-variant font-medium">
-                    <tr className="transition-colors hover:bg-surface-container-low/20 bg-primary/3">
-                      <td className="px-6 py-4 text-primary font-bold">Asistente que actúa solo — detecta, escribe y avisa</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Aviso cuando una clienta lleva tiempo sin venir</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Mensajes de WhatsApp escritos por IA (3 estilos)</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Agenda con control de disponibilidad del equipo</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">Agenda básica</td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Informes reales de lo que has ganado recuperando clientas</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">Solo informes contables básicos</td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Control de stock con aviso cuando te quedas sin producto</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center text-xs">De pago aparte</td>
-                    </tr>
-                    <tr className="transition-colors hover:bg-surface-container-low/20">
-                      <td className="px-6 py-4 text-primary font-bold">Protección de datos de clientas y borrado en 1 clic</td>
-                      <td className="px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
-                      <td className="px-6 py-4 text-center"><span className="material-symbols-outlined text-red-500 font-extrabold text-base select-none">close</span></td>
-                    </tr>
+                    {[
+                      { f: 'Asistente que actúa solo — detecta, escribe y avisa', a: false, b: false },
+                      { f: 'Aviso cuando una clienta lleva tiempo sin venir', a: false, b: false },
+                      { f: 'Mensajes de WhatsApp escritos por IA (3 estilos)', a: false, b: false },
+                      { f: 'Reservas online para tus clientas', a: false, b: true },
+                      { f: 'Agenda con control de disponibilidad del equipo', a: 'Manual', b: true },
+                      { f: 'Informes de lo que ganas recuperando clientas', a: false, b: 'Básicos' },
+                      { f: 'Protección de datos de clientas y borrado en 1 clic', a: false, b: 'Parcial' },
+                    ].map(({ f, a, b }) => {
+                      const cell = (v: boolean | string) =>
+                        typeof v === 'string'
+                          ? <span className="text-xs">{v}</span>
+                          : <span className={`material-symbols-outlined font-extrabold text-base select-none ${v ? 'text-emerald-600' : 'text-red-500'}`}>{v ? 'check' : 'close'}</span>;
+                      return (
+                        <tr key={f} className="transition-colors hover:bg-surface-container-low/20">
+                          <td className="px-4 sm:px-6 py-4 text-primary font-bold">{f}</td>
+                          <td className="px-3 sm:px-6 py-4 text-center">{cell(a)}</td>
+                          <td className="px-3 sm:px-6 py-4 text-center">{cell(b)}</td>
+                          <td className="px-3 sm:px-6 py-4 text-center bg-primary/5"><span className="material-symbols-outlined text-emerald-600 font-extrabold text-base select-none">check</span></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* H03: prueba social honesta (sin clientes reales todavía — no inventar testimonios) */}
+        <section className="px-4 md:px-16 max-w-[1280px] mx-auto mb-24 md:mb-32">
+          <div className="bg-surface-container-lowest rounded-3xl border border-surface-container/50 p-8 md:p-12 text-center max-w-3xl mx-auto">
+            <span className="material-symbols-outlined text-primary text-3xl mb-3">verified</span>
+            <h2 className="font-serif text-2xl md:text-3xl font-bold text-primary mb-3">
+              En pruebas con salones de Madrid antes del lanzamiento
+            </h2>
+            <p className="text-sm md:text-base text-on-surface-variant leading-relaxed max-w-xl mx-auto">
+              Estamos afinando Elena junto a un grupo reducido de salones reales. ¿Quieres ser de las primeras y conseguir el precio de fundadora? Pruébala 14 días gratis y cuéntanos qué necesitas.
+            </p>
+          </div>
+        </section>
+
+        {/* H07: FAQ — <details> nativo, sin JS de acordeón */}
+        <section id="faq" className="px-4 md:px-16 max-w-[1280px] mx-auto mb-24 md:mb-32">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary text-center mb-12">Preguntas frecuentes</h2>
+          <div className="max-w-3xl mx-auto divide-y divide-surface-container-high border-y border-surface-container-high">
+            {[
+              { q: '¿Mis clientas tienen que instalar una app?', a: 'No. Tus clientas reservan desde el navegador de su móvil, sin descargar nada. Reciben tus mensajes por WhatsApp, como siempre.' },
+              { q: '¿Cómo funciona lo de WhatsApp? ¿Tiene coste extra?', a: 'Elena prepara el mensaje, tú lo apruebas y se envía por WhatsApp. Los mensajes están incluidos en tu cuota: no pagas nada aparte por enviarlos.' },
+              { q: '¿Puedo cancelar cuando quiera?', a: 'Sí. No hay permanencia. Cancelas desde tu panel en cualquier momento, sin penalización. No se reembolsan periodos ya facturados.' },
+              { q: '¿Necesito tarjeta para empezar la prueba?', a: 'No. Los 14 días de prueba no piden tarjeta de crédito. Solo pones tus datos de pago si decides seguir.' },
+              { q: '¿Están seguros los datos de mis clientas?', a: 'Sí. Los datos se alojan cifrados en servidores de la Unión Europea (Google Cloud) y cumplimos el RGPD. Si una clienta pide que borres sus datos, lo haces en un clic.' },
+              { q: '¿Necesito conocimientos técnicos para usar Elena?', a: 'No. El alta tarda unos 2 minutos y te guiamos paso a paso. Si te atascas, escríbenos por email y te ayudamos.' },
+            ].map(({ q, a }) => (
+              <details key={q} className="group py-5">
+                <summary className="flex items-center justify-between cursor-pointer list-none font-serif text-lg font-bold text-primary">
+                  {q}
+                  <span className="material-symbols-outlined text-primary transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p className="mt-3 text-sm text-on-surface-variant leading-relaxed font-sans">{a}</p>
+              </details>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <button onClick={() => openAuth('sign-up')} className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-8 py-4 rounded-full hover:bg-primary/90 transition-all shadow-md cursor-pointer">
+              Probar Elena 14 días gratis
+            </button>
           </div>
         </section>
 
@@ -577,8 +520,8 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
           <button
             type="button"
             aria-label="Cerrar"
-            onClick={() => setAuthMode(null)}
-            className="absolute inset-0 bg-primary/35 backdrop-blur-sm cursor-default"
+            onClick={() => { setAuthMode(null); setForgotSent(false); setAuthError(null); }}
+            className="absolute inset-0 bg-primary/35 backdrop-blur-sm cursor-pointer"
           />
           <form onSubmit={handleEmailSubmit} className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl border border-primary/15">
             <div className="flex items-start justify-between gap-4 mb-6">
@@ -590,7 +533,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   {authMode === 'sign-up' ? 'Crea tu salón privado con email o Google.' : 'Entra con tu email o continúa con Google.'}
                 </p>
               </div>
-              <button type="button" onClick={() => setAuthMode(null)} className="text-primary hover:text-primary/70 cursor-pointer">
+              <button type="button" onClick={() => { setAuthMode(null); setForgotSent(false); setAuthError(null); }} className="text-primary hover:text-primary/70 cursor-pointer">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -638,6 +581,10 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
               )}
             </div>
 
+            {authError && (
+              <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{authError}</p>
+            )}
+
             <button
               type="submit"
               disabled={isSigningIn}
@@ -645,6 +592,12 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             >
               {isSigningIn ? 'Conectando...' : authMode === 'sign-up' ? 'Crear cuenta con email' : 'Entrar con email'}
             </button>
+
+            {authMode === 'sign-up' && (
+              <p className="mt-2 text-center text-[11px] text-on-surface-variant">
+                Tardarás 2 minutos en preparar tu salón. Te guiamos paso a paso.
+              </p>
+            )}
 
             <button
               type="button"
@@ -682,7 +635,7 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
             <button className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" onClick={() => setLegalView('terms')}>Aviso Legal</button>
             <button className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" onClick={() => setLegalView('privacy')}>Privacidad</button>
             <button className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" onClick={() => setLegalView('cookies')}>Cookies</button>
-            <a className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" href="#soluciones">Contacto</a>
+            <a className="text-xs font-bold text-on-surface-variant hover:underline decoration-outline-variant underline-offset-4" href="mailto:hola@elena-os.com">Contacto</a>
           </div>
         </div>
       </footer>
@@ -726,6 +679,28 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   <p><strong>Gestión:</strong> Puedes eliminar las cookies técnicas limpiando el almacenamiento de tu navegador, lo que cerrará tu sesión activa.</p>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LEG-01: Cookie consent banner */}
+      {!cookieConsent && (
+        <div className="fixed bottom-0 left-0 right-0 z-[80] bg-white border-t border-outline-variant/30 shadow-lg px-4 py-4">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <p className="flex-1 text-xs text-on-surface-variant">
+              Usamos cookies técnicas necesarias para el funcionamiento de la app (sesión de Firebase). No usamos cookies de seguimiento ni publicidad.{' '}
+              <button className="underline hover:text-primary" onClick={() => setLegalView('cookies')}>Más info</button>
+            </p>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => setCookieConsent('rejected')}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+              >Rechazar</button>
+              <button
+                onClick={() => setCookieConsent('accepted')}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-primary text-white hover:bg-primary/90"
+              >Aceptar</button>
             </div>
           </div>
         </div>

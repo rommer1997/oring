@@ -388,6 +388,7 @@ export default function App() {
     if (!modalIsPhoneVerified) {
       const query = modalPhoneSearch.trim();
       if (!query) { triggerToast('⚠️ Por favor, introduce un teléfono.'); return; }
+      if (!/^\+?\d[\d\s\-]{5,}$/.test(query)) { triggerToast('⚠️ Introduce un número de teléfono válido (solo dígitos).'); return; }
       const found = clients.find((c) => c.phoneNumber.includes(query) || query.includes(c.phoneNumber));
       if (found) {
         setModalFoundClient(found);
