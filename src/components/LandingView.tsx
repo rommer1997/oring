@@ -561,8 +561,9 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                   minLength={6}
                   autoComplete={authMode === 'sign-up' ? 'new-password' : 'current-password'}
                   className="mt-1 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm outline-none focus:border-primary"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Contraseña"
                 />
+                {authMode === 'sign-up' && <p className="mt-1 text-[11px] text-primary/50">Mínimo 6 caracteres</p>}
               </label>
               {authMode === 'sign-in' && (
                 <div className="text-right">

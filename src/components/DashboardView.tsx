@@ -516,31 +516,31 @@ export default function DashboardView({
             </div>
           </div>
 
-          {/* Banner de la Cebolla (Unlock Suite Completa) */}
-          <div className="bg-gradient-to-r from-[#faf8f4] to-[#f5f1e9] border border-[#bfa982]/32 p-6 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-6 text-left shadow-sm mb-6">
-            <div className="flex-1 space-y-1 font-sans">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary font-bold animate-pulse">auto_awesome</span>
-                <h4 className="font-serif text-lg font-bold text-primary">¿Preparada para expandir tu negocio?</h4>
-              </div>
-              <p className="text-[11.5px] text-on-surface-variant max-w-2xl leading-relaxed">
-                Ahora mismo estás en la **vista simple** para mantener tu agenda ordenada y concentrarte en tus clientas. Cuando estés lista, puedes activar de forma gratuita las herramientas avanzadas de **Inventario, Facturación mensual y Gestión de equipo**.
+          {/* QW-8: herramientas avanzadas colapsadas al final — no compite con la acción primaria */}
+          <details className="group mb-6">
+            <summary className="flex items-center justify-between cursor-pointer list-none bg-gradient-to-r from-[#faf8f4] to-[#f5f1e9] border border-[#bfa982]/32 px-5 py-3.5 rounded-2xl text-sm font-bold text-primary select-none">
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">auto_awesome</span>
+                Activar herramientas avanzadas
+              </span>
+              <span className="material-symbols-outlined text-base transition-transform group-open:rotate-180">expand_more</span>
+            </summary>
+            <div className="mt-2 bg-[#faf8f4] border border-[#bfa982]/20 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <p className="text-xs text-on-surface-variant max-w-2xl leading-relaxed font-sans">
+                Cuando estés lista, activa las herramientas avanzadas de Inventario, Facturación mensual y Gestión de equipo.
               </p>
+              <button
+                onClick={() => {
+                  if (onUpdateConfig) onUpdateConfig({ isBeginnerMode: false });
+                  onToastMessage('✓ ¡Felicidades! Has activado todas las herramientas de Elena.');
+                }}
+                className="bg-primary hover:bg-[#4a2c40] text-on-primary py-2.5 px-5 text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Activar ahora</span>
+                <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
+              </button>
             </div>
-            
-            <button
-              onClick={() => {
-                if (onUpdateConfig) {
-                  onUpdateConfig({ isBeginnerMode: false });
-                }
-                onToastMessage('✓ ¡Felicidades! Has activado Todas las herramientas de Elena. Todo está disponible.');
-              }}
-              className="bg-primary hover:bg-[#4a2c40] text-on-primary py-3.5 px-6 text-xs font-bold rounded-xl transition-all shadow shrink-0 whitespace-nowrap cursor-pointer flex items-center gap-1.5"
-            >
-              <span>Activar Todas las herramientas ✨</span>
-              <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
-            </button>
-          </div>
+          </details>
         </div>
       ) : (
         /* Full Suite Advanced Views and Widgets (Fases 2 y 3) */
