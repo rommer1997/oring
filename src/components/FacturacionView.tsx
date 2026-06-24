@@ -108,11 +108,13 @@ export default function FacturacionView({ appointments, clients, onToastMessage 
       onToastMessage('No hay datos de facturación en este período.');
       return;
     }
+    // ponytail: quote every cell + neutralise formula-injection (= + - @) for Excel/Sheets
+    const csvCell = (v: string) => `"${String(v).replace(/"/g, '""').replace(/^([=+\-@])/, "'$1")}"`;
     const headers = ['Fecha', 'Clienta', 'Servicio', 'Estilista', 'Importe (€)'];
     const rows = currentQData
       .sort((a, b) => a.date.localeCompare(b.date))
       .map(a => [a.date, a.clientName, a.serviceName, a.staffName, a.price?.toFixed(2) || '0.00']);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const csv = [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

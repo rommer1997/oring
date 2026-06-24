@@ -613,37 +613,58 @@ export default function AgendaView({
                           onClick={() => onUpdateStatus(appt.id, 'Pagado')}
                           className="p-1 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold tracking-wider cursor-pointer transition-colors"
                           title="Marcar como cobrado/pagado"
+                          aria-label="Cobrar cita"
                         >
                           COBRAR
                         </button>
                       )}
-                      {appt.status !== 'Cancelado' && (
-                        <button
-                          onClick={() => onUpdateStatus(appt.id, 'Cancelado')}
-                          className="p-1 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold tracking-wider cursor-pointer"
-                          title="Cancelar reserva"
-                        >
-                          CANCELAR
-                        </button>
-                      )}
-                      
+
                       {/* Edit appointment */}
                       <button
                         onClick={() => openEditModal(appt)}
                         className="p-1.5 text-outline hover:text-primary hover:bg-primary/5 rounded-lg cursor-pointer transition-all"
                         title="Editar detalles de cita"
+                        aria-label="Editar cita"
                       >
                         <span className="material-symbols-outlined text-sm font-semibold">edit</span>
                       </button>
 
-                      {/* Delete appointment */}
-                      <button
-                        onClick={() => onDeleteAppointment(appt.id)}
-                        className="p-1.5 text-outline hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-all"
-                        title="Eliminar cita"
-                      >
-                        <span className="material-symbols-outlined text-sm font-semibold">delete</span>
-                      </button>
+                      {/* Destructive actions in overflow menu — prevents accidental cancel/delete */}
+                      <div className="relative group/menu">
+                        <button
+                          className="p-1.5 text-outline hover:text-primary hover:bg-primary/5 rounded-lg cursor-pointer transition-all"
+                          title="Más acciones"
+                          aria-label="Más acciones"
+                        >
+                          <span className="material-symbols-outlined text-sm font-semibold">more_vert</span>
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-outline-variant/30 rounded-xl shadow-lg z-10 overflow-hidden hidden group-focus-within/menu:block group-hover/menu:block">
+                          {appt.status !== 'Cancelado' && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`¿Cancelar la cita de ${appt.clientName}?`)) {
+                                  onUpdateStatus(appt.id, 'Cancelado');
+                                }
+                              }}
+                              className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-50 flex items-center gap-2"
+                            >
+                              <span className="material-symbols-outlined text-sm">event_busy</span>
+                              Cancelar cita
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`¿Eliminar definitivamente la cita de ${appt.clientName}? Esta acción no se puede deshacer.`)) {
+                                onDeleteAppointment(appt.id);
+                              }
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-50 flex items-center gap-2 border-t border-outline-variant/20"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                            Eliminar cita
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

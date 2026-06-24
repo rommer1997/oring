@@ -60,6 +60,7 @@ export default function OnboardingView({
   const [isSaving, setIsSaving] = useState(false);
   const [dpaAccepted, setDpaAccepted] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [serviceFieldError, setServiceFieldError] = useState(false);
 
   const [salonName, setSalonName] = useState(tenant?.name || '');
   const [salonCity, setSalonCity] = useState(tenant?.city || '');
@@ -95,9 +96,10 @@ export default function OnboardingView({
 
   const addServiceDraft = () => {
     if (!serviceName.trim() || servicePrice < 0 || serviceDuration <= 0) {
-      onToastMessage('Completa nombre, precio y duración del servicio.');
+      setServiceFieldError(true);
       return;
     }
+    setServiceFieldError(false);
     const service: Service = {
       id: `serv-${Date.now()}-${servicesDraft.length}`,
       name: serviceName.trim(),
@@ -297,7 +299,10 @@ export default function OnboardingView({
                 <h2 className="font-serif text-2xl font-bold">Servicios iniciales</h2>
                 <p className="text-sm text-on-surface-variant">Añade todos los servicios que quieras mostrar desde el primer día. Necesitas al menos uno.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Field label="Nombre del servicio *" value={serviceName} onChange={setServiceName} placeholder="Corte y peinado" />
+                  <div>
+                    <Field label="Nombre del servicio *" value={serviceName} onChange={(v) => { setServiceName(v); setServiceFieldError(false); }} placeholder="Ej: Corte y peinado" />
+                    {serviceFieldError && <p className="mt-1 text-xs font-bold text-red-600">Escribe el nombre del servicio antes de añadirlo.</p>}
+                  </div>
                   <div>
                     <label className="text-[10px] uppercase font-bold tracking-wider text-outline block mb-1">Categoría *</label>
                     <select value={serviceCategory} onChange={(e) => setServiceCategory(e.target.value as Service['category'])} className="w-full h-11 px-3 bg-white border border-outline-variant/30 rounded-xl text-sm font-semibold outline-none">

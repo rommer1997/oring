@@ -92,8 +92,9 @@ export default function ClientProfileView({
 
   const handleRemovePreferenceIdx = (indexToRemove: number) => {
     if (!currentClient || !onUpdateClient) return;
-    const currentPreferences = currentClient.preferences || [];
-    const updated = currentPreferences.filter((_, idx) => idx !== indexToRemove);
+    const pref = (currentClient.preferences || [])[indexToRemove];
+    if (!window.confirm(`¿Quitar "${pref}" de las preferencias de ${currentClient.name}?`)) return;
+    const updated = (currentClient.preferences || []).filter((_, idx) => idx !== indexToRemove);
     onUpdateClient(currentClient.id, { preferences: updated });
     onToastMessage('Preferencia removida.');
   };
