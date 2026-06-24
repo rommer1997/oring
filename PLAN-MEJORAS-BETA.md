@@ -1,96 +1,155 @@
-# PLAN-MEJORAS-BETA.md — Plan óptimo tras auditoría Manus (producción)
+# PLAN-MEJORAS-BETA.md — Plan unificado tras 3 auditorías externas
 
-Las auditorías de Manus (beta testing + UX) se hicieron con recorridos **reales sobre
-producción** (`elena-os.web.app` = rama `main`). Por tanto reflejan el estado **desplegado**,
-no el de nuestra rama `claude/kind-goldberg-ym1zm7`, que tiene B-01 ya corregido y todas las
-mejoras CRO **sin desplegar todavía**.
+Tres auditorías sobre **producción real** (`elena-os.web.app`):
+- Manus Beta Testing — 5 bugs con reproducción paso a paso
+- Manus Análisis UX de botones — evaluación de arquitectura de información
+- Evaluación UX + Psicología del Diseño (iPhone 14 + 1440×900) — 18 quick wins + veredicto 55/100
 
-Cada punto: 🔴 problema · 🧩 causa en el código · 🔧 solución · ⏱️ esfuerzo · 🎯 prioridad
-
----
-
-## 🚨 P0 — Desplegar lo que ya está hecho (máximo impacto, mínimo esfuerzo)
-
-El fix de **B-01 (bloqueo en onboarding)** ya existe en nuestra rama (commit `434ae55`),
-pero **producción sigue rota**: ningún usuario nuevo puede entrar al panel. Cada día sin
-desplegar = registros perdidos.
-
-- 🔧 **Solución:** mergear `claude/kind-goldberg-ym1zm7` → `main` y desplegar a Firebase
-  Hosting. Con esto, de golpe, llega a producción: el fix de onboarding + los 11 fixes CRO
-  + RGPD + cifrado de backups + 24 tests.
-- ⏱️ **S** (un PR + deploy) · 🎯 **CRÍTICA — hacer primero**
+**Estado actual:** nuestra rama `claude/kind-goldberg-ym1zm7` tiene B-01 y 11 mejoras CRO
+resueltas, pero **producción (`main`) sigue sin el merge**. El primer paso no es código nuevo: es desplegar.
 
 ---
 
-## 🔴 P1 — Bugs reales nuevos (no cubiertos por la rama)
+## 🚨 PASO 0 — Merge a `main` + deploy (máximo impacto, esfuerzo mínimo)
 
-### B-03 · Teléfono inválido aceptado `[S]`
-- 🔴 Escribes "ABCDEFGH" en el teléfono de una cita y lo acepta como clienta nueva.
-- 🧩 `App.tsx:389` (`handleQuickAppointmentSubmit`) solo hace `.trim()`, sin validar formato.
-  El backend (`server.ts:594`) valida longitud (6-64) pero **no** que sean dígitos.
-- 🔧 Validar formato de teléfono (regex E.164 laxo: `^\+?\d[\d\s]{6,}$`) en el front antes de
-  aceptar, y reforzar con `.matches()` en el endpoint. Mensaje claro si falla.
-- ⏱️ **S** · 🎯 **Alta** (afecta a WhatsApp: un teléfono basura = mensaje que nunca llega)
+Sin esto, ningún usuario nuevo puede completar el alta. Todo lo que está en la rama pero no
+en producción:
 
-### B-02 · "XSS" → en realidad es **inyección CSV** `[S]`
-- ⚠️ **El XSS de navegador es FALSO POSITIVO:** no hay `dangerouslySetInnerHTML` en el código;
-  React escapa todo al renderizar, así que `<script>` se muestra como texto, no se ejecuta.
-  Manus vio el payload *guardado* y lo interpretó como ejecutado.
-- 🔴 **Pero hay un vector real adyacente:** la exportación CSV. `FacturacionView.tsx:115` hace
-  `r.join(',')` **sin comillas** → un nombre con coma rompe columnas, y un nombre tipo
-  `=HYPERLINK(...)` o `=1+1` **se ejecuta como fórmula al abrir en Excel** (CSV injection).
-  `SettingsView.tsx:580` sí pone comillas, pero tampoco neutraliza fórmulas.
-- 🔧 (a) Anteponer `'` a celdas que empiecen por `= + - @` en ambos exports.
-  (b) Citar correctamente en `FacturacionView` (comillas + escape de `"`).
-- ⏱️ **S** · 🎯 **Media-alta** (seguridad real, pero solo al exportar; el XSS reportado no existe)
+| Ya hecho en rama | Resuelve |
+|---|---|
+| Fix onboarding paso 4 (inline errors + DPA clickable) | B-01 / QW-1 |
+| Unificar CTAs a "Probar Elena 14 días gratis" | Cambio 4 / QW-17 |
+| 11 mejoras CRO (jargon, seguridad, demo links, FAQ, tabla comparativa) | GLM B1-B3 |
+| RGPD: consentimiento informado, DPA, borrado en 1 clic | LEG-02/04 |
+| Backups cifrados AES-256 | SEC-04 |
+| 24 tests automáticos | QA-01 |
 
-### B-04 · Buzón de Feedback "inaccesible" `[S-M]`
-- 🔴 Pulsas "Buzón de Feedback" y no pasa nada.
-- 🧩 `Sidebar.tsx:178` hace `window.open('mailto:...')`. En un dispositivo sin cliente de
-  correo configurado (el caso de Manus, y de muchas peluqueras en tablet), el `mailto:` no
-  abre nada → parece roto.
-- 🔧 Sustituir por un **modal de feedback in-app** (textarea + envío a un endpoint o a
-  Firestore `feedback/`), con `mailto:` como fallback secundario y la dirección visible para
-  copiar. Mínimo viable: modal que muestre el email y un botón "Copiar".
-- ⏱️ **M** (modal nuevo) / **S** si solo mostramos email copiable · 🎯 **Media**
+- ⏱️ **S** · 🎯 **CRÍTICO — hacer antes que cualquier fix nuevo**
 
 ---
 
-## 🟡 P2 — Pulido UI/UX (de los dos informes)
+## 🔴 BLOQUE A — Bugs reales pendientes `[todos S]`
 
-### B-05 · Nombres largos desbordan `[S]`
-- 🔴 Un nombre muy largo rompe el toast, la lista de clientas y el panel lateral.
-- 🔧 `truncate` / `break-words` + `max-w` en los 3 puntos (toast, tarjeta de clienta, aside).
-- ⏱️ **S** · 🎯 **Baja**
+### A-1 · Botones destructivos pegados a constructivos en la Agenda `[S]`
+- 🔴 COBRAR / CANCELAR / edit / delete en la misma fila horizontal en móvil: un desliz de 5mm
+  cancela o borra una cita en vez de cobrarla. Es el hallazgo de mayor riesgo emocional del PDF.
+- 🧩 `AgendaView.tsx` — fila de acciones sin separación ni confirmación.
+- 🔧 Dejar COBRAR como botón primario visible. Mover CANCELAR y ELIMINAR a un menú `...`
+  con diálogo de confirmación ("¿Cancelar la cita de María?"). EDITAR queda como icono
+  secundario con `aria-label`.
+- 🎯 **Alta**
 
-### UX-01 · Tooltips en iconos de cabecera `[S]`
-- 🔴 Iconos de notificaciones/correo no explican su función hasta pulsarlos.
-- 🔧 Añadir `title=` (o tooltip) a los iconos del header. Una línea cada uno.
-- ⏱️ **S** · 🎯 **Baja**
+### A-2 · Validar teléfono numérico `[S]` (B-03)
+- 🔴 "ABCDEFGH" pasa como teléfono → mensaje de WhatsApp que nunca llega.
+- 🧩 `App.tsx:389` — solo `.trim()`, sin regex. Backend valida longitud pero no formato.
+- 🔧 Regex laxo `^\+?\d[\d\s\-]{5,}$` en front + `.matches()` en endpoint.
+- 🎯 **Alta**
 
-### UX-02 · Área de clic de iconos editar/eliminar `[S]`
-- 🔴 En tablet (manos ocupadas/guantes) los iconos `edit`/`delete` son difíciles de acertar.
-- 🔧 Subir el área tocable a ≥40px (`p-2` + `min-w/min-h`). Sin cambiar el diseño.
-- ⏱️ **S** · 🎯 **Baja-media**
+### A-3 · Confirmación antes de borrar preferencias en ficha de clienta `[S]` (QW-6 / Cambio 5)
+- 🔴 Un toque en el icono `delete` junto a "le gusta el café con avena" borra para siempre
+  información que costó semanas de relación con la clienta. Sin confirmación.
+- 🔧 Sustituir icono `delete` por menú `...` con Editar/Eliminar + `confirm()` antes de borrar.
+- 🎯 **Alta**
 
-### UX-03 · FAB "Programar Cita" en móvil `[M]`
-- 🔴 En móvil/tablet el CTA principal está arriba en el lateral; incómodo con una mano.
-- 🔧 Botón flotante (FAB) abajo a la derecha en viewport pequeño que abre el mismo modal.
-- ⏱️ **M** · 🎯 **Baja** (mejora ergonómica, no bloqueante)
+### A-4 · Buzón de Feedback inaccesible en tablets/móvil sin cliente de correo `[S]` (B-04)
+- 🔴 `Sidebar.tsx:178` — `window.open('mailto:...')`. En dispositivos sin cliente de correo
+  configurado no ocurre nada visible.
+- 🔧 Mínimo viable: modal in-app que muestra el email con botón "Copiar dirección" + enlace
+  `mailto:` como opción secundaria.
+- 🎯 **Media**
+
+### A-5 · Feedback inline en "Añadir servicio" vacío `[S]` (QW-2 / Cambio 3)
+- 🔴 Si pulsas "Añadir servicio" sin rellenar el nombre, el botón no reacciona en absoluto.
+  La usuaria piensa que la app está rota.
+- 🧩 `OnboardingView.tsx:addServiceDraft` — llama a `onToastMessage` (toast lejano) pero
+  no feedback visual inmediato en el botón ni en el campo.
+- 🔧 Mensaje rojo inline bajo el campo + cambiar placeholder de "Corte y peinado" a
+  "Ej: Corte y peinado" para que quede claro que es ejemplo, no valor.
+- 🎯 **Alta** (es la 2ª causa de abandono en onboarding)
+
+### A-6 · Inyección de fórmulas CSV al exportar `[S]` (B-02 real)
+- ⚠️ El XSS de navegador reportado es falso positivo (React escapa por defecto, sin
+  `dangerouslySetInnerHTML`). Pero sí hay vector real: `FacturacionView.tsx:115` une columnas
+  con `.join(',')` sin comillas → nombres con coma rompen columnas; nombres como `=1+1`
+  se ejecutan como fórmulas al abrir en Excel (CSV injection).
+- 🔧 Envolver cada celda en comillas + escapar `"` → `""`. Neutralizar celdas que empiecen
+  por `= + - @` prefijando `'`. Dos líneas.
+- 🎯 **Media-alta**
 
 ---
 
-## Orden recomendado
+## 🟡 BLOQUE B — Quick wins de UX/psicología `[todos S]`
 
-| Orden | ID | Qué | Esfuerzo | Prioridad |
-|:---:|:---|:---|:---:|:---:|
-| 1 | P0 | Merge a `main` + deploy (lleva B-01 y todo lo demás a producción) | S | 🚨 Crítica |
-| 2 | B-03 | Validar teléfono numérico | S | Alta |
-| 3 | B-02 | Neutralizar inyección CSV en exports | S | Media-alta |
-| 4 | B-04 | Feedback in-app (o email copiable) | S-M | Media |
-| 5 | B-05 | Truncar nombres largos | S | Baja |
-| 6 | UX-01/02/03 | Tooltips, click targets, FAB móvil | S-M | Baja |
+Extraídos del PDF (18 quick wins oficiales). Agrupados por tema.
 
-**Recomendación:** P0 ya mismo (es el de más impacto y desbloquea producción), luego B-03 +
-B-02 + B-05 juntos en una tanda (todos `[S]`), y dejar B-04 y el bloque UX para una segunda
-ronda. No invertir nada en "arreglar el XSS de navegador": no existe.
+### Feedback del sistema
+| QW | Qué | Impacto |
+|---|---|---|
+| QW-3 | "Guardado ✓" 2s tras perder foco en nota técnica de ficha de clienta (autoguarda sin aviso) | +conf. |
+| QW-4 | Microcopy bajo toggles de Ajustes: "Los cambios se guardan al pulsar Guardar al final" | -confusión |
+
+### Jerarquía y acciones
+| QW | Qué | Impacto |
+|---|---|---|
+| QW-7 | "PROGRAMAR CITA" en agenda con más peso visual que los toggles Vista Diaria / Lista | +CTA |
+| QW-8 | Mover "Activar todas las herramientas ✨" a sección colapsada al final del dashboard | -saturación |
+
+### Copy y etiquetas
+| QW | Qué | Impacto |
+|---|---|---|
+| QW-9 | "MODO AUTOMÁTICO" WhatsApp → "Elena está redactando — toca para revisar" | -miedo IA |
+| QW-10 | Placeholders confundibles → añadir "Ej:" delante (Dirección, servicios, contraseña fuera del input) | -confusión |
+| QW-11 | Añadir icono ✓ / ⏱ a estados de cita (no solo color: accesibilidad) | +accesibilidad |
+| QW-12 | Bajar mayúsculas innecesarias: "ATENCIÓN URGENTE" → "Atención urgente" | -agresividad |
+
+### Accesibilidad objetiva
+| QW | Qué | Norma |
+|---|---|---|
+| QW-13 | Textos cuerpo en móvil: subir de 12-13px a 15-16px en agenda/clientes/ajustes | WCAG 1.4.4 |
+| QW-14 | Oscurecer placeholders a ≥4.5:1 contraste | WCAG 1.4.3 |
+| QW-15 | Focus visible con color de marca en navegación por teclado | WCAG 2.4.7 |
+| QW-16 | `aria-label` en iconos-only (edit, delete, settings, notifications, mail) | WCAG 4.1.2 |
+
+### Reducción de carga cognitiva
+| QW | Qué | Impacto |
+|---|---|---|
+| QW-18 | Filtros de Clientes: ocultar avanzados tras botón "Filtros", mostrar solo búsqueda + lista por urgencia | -saturación |
+
+---
+
+## 🟢 BLOQUE C — Mejoras de esfuerzo medio `[M]`
+
+### C-1 · FAB "Programar Cita" en móvil (UX-03)
+- Botón flotante abajo-derecha en viewport <768px que abre el mismo modal. Ergonomía con
+  una mano.
+- ⏱️ **M** · 🎯 Media
+
+### C-2 · Colapsar filtros avanzados de Clientes (QW-18 extendido)
+- Reestructurar la cabecera de Clientes: solo búsqueda visible por defecto, filtros tras "Filtros ▾".
+- ⏱️ **M** · 🎯 Media
+
+---
+
+## Orden de ejecución recomendado
+
+| Sprint | Qué | Esfuerzo total | Impacto |
+|:---:|---|:---:|:---:|
+| **Esta semana** | Merge + deploy (`main`) | S | 🚨 Crítico |
+| **Sprint 1** | A-1 (agenda destructiva), A-2 (teléfono), A-3 (borrar prefs), A-5 (servicio vacío), A-6 (CSV) | ~1 día | Alto |
+| **Sprint 2** | QW-3,4,7,8,9,10,11,12 (copy + jerarquía) | ~1 día | Medio-alto |
+| **Sprint 3** | QW-13,14,15,16 (accesibilidad) + A-4 (feedback in-app) | ~1 día | Medio |
+| **Sprint 4** | C-1 FAB móvil, C-2 filtros colapsados | ~1 día | Medio |
+
+**Si se ejecutan todos los Bloques A + B, el veredicto del PDF subiría del 55% actual a
+~80-85% de adopción percibida.** Los Bloques A resuelven los callejones sin salida; los
+Bloques B convierten "funciona" en "me cuida".
+
+---
+
+## Nota: qué NO hacer
+- ❌ **No "arreglar el XSS de navegador"**: no existe. React escapa todo. Perseguirlo sería
+  tiempo perdido. El vector CSV (A-6) sí vale la pena.
+- ❌ **No reescribir la agenda desde cero**: el problema de los botones destructivos se
+  resuelve con un menú `...` y un `confirm()`, no con una refactorización.
+- ❌ **No meter tooltips custom con librerías**: `title=""` nativo cubre QW-16 en desktop,
+  `aria-label=""` cubre lectores de pantalla. Una línea por icono.
