@@ -391,9 +391,9 @@ export default function AgendaView({
           )}
           <button
             onClick={openCreateModal}
-            className="bg-primary text-on-primary font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#4a2c40]/90 transition-all cursor-pointer shadow-sm"
+            className="bg-primary text-on-primary font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#4a2c40]/90 transition-all cursor-pointer shadow-md"
           >
-            <span className="material-symbols-outlined text-sm font-bold">add_circle</span>
+            <span className="material-symbols-outlined text-base font-bold">add_circle</span>
             <span>Programar Cita</span>
           </button>
         </div>
@@ -586,7 +586,10 @@ export default function AgendaView({
                     <div className="flex-1 min-w-0 text-left">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h4 className="font-serif text-base font-bold text-primary truncate leading-tight">{appt.clientName}</h4>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusColorMap[appt.status]}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${statusColorMap[appt.status]}`}>
+                          {appt.status === 'Pagado' && <span className="material-symbols-outlined text-[10px] font-bold">check_circle</span>}
+                          {appt.status === 'Reservado' && <span className="material-symbols-outlined text-[10px] font-bold">schedule</span>}
+                          {appt.status === 'Cancelado' && <span className="material-symbols-outlined text-[10px] font-bold">cancel</span>}
                           {appt.status}
                         </span>
                       </div>

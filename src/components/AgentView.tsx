@@ -614,7 +614,7 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
                           </div>
                           <div className="flex items-center gap-3">
                             <label className="flex items-center gap-2 cursor-pointer">
-                              <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-[#062d32]/40">Modo Automático</span>
+                              <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-[#062d32]/40">Elena está redactando — toca para revisar</span>
                               <button onClick={() => saveConfig({ autoSend: !config.autoSend })}
                                 className={`relative h-5 w-9 rounded-full transition-colors ${config.autoSend ? 'bg-[#062d32]' : 'bg-[#062d32]/15'}`}>
                                 <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${config.autoSend ? 'left-[18px]' : 'left-0.5'}`} />
