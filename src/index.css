@@ -105,3 +105,12 @@ body {
   background-color: hsl(40 33% 98%);
   color: hsl(330 10% 15%);
 }
+
+/* QW-15: visible focus ring with brand color */
+*:focus-visible {
+  outline: 2px solid hsl(335 30% 35%);
+  outline-offset: 2px;
+}
+*:focus:not(:focus-visible) {
+  outline: none;
+}

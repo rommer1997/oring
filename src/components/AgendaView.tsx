@@ -524,10 +524,10 @@ export default function AgendaView({
                 placeholder="Buscar por clienta, servicio..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none text-xs font-semibold text-primary outline-none placeholder-primary/50 w-full"
+                className="bg-transparent border-none text-xs font-semibold text-primary outline-none placeholder-primary/70 w-full"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="p-0.5 text-outline-variant hover:text-primary">
+                <button onClick={() => setSearchQuery('')} aria-label="Limpiar búsqueda" className="p-0.5 text-outline-variant hover:text-primary">
                   <span className="material-symbols-outlined text-[10px] font-bold">close</span>
                 </button>
               )}
@@ -690,8 +690,9 @@ export default function AgendaView({
                 <span className="material-symbols-outlined">calendar_today</span>
                 <span>{editingAppointment ? 'Editar Detalles de Cita' : 'Programar Nueva Cita'}</span>
               </h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
+                aria-label="Cerrar"
                 onClick={() => setIsAddOpen(false)}
                 className="text-outline hover:text-primary cursor-pointer p-0.5"
               >
