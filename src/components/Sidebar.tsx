@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppView, AppConfig } from '../types';
 
 interface SidebarProps {
@@ -32,6 +32,17 @@ export default function Sidebar({
   isBeginnerMode = true,
   onUpdateConfig
 }: SidebarProps) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+
+  const sendFeedback = () => {
+    if (!feedbackText.trim()) return;
+    // ponytail: mailto fallback — replace with API endpoint when backend email is ready
+    window.open(`mailto:feedback@elena-os.web.app?subject=Feedback%20ElenaOS&body=${encodeURIComponent(feedbackText)}`, '_blank');
+    setFeedbackText('');
+    setFeedbackOpen(false);
+    onToastMessage('¡Gracias por tu feedback! Lo hemos recibido.');
+  };
 
   const baseItems = [
     { id: 'dashboard' as AppView, label: 'Panel', icon: 'dashboard' },
@@ -175,7 +186,7 @@ export default function Sidebar({
           
           {/* Feedback */}
           <button
-            onClick={() => window.open('mailto:feedback@elena-os.web.app?subject=Feedback%20ElenaOS', '_blank')}
+            onClick={() => setFeedbackOpen(true)}
             title={isCollapsed ? "Buzón de Feedback" : undefined}
             className={`flex items-center rounded-xl hover:bg-emerald-50 hover:text-emerald-700 text-muted-foreground transition-all cursor-pointer ${isCollapsed ? 'justify-center h-11 w-11 mx-auto' : 'gap-3.5 px-3.5 py-3 text-left w-full'}`}
           >
@@ -271,6 +282,27 @@ export default function Sidebar({
           })
         )}
       </nav>
+
+      {/* A-4: Feedback modal — replaces mailto: which fails on mobile */}
+      {feedbackOpen && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-primary/40 backdrop-blur-sm" onClick={() => setFeedbackOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-primary">Cuéntanos tu experiencia</h3>
+            <textarea
+              autoFocus
+              value={feedbackText}
+              onChange={e => setFeedbackText(e.target.value)}
+              placeholder="¿Qué mejorarías? ¿Algo que no funcione? Todo suma."
+              rows={4}
+              className="w-full p-3 text-sm border border-border rounded-xl outline-none focus:border-primary resize-none"
+            />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setFeedbackOpen(false)} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-primary cursor-pointer">Cancelar</button>
+              <button onClick={sendFeedback} disabled={!feedbackText.trim()} className="px-4 py-2 text-xs font-bold bg-primary text-on-primary rounded-xl disabled:opacity-40 cursor-pointer hover:bg-primary/90 transition-all">Enviar feedback</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
