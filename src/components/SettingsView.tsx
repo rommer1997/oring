@@ -403,7 +403,7 @@ export default function SettingsView({
                         <img src={currentPromoMember.avatar} alt={currentPromoMember.name} className="w-8 h-8 rounded-full object-cover border border-[#bfa982]/20" />
                         <div>
                           <p className="text-xs font-bold text-primary">{currentPromoMember.name}</p>
-                          <p className="text-[9px] text-[#bfa982] uppercase font-bold tracking-wider">{currentPromoMember.specialty}</p>
+                          <p className="text-[11px] text-[#bfa982] uppercase font-bold tracking-wider">{currentPromoMember.specialty}</p>
                         </div>
                       </div>
                       

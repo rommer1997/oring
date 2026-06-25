@@ -388,7 +388,7 @@ export default function ClientProfileView({
                 placeholder="Fórmulas técnicas del cabello, mezclas de coloración y notas específicas..."
                 className="w-full h-32 p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-xs font-serif leading-relaxed text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none italic"
               />
-              <span className="text-[9px] text-outline block mt-1">Haga clic fuera del recuadro para autoguardar la nota técnica.</span>
+              <span className="text-[11px] text-outline block mt-1">Haga clic fuera del recuadro para autoguardar la nota técnica.</span>
             </div>
 
           </div>
@@ -466,7 +466,7 @@ export default function ClientProfileView({
                       <div className="flex items-center gap-4 text-left">
                         <div className="bg-surface-container-low p-2 rounded-xl text-center min-w-[54px] border border-surface-container/50 font-sans">
                           <p className="text-[10px] font-bold text-primary">{history.date}</p>
-                          <p className="text-[8px] uppercase tracking-widest text-outline">{history.year}</p>
+                          <p className="text-[10px] uppercase tracking-widest text-outline">{history.year}</p>
                         </div>
                         <div>
                           <p className="font-bold text-primary">{history.serviceName}</p>
