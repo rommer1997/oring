@@ -381,9 +381,9 @@ export default function RetentionView({
       )}
 
       {/* Búsqueda y Filtros de Clientas */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6 font-sans">
-        {/* Search input field */}
-        <div className="md:col-span-5 relative">
+      <div className="mb-6 font-sans space-y-3">
+        {/* Search input field — always visible */}
+        <div className="relative">
           <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">
             search
           </span>
@@ -404,47 +404,41 @@ export default function RetentionView({
           )}
         </div>
 
-        {/* VIP Filter selector */}
-        <div className="md:col-span-3 font-sans">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
-              star
-            </span>
-            <select
-              value={vipFilter}
-              onChange={(e) => setVipFilter(e.target.value as any)}
-              className="w-full h-11 pl-9 pr-8 bg-white border border-border rounded-xl text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground font-semibold shadow-sm appearance-none cursor-pointer"
-            >
-              <option value="Todos">Todas las Etiquetas</option>
-              <option value="VIP">🌟 Clientes VIP</option>
-              <option value="No-VIP">Estándar (No VIP)</option>
-            </select>
-            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
-              keyboard_arrow_down
-            </span>
+        {/* C-2: Advanced filters collapsed by default */}
+        <details className="group">
+          <summary className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground cursor-pointer select-none list-none w-fit">
+            <span className="material-symbols-outlined text-sm transition-transform group-open:rotate-180">tune</span>
+            Filtros avanzados
+          </summary>
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base">star</span>
+              <select
+                value={vipFilter}
+                onChange={(e) => setVipFilter(e.target.value as any)}
+                className="w-full h-11 pl-9 pr-8 bg-white border border-border rounded-xl text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground font-semibold shadow-sm appearance-none cursor-pointer"
+              >
+                <option value="Todos">Todas las Etiquetas</option>
+                <option value="VIP">🌟 Clientes VIP</option>
+                <option value="No-VIP">Estándar (No VIP)</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">keyboard_arrow_down</span>
+            </div>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base">sort</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full h-11 pl-9 pr-8 bg-white border border-border rounded-xl text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground font-semibold shadow-sm appearance-none cursor-pointer"
+              >
+                <option value="days">Ordenar por: Mayor Inactividad</option>
+                <option value="ltv">Ordenar por: Gasto Total (€)</option>
+                <option value="name">Ordenar por: Nombre (A-Z)</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">keyboard_arrow_down</span>
+            </div>
           </div>
-        </div>
-
-        {/* Sorting criterion selector */}
-        <div className="md:col-span-4 font-sans">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
-              sort
-            </span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full h-11 pl-9 pr-8 bg-white border border-border rounded-xl text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground font-semibold shadow-sm appearance-none cursor-pointer"
-            >
-              <option value="days">Ordenar por: Mayor Inactividad</option>
-              <option value="ltv">Ordenar por: Gasto Total (€)</option>
-              <option value="name">Ordenar por: Nombre (A-Z)</option>
-            </select>
-            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
-              keyboard_arrow_down
-            </span>
-          </div>
-        </div>
+        </details>
       </div>
 
       {/* Segmented Risk Filter Tabs */}

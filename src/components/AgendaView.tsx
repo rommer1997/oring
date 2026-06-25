@@ -677,6 +677,15 @@ export default function AgendaView({
         )}
       </div>
 
+      {/* C-1: FAB mobile — hidden on md+ where the header button is visible */}
+      <button
+        onClick={openCreateModal}
+        aria-label="Programar Cita"
+        className="md:hidden fixed bottom-6 right-5 z-40 bg-primary text-on-primary w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all active:scale-95"
+      >
+        <span className="material-symbols-outlined text-2xl font-bold">add</span>
+      </button>
+
       {/* Manual Add/Edit Appointment view slider/modal */}
       {isAddOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
