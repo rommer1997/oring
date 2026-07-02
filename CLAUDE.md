@@ -66,6 +66,15 @@ Note: `/qa` and `/browse` require browser access — not available in this CCR e
 - No external UI libraries (no Tailwind, no shadcn, no Bootstrap)
 - Comments only when WHY is non-obvious
 
+## Security — NON-NEGOTIABLE (regla anti-EnrichLead)
+El navegador nunca es de fiar: todo lo que llega al cliente es visible y editable.
+- **Secretos SOLO en `process.env` del servidor** (Stripe, Gemini, Meta WA, service account). NUNCA hardcodeados, NUNCA con prefijo `VITE_` (todo `VITE_*` se empaqueta en el bundle público).
+- **Autorización SIEMPRE en el servidor**: `verifyIdToken` + tenant derivado del servidor. Jamás confiar en un flag de pago/rol enviado por el cliente.
+- **Campos de billing** (`subscriptionStatus`, `trialEndsAt`, `stripe*`) son inmutables desde el cliente — solo los escriben los webhooks de Stripe vía Admin SDK. Ver `firestore.rules`.
+- **Firestore**: default `deny-all` + aislamiento por tenant + validación de esquema. No relajar.
+- **Rate limiting** en todos los endpoints (`apiLimiter`/`publicLimiter`/`aiLimiter`) + cuota per-user en IA.
+- **Guard automático**: `scripts/check-secrets.mjs` corre en `prebuild` (local) y en CI tras el build (escanea el bundle real). Rompe el build si un secreto se cuela. La Firebase client `apiKey` (`AIza…`) es pública por diseño — no es un secreto, no perseguirla.
+
 ## Commit Convention
 - Descriptive imperative: "Add pricing section", "Fix simulator ROI calc"
 - No emoji, no Claude branding in commit messages

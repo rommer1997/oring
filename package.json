@@ -10,6 +10,7 @@
     "deploy:hosting": "npm run build && npx firebase-tools deploy --only hosting",
     "deploy:rules": "npx firebase-tools deploy --only firestore:rules",
     "clean": "rm -rf dist server.js",
+    "prebuild": "node scripts/check-secrets.mjs",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
