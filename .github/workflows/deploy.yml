@@ -24,6 +24,7 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: "207197327585"
           VITE_FIREBASE_APP_ID: "1:207197327585:web:b72317fd8ea87322aea7a0"
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      - run: node scripts/check-secrets.mjs   # escanea el bundle dist/ real antes de desplegar
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
