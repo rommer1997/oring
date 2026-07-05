@@ -922,13 +922,14 @@ async function startServer() {
   });
 
   // ─── WhatsApp Adapter ────────────────────────────────────────────────────────
-  // ponytail: stub activo cuando no hay token. Real cuando META_WA_TOKEN + META_PHONE_NUMBER_ID están en .env
+  // Sin META_WA_TOKEN + META_PHONE_NUMBER_ID no hay canal Meta: devolvemos false para
+  // que la campaña quede 'pendiente'. Nunca fingir un envío que no ocurrió.
   async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
     const token = process.env.META_WA_TOKEN;
     const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
     if (!token || !phoneNumberId) {
-      console.log(`[WA STUB] → ${to}: ${text.substring(0, 80)}...`);
-      return true; // stub: simula envío exitoso
+      console.warn(`[WA] Sin canal Meta configurado; no se envía a ${to}.`);
+      return false;
     }
     try {
       const res = await fetch(
@@ -1096,7 +1097,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           riskDays: client.riskDays || 0,
           suggestedService: client.lastVisitService || '',
           message,
-          status: agentConfig.autoSend ? 'enviado' : 'pendiente',
+          status: 'pendiente', // solo pasa a 'enviado' si el envío real tiene éxito
           autoSend: agentConfig.autoSend || false,
           createdAt: new Date().toISOString(),
           conversationLog: [{ role: 'agent', text: message, timestamp: new Date().toISOString() }],
@@ -1111,7 +1112,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
           if (phone.length === 9) phone = '34' + phone;
           const sent = await sendWhatsAppMessage(phone, message);
-          if (sent) await ref.update({ sentAt: new Date().toISOString() });
+          if (sent) await ref.update({ status: 'enviado', sentAt: new Date().toISOString() });
         }
 
         queued++;
