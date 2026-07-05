@@ -168,7 +168,7 @@ service cloud.firestore {
 
     function isValidAppointment(data) {
       return data.keys().hasAll(['id', 'clientId', 'clientName', 'serviceId', 'serviceName', 'staffId', 'staffName', 'date', 'time', 'price', 'status', 'tenantId'])
-        && data.keys().hasOnly(['id', 'clientId', 'clientName', 'serviceId', 'serviceName', 'staffId', 'staffName', 'date', 'time', 'price', 'status', 'tenantId', 'source', 'clientEmail', 'clientPhone'])
+        && data.keys().hasOnly(['id', 'clientId', 'clientName', 'serviceId', 'serviceName', 'staffId', 'staffName', 'date', 'time', 'price', 'status', 'tenantId', 'source', 'clientEmail', 'clientPhone', 'reminderSentAt'])
         && data.id is string && data.id.size() <= 128
         && data.clientId is string && data.clientId.size() <= 128
         && data.clientName is string && data.clientName.size() <= 256
