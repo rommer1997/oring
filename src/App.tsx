@@ -70,7 +70,7 @@ import {
 
 // ─── Firebase ─────────────────────────────────────────────────────────────────
 import { doc, setDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from './firebase';
+import { db, handleFirestoreError, OperationType, setFirestoreErrorNotifier } from './firebase';
 
 interface ActiveToast {
   id: string;
@@ -131,6 +131,9 @@ export default function App() {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3200);
   };
+
+  // Los fallos de escritura en Firestore se muestran como toast (antes: solo console).
+  useEffect(() => { setFirestoreErrorNotifier(triggerToast); }, []);
 
   // ─── Auth Hook ───────────────────────────────────────────────────────────
   const {

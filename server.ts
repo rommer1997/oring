@@ -458,6 +458,75 @@ async function startServer() {
   const waPhoneMap = new Map<string, string | null>();
   const waClientsMap = new Map<string, Set<express.Response>>();
 
+  // ─── Persistencia de sesiones Baileys en Firestore ──────────────────────────
+  // El filesystem es efímero en Render/containers: sin esto, cada redeploy
+  // desconecta el WhatsApp de todos los salones y obliga a re-escanear el QR.
+  // Espejo: .wa-auth/<tenantId>/* ↔ wa_sessions/{tenantId}/files/{encodedName}
+  const waSyncTimers = new Map<string, NodeJS.Timeout>();
+
+  async function syncWASessionToFirestore(tenantId: string) {
+    if (!adminRuntime) return;
+    const authDir = path.join(WA_AUTH_DIR, tenantId);
+    if (!fs.existsSync(authDir)) return;
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const files = fs.readdirSync(authDir).filter(f => f.endsWith('.json'));
+      await db_.doc(`wa_sessions/${tenantId}`).set({ updatedAt: new Date().toISOString(), fileCount: files.length });
+      // ponytail: chunks de 400 por el límite de 500 writes por batch
+      for (let i = 0; i < files.length; i += 400) {
+        const batch = db_.batch();
+        for (const f of files.slice(i, i + 400)) {
+          const content = fs.readFileSync(path.join(authDir, f), 'utf8');
+          batch.set(db_.doc(`wa_sessions/${tenantId}/files/${encodeURIComponent(f)}`), { content });
+        }
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error(`[WA] Error sincronizando sesión de ${tenantId} a Firestore:`, err);
+    }
+  }
+
+  function scheduleWASessionSync(tenantId: string) {
+    clearTimeout(waSyncTimers.get(tenantId));
+    waSyncTimers.set(tenantId, setTimeout(() => syncWASessionToFirestore(tenantId), 3000));
+  }
+
+  async function restoreWASessionFromFirestore(tenantId: string): Promise<boolean> {
+    if (!adminRuntime) return false;
+    const authDir = path.join(WA_AUTH_DIR, tenantId);
+    if (fs.existsSync(path.join(authDir, 'creds.json'))) return true; // ya hay sesión local
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const snap = await db_.collection(`wa_sessions/${tenantId}/files`).get();
+      if (snap.empty) return false;
+      fs.mkdirSync(authDir, { recursive: true });
+      for (const doc of snap.docs) {
+        fs.writeFileSync(path.join(authDir, decodeURIComponent(doc.id)), doc.data().content, 'utf8');
+      }
+      console.log(`[WA] Sesión de ${tenantId} restaurada desde Firestore (${snap.size} archivos).`);
+      return true;
+    } catch (err) {
+      console.error(`[WA] Error restaurando sesión de ${tenantId}:`, err);
+      return false;
+    }
+  }
+
+  async function deleteWASessionEverywhere(tenantId: string) {
+    clearTimeout(waSyncTimers.get(tenantId));
+    fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true });
+    if (!adminRuntime) return;
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const snap = await db_.collection(`wa_sessions/${tenantId}/files`).get();
+      const batch = db_.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      batch.delete(db_.doc(`wa_sessions/${tenantId}`));
+      await batch.commit();
+    } catch (err) {
+      console.error(`[WA] Error borrando sesión remota de ${tenantId}:`, err);
+    }
+  }
+
   function getWAClients(tenantId: string): Set<express.Response> {
     if (!waClientsMap.has(tenantId)) waClientsMap.set(tenantId, new Set());
     return waClientsMap.get(tenantId)!;
@@ -922,13 +991,14 @@ async function startServer() {
   });
 
   // ─── WhatsApp Adapter ────────────────────────────────────────────────────────
-  // ponytail: stub activo cuando no hay token. Real cuando META_WA_TOKEN + META_PHONE_NUMBER_ID están en .env
+  // Sin META_WA_TOKEN + META_PHONE_NUMBER_ID no hay canal Meta: devolvemos false para
+  // que la campaña quede 'pendiente'. Nunca fingir un envío que no ocurrió.
   async function sendWhatsAppMessage(to: string, text: string): Promise<boolean> {
     const token = process.env.META_WA_TOKEN;
     const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
     if (!token || !phoneNumberId) {
-      console.log(`[WA STUB] → ${to}: ${text.substring(0, 80)}...`);
-      return true; // stub: simula envío exitoso
+      console.warn(`[WA] Sin canal Meta configurado; no se envía a ${to}.`);
+      return false;
     }
     try {
       const res = await fetch(
@@ -949,6 +1019,35 @@ async function startServer() {
       console.error('[WA] Error enviando mensaje:', err);
       return false;
     }
+  }
+
+  function normalizePhoneES(raw: string): string {
+    let phone = raw.replace(/\D/g, '');
+    if (phone.startsWith('0034')) phone = phone.slice(4);
+    else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
+    if (phone.length === 9) phone = '34' + phone;
+    return phone;
+  }
+
+  // Canal único de salida por tenant: Baileys (sesión QR del salón) primero,
+  // Meta Cloud API como fallback. Nunca informa éxito sin envío real.
+  async function sendViaTenantChannel(
+    tenantId: string,
+    rawPhone: string,
+    text: string
+  ): Promise<{ sent: boolean; channel: 'baileys' | 'meta' | null; reason?: string }> {
+    const phone = normalizePhoneES(rawPhone);
+    const sock = waSockMap.get(tenantId);
+    if (sock && waStatusMap.get(tenantId) === 'connected') {
+      try {
+        await sock.sendMessage(`${phone}@s.whatsapp.net`, { text });
+        return { sent: true, channel: 'baileys' };
+      } catch (err) {
+        console.error('[WA Baileys] Error enviando, probando Meta:', err);
+      }
+    }
+    if (await sendWhatsAppMessage(phone, text)) return { sent: true, channel: 'meta' };
+    return { sent: false, channel: null, reason: 'no_channel' };
   }
 
   // ─── Agente: Generar mensaje personalizado con Gemini ────────────────────────
@@ -1096,7 +1195,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           riskDays: client.riskDays || 0,
           suggestedService: client.lastVisitService || '',
           message,
-          status: agentConfig.autoSend ? 'enviado' : 'pendiente',
+          status: 'pendiente', // solo pasa a 'enviado' si el envío real tiene éxito
           autoSend: agentConfig.autoSend || false,
           createdAt: new Date().toISOString(),
           conversationLog: [{ role: 'agent', text: message, timestamp: new Date().toISOString() }],
@@ -1106,12 +1205,8 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
         await ref.set(campaign);
 
         if (agentConfig.autoSend) {
-          let phone = client.phoneNumber.replace(/\D/g, '');
-          if (phone.startsWith('0034')) phone = phone.slice(4);
-          else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-          if (phone.length === 9) phone = '34' + phone;
-          const sent = await sendWhatsAppMessage(phone, message);
-          if (sent) await ref.update({ sentAt: new Date().toISOString() });
+          const result = await sendViaTenantChannel(tenantId, client.phoneNumber, message);
+          if (result.sent) await ref.update({ status: 'enviado', sentAt: new Date().toISOString() });
         }
 
         queued++;
@@ -1148,14 +1243,9 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
       const campaign = snap.data() as any;
 
-      let phone = campaign.clientPhone.replace(/\D/g, '');
-      if (phone.startsWith('0034')) phone = phone.slice(4);
-      else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-      if (phone.length === 9) phone = '34' + phone;
-
-      const sent = await sendWhatsAppMessage(phone, campaign.message);
-      await ref.update({ status: sent ? 'enviado' : 'pendiente', sentAt: sent ? new Date().toISOString() : null });
-      res.json({ ok: true, sent });
+      const result = await sendViaTenantChannel(tenantId, campaign.clientPhone, campaign.message);
+      await ref.update({ status: result.sent ? 'enviado' : 'pendiente', sentAt: result.sent ? new Date().toISOString() : null });
+      res.json({ ok: true, sent: result.sent, channel: result.channel, reason: result.reason });
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
     }
@@ -1185,22 +1275,15 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
       const campaign = snap.data() as any;
 
-      let phone = campaign.clientPhone.replace(/\D/g, '');
-      if (phone.startsWith('0034')) phone = phone.slice(4);
-      else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-      if (phone.length === 9) phone = '34' + phone;
-
-      const sock = waSockMap.get(tenantId);
-      let sent = false;
-      if (sock && waStatusMap.get(tenantId) === 'connected') {
-        try { await sock.sendMessage(`${phone}@s.whatsapp.net`, { text }); sent = true; } catch {}
+      const result = await sendViaTenantChannel(tenantId, campaign.clientPhone, text);
+      if (!result.sent) {
+        return res.status(502).json({ error: 'No hay canal de WhatsApp conectado. Conecta WhatsApp en el panel del agente.', reason: result.reason });
       }
-      if (!sent) sent = await sendWhatsAppMessage(phone, text);
 
       const newEntry = { role: 'agent', text, timestamp: new Date().toISOString() };
       const log = [...(campaign.conversationLog || []), newEntry];
       await ref.update({ conversationLog: log, status: 'enviado', sentAt: new Date().toISOString() });
-      res.json({ ok: true, sent, entry: newEntry });
+      res.json({ ok: true, sent: true, channel: result.channel, entry: newEntry });
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
     }
@@ -1272,22 +1355,12 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       const snap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
         .where('status', '==', 'pendiente').get();
 
-      const sock = waSockMap.get(tenantId);
-      const waConnected = waStatusMap.get(tenantId) === 'connected';
       let sent = 0;
 
       for (const doc of snap.docs) {
         const campaign = doc.data() as any;
-        let phone = campaign.clientPhone.replace(/\D/g, '');
-        if (phone.startsWith('0034')) phone = phone.slice(4);
-        else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-        if (phone.length === 9) phone = '34' + phone;
-
-        let ok = false;
-        if (waConnected && sock) {
-          try { await sock.sendMessage(`${phone}@s.whatsapp.net`, { text: message }); ok = true; } catch {}
-        }
-        if (!ok) ok = await sendWhatsAppMessage(phone, message);
+        const result = await sendViaTenantChannel(tenantId, campaign.clientPhone, message);
+        if (!result.sent) continue; // sin canal: la campaña sigue pendiente, no se miente
 
         const entry = { role: 'agent', text: message, timestamp: new Date().toISOString() };
         await doc.ref.update({
@@ -1295,7 +1368,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           sentAt: new Date().toISOString(),
           conversationLog: [...(campaign.conversationLog || []), entry],
         });
-        if (ok) sent++;
+        sent++;
       }
 
       res.json({ ok: true, total: snap.size, sent });
@@ -1484,6 +1557,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
       const authDir = path.join(WA_AUTH_DIR, tenantId);
       fs.mkdirSync(authDir, { recursive: true });
+      await restoreWASessionFromFirestore(tenantId);
 
       const { state, saveCreds } = await useMultiFileAuthState(authDir);
       const { version } = await fetchLatestBaileysVersion();
@@ -1500,7 +1574,10 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       waStatusMap.set(tenantId, 'connecting');
       broadcastWAStatus(tenantId);
 
-      sock.ev.on('creds.update', saveCreds);
+      sock.ev.on('creds.update', async () => {
+        await saveCreds();
+        scheduleWASessionSync(tenantId);
+      });
 
       sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
@@ -1523,7 +1600,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           waPhoneMap.set(tenantId, null);
           broadcastWAStatus(tenantId);
           if (shouldReconnect) setTimeout(() => startBaileys(tenantId), 5000);
-          else { waSockMap.delete(tenantId); fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true }); }
+          else { waSockMap.delete(tenantId); await deleteWASessionEverywhere(tenantId); }
         }
       });
 
@@ -1579,13 +1656,23 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   }
 
-  // Reconectar sesiones guardadas al arrancar
+  // Reconectar sesiones guardadas al arrancar: disco local + Firestore
+  // (tras un redeploy el disco está vacío; Firestore es la fuente durable)
   if (adminRuntime) {
-    const sessions = fs.existsSync(WA_AUTH_DIR) ? fs.readdirSync(WA_AUTH_DIR) : [];
-    sessions.forEach(tid => {
-      console.log(`[WA Baileys] Reconectando sesión: ${tid}`);
-      startBaileys(tid);
-    });
+    (async () => {
+      const local = fs.existsSync(WA_AUTH_DIR) ? fs.readdirSync(WA_AUTH_DIR) : [];
+      let remote: string[] = [];
+      try {
+        const snap = await adminRuntime!.admin.firestore().collection('wa_sessions').get();
+        remote = snap.docs.map(d => d.id);
+      } catch (err) {
+        console.error('[WA] Error listando sesiones remotas:', err);
+      }
+      for (const tid of new Set([...local, ...remote])) {
+        console.log(`[WA Baileys] Reconectando sesión: ${tid}`);
+        startBaileys(tid);
+      }
+    })();
   }
 
   // ─── GET /api/agent/wa-status (SSE) ──────────────────────────────────────────
@@ -1637,7 +1724,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       waStatusMap.set(tenantId, 'disconnected');
       waPhoneMap.set(tenantId, null);
       waQRMap.set(tenantId, null);
-      fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true });
+      await deleteWASessionEverywhere(tenantId);
       broadcastWAStatus(tenantId);
       res.json({ ok: true });
     } catch (err: any) {
