@@ -1140,18 +1140,15 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   }
 
-  // ─── POST /api/agent/scan ─────────────────────────────────────────────────────
-  // Escanea clientes en riesgo y genera campañas pendientes
-  app.post('/api/agent/scan', apiLimiter, async (req, res) => {
-    try {
-      const { tenantId, db } = await resolveAuthenticatedTenant(req, adminRuntime);
+  // ─── Scan de clientes en riesgo (compartido: endpoint manual + scheduler) ────
+  async function runAgentScan(tenantId: string): Promise<{ scanned: number; queued: number; autoSend: boolean; message?: string }> {
       const db_ = adminRuntime!.admin.firestore();
 
       // Leer config del agente
       const configDoc = await db_.doc(`tenants/${tenantId}/settings/agent`).get();
       const agentConfig = configDoc.exists ? configDoc.data() : { enabled: true, autoSend: false, cooldownDays: 7, maxActivePerDay: 10, minRiskLevel: 'Alto' };
 
-      if (!agentConfig?.enabled) return res.json({ scanned: 0, queued: 0, message: 'Agente desactivado.' });
+      if (!agentConfig?.enabled) return { scanned: 0, queued: 0, autoSend: false, message: 'Agente desactivado.' };
 
       // Clientes en riesgo
       const clientsSnap = await db_.collection(`tenants/${tenantId}/clients`)
@@ -1212,7 +1209,14 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
         queued++;
       }
 
-      res.json({ scanned: clientsSnap.size, queued, autoSend: agentConfig.autoSend });
+      return { scanned: clientsSnap.size, queued, autoSend: agentConfig.autoSend };
+  }
+
+  // ─── POST /api/agent/scan ─────────────────────────────────────────────────────
+  app.post('/api/agent/scan', apiLimiter, async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      res.json(await runAgentScan(tenantId));
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
     }
@@ -1673,6 +1677,70 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
         startBaileys(tid);
       }
     })();
+  }
+
+  // ─── Scheduler: Elena autónoma ────────────────────────────────────────────────
+  // ponytail: setInterval en vez de node-cron — una sola instancia, cero deps.
+  // Si algún día hay múltiples instancias, mover a Cloud Scheduler → endpoint.
+
+  async function runScheduledScans() {
+    const db_ = adminRuntime!.admin.firestore();
+    const tenantsSnap = await db_.collection('tenants').get();
+    for (const t of tenantsSnap.docs) {
+      try {
+        const cfgRef = db_.doc(`tenants/${t.id}/settings/agent`);
+        const cfg = (await cfgRef.get()).data();
+        if (!cfg?.enabled || !cfg?.scanIntervalHours) continue;
+        const last = cfg.lastAutoScanAt ? new Date(cfg.lastAutoScanAt).getTime() : 0;
+        if (Date.now() - last < cfg.scanIntervalHours * 3600_000) continue;
+        await cfgRef.set({ lastAutoScanAt: new Date().toISOString() }, { merge: true });
+        const r = await runAgentScan(t.id);
+        console.log(`[CRON scan] ${t.id}: ${r.queued} campañas nuevas.`);
+      } catch (err) {
+        console.error(`[CRON scan] ${t.id}:`, err);
+      }
+    }
+  }
+
+  async function runAppointmentReminders() {
+    // Solo en la franja de las 09:00 (hora de Madrid); reminderSentAt evita duplicados.
+    const hourMadrid = Number(new Intl.DateTimeFormat('es-ES', { hour: 'numeric', hour12: false, timeZone: 'Europe/Madrid' }).format(new Date()));
+    if (hourMadrid !== 9) return;
+    const db_ = adminRuntime!.admin.firestore();
+    const tomorrowStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(Date.now() + 86400_000));
+
+    const tenantsSnap = await db_.collection('tenants').get();
+    for (const t of tenantsSnap.docs) {
+      try {
+        const cfg = (await db_.doc(`tenants/${t.id}/settings/agent`).get()).data();
+        if (cfg?.remindersEnabled === false) continue; // opt-out por tenant
+        const apptSnap = await db_.collection(`tenants/${t.id}/appointments`)
+          .where('date', '==', tomorrowStr)
+          .where('status', '==', 'Reservado')
+          .get();
+        for (const apptDoc of apptSnap.docs) {
+          const appt = apptDoc.data();
+          if (appt.reminderSentAt) continue;
+          let phone: string = appt.clientPhone || '';
+          if (!phone && appt.clientId) {
+            const clientDoc = await db_.doc(`tenants/${t.id}/clients/${appt.clientId}`).get();
+            phone = clientDoc.data()?.phoneNumber || '';
+          }
+          if (!phone) continue;
+          const text = `¡Hola ${appt.clientName}! Te recordamos tu cita de mañana a las ${appt.time} (${appt.serviceName}) en ${t.data().name}. Si necesitas cambiarla, respóndenos por aquí. 💜`;
+          const result = await sendViaTenantChannel(t.id, phone, text);
+          if (result.sent) await apptDoc.ref.update({ reminderSentAt: new Date().toISOString() });
+        }
+      } catch (err) {
+        console.error(`[CRON recordatorios] ${t.id}:`, err);
+      }
+    }
+  }
+
+  if (adminRuntime) {
+    const tick = () => { runScheduledScans().catch(console.error); runAppointmentReminders().catch(console.error); };
+    setInterval(tick, 15 * 60 * 1000);
+    setTimeout(tick, 60 * 1000); // primer tick al minuto de arrancar
   }
 
   // ─── GET /api/agent/wa-status (SSE) ──────────────────────────────────────────
