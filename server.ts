@@ -1804,10 +1804,13 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   // SSE clients por sesión de chat {sessionId → res}
   const chatSSEClients = new Map<string, express.Response>();
 
+  // El sessionId es la única llave del historial de chat: exigir UUID (no adivinable/enumerable)
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   // GET /api/chat/:slug/stream?sessionId=xxx  — SSE para el cliente web
-  app.get('/api/chat/:slug/stream', (req, res) => {
+  app.get('/api/chat/:slug/stream', publicLimiter, (req, res) => {
     const { sessionId } = req.query as { sessionId: string };
-    if (!sessionId) return res.sendStatus(400);
+    if (!sessionId || !UUID_RE.test(sessionId)) return res.sendStatus(400);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -1820,7 +1823,8 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   app.post('/api/chat/:slug/message', publicLimiter, express.json(), async (req, res) => {
     const { slug } = req.params;
     const { sessionId, clientName, text } = req.body as { sessionId: string; clientName: string; text: string };
-    if (!sessionId || !text?.trim()) return res.status(400).json({ error: 'sessionId y text requeridos.' });
+    if (!sessionId || !UUID_RE.test(sessionId) || !text?.trim()) return res.status(400).json({ error: 'sessionId (UUID) y text requeridos.' });
+    if (text.length > 2000 || (clientName && clientName.length > 256)) return res.status(400).json({ error: 'Mensaje demasiado largo.' });
     if (!adminRuntime) return res.status(503).json({ error: 'Base de datos no disponible.' });
 
     res.json({ ok: true }); // responder rápido, procesar async
@@ -1843,7 +1847,9 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       const { text: reply } = await generateAgentReply(text, log, tenantName, [], ai);
       log.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
 
-      await sessionRef.set({ clientName, log, tenantId, updatedAt: new Date().toISOString() }, { merge: true });
+      // ponytail: cap a 200 entradas — evita acercarse al límite de 1MB/doc de Firestore
+      const cappedLog = log.length > 200 ? log.slice(-200) : log;
+      await sessionRef.set({ clientName, log: cappedLog, tenantId, updatedAt: new Date().toISOString() }, { merge: true });
 
       // Push por SSE al cliente web
       const sseRes = chatSSEClients.get(sessionId);
@@ -1857,7 +1863,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
   app.get('/api/chat/:slug/history', publicLimiter, async (req, res) => {
     const { slug } = req.params;
     const { sessionId } = req.query as { sessionId: string };
-    if (!sessionId || !adminRuntime) return res.json({ log: [] });
+    if (!sessionId || !UUID_RE.test(sessionId) || !adminRuntime) return res.json({ log: [] });
     try {
       const db_ = adminRuntime.admin.firestore();
       const tenant = await getTenantBySlug(db_, slug);

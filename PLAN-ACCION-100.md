@@ -63,7 +63,7 @@
 - Registrar cada ejecución en un doc `cron_runs` (observabilidad mínima).
 - ✓ Verificación: cita creada para mañana → recordatorio llega solo; scan corre sin tocar nada.
 
-### Paso 9 🔑 · B9: deploy de producción + envs
+### Paso 9 🔑 · B9: deploy de producción + envs → MOVIDO A `ULTIMA-LINEA.md`
 - Deploy del server (Render, ya hay render.yaml) con: `FIREBASE_SERVICE_ACCOUNT_JSON`,
   `GEMINI_API_KEY`, `NODE_ENV=production`, `ALLOWED_ORIGINS`, `META_WA_VERIFY_TOKEN`,
   `WHATSAPP_WEBHOOK_SECRET` (hacerlo OBLIGATORIO: sin él, webhook responde 503).
