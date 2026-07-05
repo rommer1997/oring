@@ -111,7 +111,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.keys().hasAll(['id', 'email', 'name', 'role', 'tenantId', 'status', 'emailVerified', 'createdAt'])
-        && data.keys().hasOnly(['id', 'email', 'name', 'role', 'tenantId', 'status', 'emailVerified', 'createdAt', 'staffMemberId', 'onboardingCompleted', 'photoURL', 'lastLoginAt', 'globalAdmin'])
+        && data.keys().hasOnly(['id', 'email', 'name', 'role', 'tenantId', 'status', 'emailVerified', 'createdAt', 'staffMemberId', 'onboardingCompleted', 'photoURL', 'lastLoginAt', 'globalAdmin', 'inviteCode'])
         && data.id is string && data.id.size() <= 128
         && data.email is string && data.email.size() <= 256
         && data.name is string && data.name.size() <= 256
@@ -277,8 +277,22 @@ service cloud.firestore {
         || isGlobalAdmin()
       );
       // A user is created during sign up. globalAdmin can never be self-granted from the client.
+      // Two legal paths: founder of a NEW salon (tenant doc must not exist yet — the client
+      // creates users first, then the tenant), or an invited employee with a valid unused code.
+      // This closes the self-join hole (anyone could previously write any tenantId).
       allow create: if isAccountOwner() && request.auth.uid == userId && isValidUser(incoming())
-        && incoming().get('globalAdmin', false) == false;
+        && incoming().get('globalAdmin', false) == false
+        && (
+          !exists(/databases/$(database)/documents/tenants/$(incoming().tenantId))
+          ||
+          (
+            incoming().get('inviteCode', '') != ''
+            && exists(/databases/$(database)/documents/invites/$(incoming().inviteCode))
+            && get(/databases/$(database)/documents/invites/$(incoming().inviteCode)).data.tenantId == incoming().tenantId
+            && get(/databases/$(database)/documents/invites/$(incoming().inviteCode)).data.role == incoming().role
+            && get(/databases/$(database)/documents/invites/$(incoming().inviteCode)).data.get('usedBy', '') == ''
+          )
+        );
       allow update: if isAccountOwner() && isValidUser(incoming())
         && (
           // Same-tenant Administrador may manage users in their OWN tenant only, and cannot move them
@@ -410,6 +424,25 @@ service cloud.firestore {
         && incoming().tenantId == tenantId
         && incoming().clientId == clientId;
       allow update, delete: if false; // Communication event log records are strictly immutable
+    }
+
+    // INVITES — códigos de invitación de empleadas a un tenant existente.
+    // Un manager los crea; la invitada (autenticada, con el código en mano) lo lee
+    // y lo consume marcando usedBy una sola vez. La caducidad se valida en cliente
+    // (ponytail: comparar ISO strings en rules es frágil; usedBy es el control fuerte).
+    match /invites/{code} {
+      allow read: if isSignedIn();
+      allow create: if isManagerOrAdmin(incoming().tenantId)
+        && isValidId(code)
+        && incoming().keys().hasAll(['tenantId', 'role', 'createdAt', 'expiresAt'])
+        && incoming().keys().hasOnly(['tenantId', 'role', 'staffMemberId', 'email', 'createdAt', 'expiresAt', 'usedBy', 'usedAt'])
+        && incoming().role in ['Administrador', 'Estilista de autor', 'Recepcionista', 'Especialista Facial']
+        && incoming().get('usedBy', '') == '';
+      allow update: if isSignedIn()
+        && existing().get('usedBy', '') == ''
+        && incoming().diff(existing()).affectedKeys().hasOnly(['usedBy', 'usedAt'])
+        && incoming().usedBy == request.auth.uid;
+      allow delete: if isManagerOrAdmin(existing().tenantId);
     }
 
     // AGENT CAMPAIGNS (written ONLY by the server via Admin SDK; clients just observe)

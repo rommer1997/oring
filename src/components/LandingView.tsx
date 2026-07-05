@@ -565,6 +565,24 @@ export default function LandingView({ onNavigate, onSignInWithGoogle, onSignInWi
                 />
                 {authMode === 'sign-up' && <p className="mt-1 text-[11px] text-primary/50">Mínimo 6 caracteres</p>}
               </label>
+              {authMode === 'sign-up' && (
+                <label className="block text-sm font-medium text-primary/80">
+                  ¿Te invitaron a un salón? <span className="text-primary/40">(opcional)</span>
+                  <input
+                    type="text"
+                    defaultValue={localStorage.getItem('elena-invite-code') || ''}
+                    onChange={(e) => {
+                      const v = e.target.value.trim().toUpperCase();
+                      if (v) localStorage.setItem('elena-invite-code', v);
+                      else localStorage.removeItem('elena-invite-code');
+                    }}
+                    maxLength={16}
+                    autoComplete="off"
+                    className="mt-1 w-full rounded-xl border border-primary/20 bg-white px-4 py-3 text-sm outline-none focus:border-primary uppercase tracking-widest"
+                    placeholder="Código de invitación"
+                  />
+                </label>
+              )}
               {authMode === 'sign-in' && (
                 <div className="text-right">
                   <button

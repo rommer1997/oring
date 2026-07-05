@@ -13,7 +13,7 @@ import {
   sendPasswordResetEmail,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { User } from '../types';
 
@@ -89,53 +89,98 @@ export function useAuth(triggerToast: (msg: string) => void): UseAuthReturn {
             resolvedUser = userSnap.data() as User;
             resolvedTenantId = resolvedUser.tenantId;
           } else {
-            // H05: no derivar el nombre del email (genera "prueba.cro.elena"). Si no hay
-            // displayName real (registro por email), dejar vacío para que el onboarding pida "Tu nombre".
-            const ownerName = user.displayName || '';
             const now = new Date();
             const createdAt = now.toISOString();
-            const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-            await setDoc(doc(db, 'tenants', resolvedTenantId), {
-              id: resolvedTenantId,
-              name: '',
-              address: '',
-              phone: '',
-              city: '',
-              email: user.email || '',
-              onboardingCompleted: false,
-              createdAt,
-              updatedAt: createdAt,
-              trialEndsAt,
-              subscriptionStatus: 'trialing',
-              publicBookingEnabled: true,
-              slug: buildSlug(resolvedTenantId, resolvedTenantId),
-              bookingNoticeHours: 2,
-              bookingSlotMinutes: 30,
-            }).catch((err) =>
-              handleFirestoreError(err, OperationType.CREATE, `tenants/${resolvedTenantId}`)
-            );
+            // ¿Viene con código de invitación? → se une al salón existente, sin crear tenant.
+            const inviteCode = (localStorage.getItem('elena-invite-code') || '').trim().toUpperCase();
+            let invite: { tenantId: string; role: User['role']; staffMemberId?: string } | null = null;
+            if (inviteCode) {
+              const invSnap = await getDoc(doc(db, 'invites', inviteCode)).catch(() => null);
+              const inv = invSnap?.exists() ? invSnap.data() : null;
+              if (inv && !inv.usedBy && new Date(inv.expiresAt) > now) {
+                invite = { tenantId: inv.tenantId, role: inv.role, staffMemberId: inv.staffMemberId };
+              } else {
+                triggerToast('El código de invitación no es válido o ya se usó. Se creará un salón nuevo.');
+              }
+            }
 
-            const newUserDoc: User = {
-              id: user.uid,
-              email: user.email || '',
-              name: ownerName,
-              role: 'Propietaria',
-              tenantId: resolvedTenantId,
-              status: 'Activo',
-              emailVerified: user.emailVerified,
-              createdAt,
-              onboardingCompleted: false,
-              photoURL: user.photoURL || '',
-              lastLoginAt: createdAt,
-            };
+            if (invite) {
+              const newUserDoc: User = {
+                id: user.uid,
+                email: user.email || '',
+                name: user.displayName || '',
+                role: invite.role,
+                tenantId: invite.tenantId,
+                status: 'Activo',
+                emailVerified: user.emailVerified,
+                createdAt,
+                onboardingCompleted: true, // el salón ya existe; sin onboarding
+                photoURL: user.photoURL || '',
+                lastLoginAt: createdAt,
+                staffMemberId: invite.staffMemberId,
+                inviteCode,
+              };
+              await setDoc(userDocRef, newUserDoc).catch((err) =>
+                handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`)
+              );
+              await updateDoc(doc(db, 'invites', inviteCode), {
+                usedBy: user.uid,
+                usedAt: createdAt,
+              }).catch((err) => handleFirestoreError(err, OperationType.UPDATE, `invites/${inviteCode}`));
+              localStorage.removeItem('elena-invite-code');
+              resolvedUser = newUserDoc;
+              resolvedTenantId = invite.tenantId;
+              triggerToast('¡Bienvenida al equipo! Ya tienes acceso al salón.');
+            } else {
+              // H05: no derivar el nombre del email (genera "prueba.cro.elena"). Si no hay
+              // displayName real (registro por email), dejar vacío para que el onboarding pida "Tu nombre".
+              const ownerName = user.displayName || '';
+              const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
-            await setDoc(userDocRef, newUserDoc).catch((err) =>
-              handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`)
-            );
+              const newUserDoc: User = {
+                id: user.uid,
+                email: user.email || '',
+                name: ownerName,
+                role: 'Propietaria',
+                tenantId: resolvedTenantId,
+                status: 'Activo',
+                emailVerified: user.emailVerified,
+                createdAt,
+                onboardingCompleted: false,
+                photoURL: user.photoURL || '',
+                lastLoginAt: createdAt,
+              };
 
-            resolvedUser = newUserDoc;
-            triggerToast('Tu cuenta y tu salón ya tienen un espacio propio.');
+              // Orden importante: users primero, tenant después. La regla de creación de
+              // users exige que el tenant NO exista aún (cierra la auto-unión a salones ajenos).
+              await setDoc(userDocRef, newUserDoc).catch((err) =>
+                handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`)
+              );
+
+              await setDoc(doc(db, 'tenants', resolvedTenantId), {
+                id: resolvedTenantId,
+                name: '',
+                address: '',
+                phone: '',
+                city: '',
+                email: user.email || '',
+                onboardingCompleted: false,
+                createdAt,
+                updatedAt: createdAt,
+                trialEndsAt,
+                subscriptionStatus: 'trialing',
+                publicBookingEnabled: true,
+                slug: buildSlug(resolvedTenantId, resolvedTenantId),
+                bookingNoticeHours: 2,
+                bookingSlotMinutes: 30,
+              }).catch((err) =>
+                handleFirestoreError(err, OperationType.CREATE, `tenants/${resolvedTenantId}`)
+              );
+
+              resolvedUser = newUserDoc;
+              triggerToast('Tu cuenta y tu salón ya tienen un espacio propio.');
+            }
           }
 
           if (userSnap.exists()) {
