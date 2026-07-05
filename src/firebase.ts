@@ -46,7 +46,19 @@ export interface FirestoreErrorInfo {
   }
 }
 
+// Notificador visible al usuario, registrado por App con su toast. Sin él los fallos
+// de escritura solo iban a console y la usuaria creía que había guardado.
+let firestoreErrorNotifier: ((msg: string) => void) | null = null;
+export function setFirestoreErrorNotifier(fn: (msg: string) => void) {
+  firestoreErrorNotifier = fn;
+}
+
+const WRITE_OPS = new Set([OperationType.CREATE, OperationType.UPDATE, OperationType.DELETE, OperationType.WRITE]);
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  if (WRITE_OPS.has(operationType) && firestoreErrorNotifier) {
+    firestoreErrorNotifier('⚠️ No se pudo guardar el cambio. Revisa tu conexión e inténtalo de nuevo.');
+  }
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
