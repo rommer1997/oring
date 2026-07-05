@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tenant, StaffMember, AppConfig } from '../types';
+import { generateAvatarUrl } from '../hooks/useTenantData';
 
 interface StaffTenantViewProps {
   tenants: Tenant[];
@@ -74,7 +75,7 @@ export default function StaffTenantView({
       id: `staff-${Date.now()}`,
       name: sName,
       role: sRole,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+      avatar: generateAvatarUrl(sName),
       email: sEmail,
       phone: sPhone,
       specialty: sSpecialty,
@@ -201,9 +202,13 @@ export default function StaffTenantView({
               </p>
             </div>
 
-            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/60 px-3 py-1.5 rounded-full select-none flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">lock</span> Datos privados del tenant activo
-            </span>
+            <button
+              onClick={() => setIsAddTenantOpen(true)}
+              className="bg-primary text-on-primary text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all cursor-pointer shadow-sm shrink-0"
+            >
+              <span className="material-symbols-outlined text-base">add_business</span>
+              Nueva Sucursal
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -267,9 +272,13 @@ export default function StaffTenantView({
               </p>
             </div>
 
-            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/60 px-3 py-1.5 rounded-full select-none flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">lock</span> Gestión real del equipo
-            </span>
+            <button
+              onClick={() => setIsAddStaffOpen(true)}
+              className="bg-primary text-on-primary text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all cursor-pointer shadow-sm shrink-0"
+            >
+              <span className="material-symbols-outlined text-base">person_add</span>
+              Inscribir Profesional
+            </button>
           </div>
 
           {/* List of personnel */}
