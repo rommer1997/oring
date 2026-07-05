@@ -193,6 +193,7 @@ export interface User {
   globalAdmin?: boolean;
   photoURL?: string;
   lastLoginAt?: string;
+  inviteCode?: string; // Código consumido al unirse a un tenant existente
 }
 
 export interface RetentionScore {

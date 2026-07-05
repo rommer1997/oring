@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Tenant, StaffMember, AppConfig } from '../types';
 import { generateAvatarUrl } from '../hooks/useTenantData';
+import { db, firebaseReady } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface StaffTenantViewProps {
   tenants: Tenant[];
@@ -65,6 +67,30 @@ export default function StaffTenantView({
     setIsAddTenantOpen(false);
     onSelectTenant(newTenantID);
     onToastMessage(`🏢 Sucursal "${tName}" creada e iniciada como activa.`);
+  };
+
+  // Invitación: código de un solo uso para que la profesional cree su cuenta
+  // y entre directamente a este salón con su rol.
+  const APP_ROLES = ['Administrador', 'Estilista de autor', 'Recepcionista', 'Especialista Facial'];
+  const handleInvite = async (member: StaffMember) => {
+    if (!firebaseReady) { onToastMessage('Las invitaciones no están disponibles en la demo.'); return; }
+    const code = Array.from(crypto.getRandomValues(new Uint8Array(8)))
+      .map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+    const now = new Date();
+    try {
+      await setDoc(doc(db, 'invites', code), {
+        tenantId: member.tenantId,
+        role: APP_ROLES.includes(member.role) ? member.role : 'Estilista de autor',
+        staffMemberId: member.id,
+        email: member.email || '',
+        createdAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+      await navigator.clipboard.writeText(code).catch(() => {});
+      onToastMessage(`Código para ${member.name}: ${code} (copiado). Que lo use al crear su cuenta. Caduca en 7 días.`);
+    } catch {
+      onToastMessage('No se pudo crear la invitación. Inténtalo de nuevo.');
+    }
   };
 
   const handleAddStaffSubmit = (e: React.FormEvent) => {
@@ -332,6 +358,14 @@ export default function StaffTenantView({
                       <p className="truncate">{member.email}</p>
                       <p>{member.phone}</p>
                     </div>
+
+                    <button
+                      onClick={() => handleInvite(member)}
+                      className="text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/25 rounded-lg px-3 py-1.5 hover:bg-primary hover:text-on-primary transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-xs">key</span>
+                      Invitar a la app
+                    </button>
 
                     {/* Visibilidad de cara al cliente */}
                     <div className="flex items-center gap-2 pt-3 border-t border-outline-variant/15 mt-3">
