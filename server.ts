@@ -458,6 +458,75 @@ async function startServer() {
   const waPhoneMap = new Map<string, string | null>();
   const waClientsMap = new Map<string, Set<express.Response>>();
 
+  // ─── Persistencia de sesiones Baileys en Firestore ──────────────────────────
+  // El filesystem es efímero en Render/containers: sin esto, cada redeploy
+  // desconecta el WhatsApp de todos los salones y obliga a re-escanear el QR.
+  // Espejo: .wa-auth/<tenantId>/* ↔ wa_sessions/{tenantId}/files/{encodedName}
+  const waSyncTimers = new Map<string, NodeJS.Timeout>();
+
+  async function syncWASessionToFirestore(tenantId: string) {
+    if (!adminRuntime) return;
+    const authDir = path.join(WA_AUTH_DIR, tenantId);
+    if (!fs.existsSync(authDir)) return;
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const files = fs.readdirSync(authDir).filter(f => f.endsWith('.json'));
+      await db_.doc(`wa_sessions/${tenantId}`).set({ updatedAt: new Date().toISOString(), fileCount: files.length });
+      // ponytail: chunks de 400 por el límite de 500 writes por batch
+      for (let i = 0; i < files.length; i += 400) {
+        const batch = db_.batch();
+        for (const f of files.slice(i, i + 400)) {
+          const content = fs.readFileSync(path.join(authDir, f), 'utf8');
+          batch.set(db_.doc(`wa_sessions/${tenantId}/files/${encodeURIComponent(f)}`), { content });
+        }
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error(`[WA] Error sincronizando sesión de ${tenantId} a Firestore:`, err);
+    }
+  }
+
+  function scheduleWASessionSync(tenantId: string) {
+    clearTimeout(waSyncTimers.get(tenantId));
+    waSyncTimers.set(tenantId, setTimeout(() => syncWASessionToFirestore(tenantId), 3000));
+  }
+
+  async function restoreWASessionFromFirestore(tenantId: string): Promise<boolean> {
+    if (!adminRuntime) return false;
+    const authDir = path.join(WA_AUTH_DIR, tenantId);
+    if (fs.existsSync(path.join(authDir, 'creds.json'))) return true; // ya hay sesión local
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const snap = await db_.collection(`wa_sessions/${tenantId}/files`).get();
+      if (snap.empty) return false;
+      fs.mkdirSync(authDir, { recursive: true });
+      for (const doc of snap.docs) {
+        fs.writeFileSync(path.join(authDir, decodeURIComponent(doc.id)), doc.data().content, 'utf8');
+      }
+      console.log(`[WA] Sesión de ${tenantId} restaurada desde Firestore (${snap.size} archivos).`);
+      return true;
+    } catch (err) {
+      console.error(`[WA] Error restaurando sesión de ${tenantId}:`, err);
+      return false;
+    }
+  }
+
+  async function deleteWASessionEverywhere(tenantId: string) {
+    clearTimeout(waSyncTimers.get(tenantId));
+    fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true });
+    if (!adminRuntime) return;
+    try {
+      const db_ = adminRuntime.admin.firestore();
+      const snap = await db_.collection(`wa_sessions/${tenantId}/files`).get();
+      const batch = db_.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      batch.delete(db_.doc(`wa_sessions/${tenantId}`));
+      await batch.commit();
+    } catch (err) {
+      console.error(`[WA] Error borrando sesión remota de ${tenantId}:`, err);
+    }
+  }
+
   function getWAClients(tenantId: string): Set<express.Response> {
     if (!waClientsMap.has(tenantId)) waClientsMap.set(tenantId, new Set());
     return waClientsMap.get(tenantId)!;
@@ -1488,6 +1557,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
       const authDir = path.join(WA_AUTH_DIR, tenantId);
       fs.mkdirSync(authDir, { recursive: true });
+      await restoreWASessionFromFirestore(tenantId);
 
       const { state, saveCreds } = await useMultiFileAuthState(authDir);
       const { version } = await fetchLatestBaileysVersion();
@@ -1504,7 +1574,10 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       waStatusMap.set(tenantId, 'connecting');
       broadcastWAStatus(tenantId);
 
-      sock.ev.on('creds.update', saveCreds);
+      sock.ev.on('creds.update', async () => {
+        await saveCreds();
+        scheduleWASessionSync(tenantId);
+      });
 
       sock.ev.on('connection.update', async (update: any) => {
         const { connection, lastDisconnect, qr } = update;
@@ -1527,7 +1600,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           waPhoneMap.set(tenantId, null);
           broadcastWAStatus(tenantId);
           if (shouldReconnect) setTimeout(() => startBaileys(tenantId), 5000);
-          else { waSockMap.delete(tenantId); fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true }); }
+          else { waSockMap.delete(tenantId); await deleteWASessionEverywhere(tenantId); }
         }
       });
 
@@ -1583,13 +1656,23 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     }
   }
 
-  // Reconectar sesiones guardadas al arrancar
+  // Reconectar sesiones guardadas al arrancar: disco local + Firestore
+  // (tras un redeploy el disco está vacío; Firestore es la fuente durable)
   if (adminRuntime) {
-    const sessions = fs.existsSync(WA_AUTH_DIR) ? fs.readdirSync(WA_AUTH_DIR) : [];
-    sessions.forEach(tid => {
-      console.log(`[WA Baileys] Reconectando sesión: ${tid}`);
-      startBaileys(tid);
-    });
+    (async () => {
+      const local = fs.existsSync(WA_AUTH_DIR) ? fs.readdirSync(WA_AUTH_DIR) : [];
+      let remote: string[] = [];
+      try {
+        const snap = await adminRuntime!.admin.firestore().collection('wa_sessions').get();
+        remote = snap.docs.map(d => d.id);
+      } catch (err) {
+        console.error('[WA] Error listando sesiones remotas:', err);
+      }
+      for (const tid of new Set([...local, ...remote])) {
+        console.log(`[WA Baileys] Reconectando sesión: ${tid}`);
+        startBaileys(tid);
+      }
+    })();
   }
 
   // ─── GET /api/agent/wa-status (SSE) ──────────────────────────────────────────
@@ -1641,7 +1724,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       waStatusMap.set(tenantId, 'disconnected');
       waPhoneMap.set(tenantId, null);
       waQRMap.set(tenantId, null);
-      fs.rmSync(path.join(WA_AUTH_DIR, tenantId), { recursive: true, force: true });
+      await deleteWASessionEverywhere(tenantId);
       broadcastWAStatus(tenantId);
       res.json({ ok: true });
     } catch (err: any) {
