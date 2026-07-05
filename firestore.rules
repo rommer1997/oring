@@ -412,6 +412,12 @@ service cloud.firestore {
       allow update, delete: if false; // Communication event log records are strictly immutable
     }
 
+    // AGENT CAMPAIGNS (written ONLY by the server via Admin SDK; clients just observe)
+    match /tenants/{tenantId}/agent_campaigns/{campaignId} {
+      allow read: if isUserOfTenant(tenantId);
+      allow create, update, delete: if false;
+    }
+
     // AUDIT LOGS
     match /tenants/{tenantId}/audit_logs/{logId} {
       allow read: if isManagerOrAdmin(tenantId);

@@ -731,6 +731,7 @@ export default function App() {
                   getAuthToken={getAuthToken}
                   isDemoMode={isDemoMode}
                   tenantSlug={tenants.find(t => t.id === selectedTenantId)?.slug}
+                  tenantId={selectedTenantId}
                 />
               )}
               {currentView === 'settings' && (

@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AgentCampaign, AgentCampaignStatus, AgentConfig, AbsenceReason } from '../types';
 import { apiUrl } from '../lib/api';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db, firebaseReady } from '../firebase';
 
 interface AgentViewProps {
   onToastMessage: (msg: string) => void;
   getAuthToken: () => Promise<string | null>;
   isDemoMode?: boolean;
   tenantSlug?: string;
+  tenantId?: string;
 }
 
 type WAStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
@@ -144,7 +147,7 @@ function formatHour(iso: string) {
   return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = false, tenantSlug }: AgentViewProps) {
+export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = false, tenantSlug, tenantId }: AgentViewProps) {
   const [campaigns, setCampaigns] = useState<AgentCampaign[]>([]);
   const [config, setConfig] = useState<AgentConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
@@ -181,6 +184,22 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
   }, [isDemoMode, authFetch, onToastMessage]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Tiempo real: las respuestas de clientas aparecen sin recargar. El fetch de
+  // loadData queda como carga inicial/fallback; el snapshot manda.
+  useEffect(() => {
+    if (isDemoMode || !tenantId || !firebaseReady) return;
+    const unsub = onSnapshot(
+      collection(db, 'tenants', tenantId, 'agent_campaigns'),
+      (snap) => {
+        const items = snap.docs.map(d => ({ ...(d.data() as AgentCampaign), id: d.id }));
+        setCampaigns(items);
+        setSelected(prev => (prev ? items.find(c => c.id === prev.id) ?? prev : prev));
+      },
+      (err) => console.error('agent_campaigns onSnapshot:', err)
+    );
+    return unsub;
+  }, [isDemoMode, tenantId]);
 
   useEffect(() => {
     if (isDemoMode) { setWAStatus('connected'); setWAPhone('34666123456'); return; }
