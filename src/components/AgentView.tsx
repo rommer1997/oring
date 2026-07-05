@@ -204,12 +204,15 @@ export default function AgentView({ onToastMessage, getAuthToken, isDemoMode = f
     if (!isDemoMode) {
       try {
         const r = await authFetch(`/api/agent/campaigns/${c.id}/approve`, { method: 'POST' });
-        if (!r.ok) throw new Error();
+        const data = r.ok ? await r.json() : null;
+        if (!data?.sent) throw new Error(data?.reason === 'no_channel' ? 'no_channel' : 'send_failed');
         onToastMessage(`✓ Enviado a ${c.clientName}.`);
-      } catch {
+      } catch (err: any) {
         setCampaigns(prev => prev.map(x => x.id === c.id ? c : x));
         setSelected(c);
-        onToastMessage('Error al enviar. Inténtalo de nuevo.');
+        onToastMessage(err?.message === 'no_channel'
+          ? 'No hay WhatsApp conectado. Conéctalo con el QR o usa "Copiar mensaje".'
+          : 'Error al enviar. Inténtalo de nuevo.');
       }
     } else {
       onToastMessage(`✓ Enviado a ${c.clientName}.`);
