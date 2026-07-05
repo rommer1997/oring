@@ -1101,18 +1101,90 @@ Responde solo la clave o null:`,
     }
   }
 
+  // ─── Agente: huecos reales para ofrecer en conversación ─────────────────────
+  type AgentSlot = { date: string; time: string; label: string; staffId: string; staffName: string };
+
+  async function getUpcomingSlots(tenantId: string, serviceHint?: string): Promise<{ slots: AgentSlot[]; service: any | null }> {
+    const db_ = adminRuntime!.admin.firestore();
+    const tenantData = (await db_.doc(`tenants/${tenantId}`).get()).data() || {};
+    const servicesSnap = await db_.collection(`tenants/${tenantId}/services`).get();
+    if (servicesSnap.empty) return { slots: [], service: null };
+    const services = servicesSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+    const service = services.find(s => serviceHint && s.name?.toLowerCase().includes(serviceHint.toLowerCase())) || services[0];
+
+    const staffSnap = await db_.collection(`tenants/${tenantId}/staff_members`).get();
+    const staff = staffSnap.docs.map(d => ({ id: d.id, ...d.data() } as any))
+      .filter(s => s.acceptsOnlineBookings !== false && s.schedule);
+    if (staff.length === 0) return { slots: [], service };
+
+    const slotMinutes = Number(tenantData.bookingSlotMinutes || 30);
+    const noticeHours = Number(tenantData.bookingNoticeHours || 2);
+    const fmtDay = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'numeric', timeZone: 'Europe/Madrid' });
+    const fmtDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' });
+
+    const slots: AgentSlot[] = [];
+    for (let d = 0; d < 6 && slots.length < 4; d++) {
+      const dayDate = new Date(Date.now() + d * 86400_000);
+      const date = fmtDate.format(dayDate);
+      for (const member of staff) {
+        if (slots.length >= 4) break;
+        const times = await calculateAvailableSlots(db_, tenantId, service, member, date, slotMinutes, noticeHours);
+        for (const time of times.slice(0, 2)) {
+          if (slots.length >= 4) break;
+          slots.push({ date, time, staffId: member.id, staffName: member.name, label: `${fmtDay.format(dayDate)} a las ${time} con ${member.name}` });
+        }
+      }
+    }
+    return { slots, service };
+  }
+
+  // Crea la cita cuando la clienta confirma un hueco ofrecido en la conversación.
+  async function bookAgentSlot(tenantId: string, campaign: any, slot: AgentSlot, service: any): Promise<boolean> {
+    const db_ = adminRuntime!.admin.firestore();
+    try {
+      // Re-chequeo de solape justo antes de crear (misma carrera menor que el booking público)
+      const clash = await db_.collection(`tenants/${tenantId}/appointments`)
+        .where('staffId', '==', slot.staffId).where('date', '==', slot.date).where('time', '==', slot.time).get();
+      if (clash.docs.some((d: any) => d.data().status !== 'Cancelado')) return false;
+
+      const id = `appt-agent-${Date.now()}`;
+      await db_.doc(`tenants/${tenantId}/appointments/${id}`).set({
+        id,
+        clientId: campaign.clientId,
+        clientName: campaign.clientName,
+        clientPhone: campaign.clientPhone || '',
+        serviceId: service.id,
+        serviceName: service.name,
+        staffId: slot.staffId,
+        staffName: slot.staffName,
+        date: slot.date,
+        time: slot.time,
+        price: Number(service.price || 0),
+        status: 'Reservado',
+        source: 'online',
+        tenantId,
+      });
+      return true;
+    } catch (err) {
+      console.error('[Agente booking] Error creando cita:', err);
+      return false;
+    }
+  }
+
   // ─── Agente: Continuar conversación ──────────────────────────────────────────
   async function generateAgentReply(
     clientReply: string,
     conversationLog: any[],
     tenantName: string,
-    availableSlots: string[],
+    availableSlots: AgentSlot[],
     genAI: GoogleGenAI | null
-  ): Promise<{ text: string; intent: 'booking' | 'info' | 'continue' | 'human' }> {
+  ): Promise<{ text: string; intent: 'booking' | 'info' | 'continue' | 'human'; slotIndex?: number }> {
     if (!genAI) return { text: `Perfecto, te paso con el equipo de ${tenantName} para confirmar tu cita. 😊`, intent: 'human' };
     try {
       const history = conversationLog.map(m => `${m.role === 'agent' ? 'Salón' : 'Clienta'}: ${m.text}`).join('\n');
-      const slotsText = availableSlots.length > 0 ? `Huecos disponibles: ${availableSlots.slice(0, 4).join(', ')}` : 'Sin disponibilidad inmediata.';
+      const slotsText = availableSlots.length > 0
+        ? `Huecos disponibles (numerados):\n${availableSlots.map((s, i) => `${i + 1}. ${s.label}`).join('\n')}`
+        : 'Sin disponibilidad inmediata.';
       const result = await genAI.models.generateContent({
         model: 'gemini-2.0-flash',
         contents: [{
@@ -1123,17 +1195,27 @@ Conversación previa:
 ${history}
 Clienta ahora dice: "${clientReply}"
 ${slotsText}
-Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"|"human"}
-- booking: la clienta confirma querer cita
+Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"|"human","slotIndex":número}
+- booking: la clienta CONFIRMA un hueco concreto de la lista → incluye "slotIndex" (1-${Math.max(availableSlots.length, 1)}) y en "text" confirma día y hora exactos
+- si quiere cita pero aún no eligió hueco, ofrécele los huecos de la lista con intent "continue"
 - info: pregunta información (precio, servicio)
 - continue: continúa conversando sin confirmar
-- human: situación compleja, escalar al gerente`
+- human: situación compleja, escalar al gerente
+- NUNCA inventes huecos que no estén en la lista`
           }]
         }]
       });
       const raw = result.text?.trim() || '';
       const match = raw.match(/\{[\s\S]*\}/);
-      if (match) return JSON.parse(match[0]);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        const idx = Number(parsed.slotIndex);
+        return {
+          text: parsed.text || raw,
+          intent: parsed.intent || 'continue',
+          slotIndex: idx >= 1 && idx <= availableSlots.length ? idx : undefined,
+        };
+      }
       return { text: raw, intent: 'continue' };
     } catch {
       return { text: `Gracias por escribir. Ahora mismo te atendemos personalmente. 😊`, intent: 'human' };
@@ -1511,19 +1593,24 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       const tenantDoc = await db_.doc(`tenants/${tenantId}`).get();
       const tenantName = tenantDoc.data()?.name || 'el salón';
 
-      // Huecos disponibles (simplificado — primer servicio del tenant)
-      const servicesSnap = await db_.collection(`tenants/${tenantId}/services`).limit(1).get();
-      const firstService = servicesSnap.docs[0]?.data();
-      const availableSlots: string[] = []; // ponytail: slot calculation omitida aquí, se delega al booking endpoint
+      // Huecos reales para ofrecer/reservar en la conversación
+      const { slots: availableSlots, service: agentService } = await getUpcomingSlots(tenantId, campaign.suggestedService);
 
       const newLog = [...(campaign.conversationLog || []), { role: 'client', text: clientText, timestamp: new Date().toISOString() }];
-      const { text: reply, intent } = await generateAgentReply(clientText, newLog, tenantName, availableSlots, ai);
+      const { text: reply, intent, slotIndex } = await generateAgentReply(clientText, newLog, tenantName, availableSlots, ai);
+
+      // Confirmación real: si eligió un hueco de la lista, la cita se crea en la agenda
+      let booked = false;
+      if (intent === 'booking' && slotIndex && agentService) {
+        booked = await bookAgentSlot(tenantId, campaign, availableSlots[slotIndex - 1], agentService);
+      }
 
       newLog.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
       const absenceReason = await classifyAbsenceReason(clientText, ai);
 
       const update: any = {
-        status: intent === 'booking' ? 'reservado' : 'respondido',
+        status: booked ? 'reservado' : intent === 'booking' ? 'reservado' : 'respondido',
+        ...(booked && { bookedAt: new Date().toISOString() }),
         repliedAt: new Date().toISOString(),
         lastReply: clientText,
         conversationLog: newLog,
@@ -1634,12 +1721,20 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
           const newLog = [...(campaign.conversationLog || []),
             { role: 'client', text, timestamp: new Date().toISOString() }];
-          const { text: reply, intent } = await generateAgentReply(text, newLog, tenantName, [], ai);
+          const { slots: availableSlots, service: agentService } = await getUpcomingSlots(tenantId, campaign.suggestedService);
+          const { text: reply, intent, slotIndex } = await generateAgentReply(text, newLog, tenantName, availableSlots, ai);
+
+          let booked = false;
+          if (intent === 'booking' && slotIndex && agentService) {
+            booked = await bookAgentSlot(tenantId, campaign, availableSlots[slotIndex - 1], agentService);
+          }
+
           newLog.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
           const absenceReason = await classifyAbsenceReason(text, ai);
 
           await campaignDoc.ref.update({
             status: intent === 'booking' ? 'reservado' : 'respondido',
+            ...(booked && { bookedAt: new Date().toISOString() }),
             repliedAt: new Date().toISOString(),
             lastReply: text,
             conversationLog: newLog,
@@ -1843,8 +1938,9 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
       log.push({ role: 'client', text, timestamp: new Date().toISOString() });
 
-      // Gemini responde
-      const { text: reply } = await generateAgentReply(text, log, tenantName, [], ai);
+      // Gemini responde con disponibilidad real (la reserva se hace en /salon/{slug}, aquí no hay ficha de clienta)
+      const { slots: chatSlots } = await getUpcomingSlots(tenantId);
+      const { text: reply } = await generateAgentReply(text, log, tenantName, chatSlots, ai);
       log.push({ role: 'agent', text: reply, timestamp: new Date().toISOString() });
 
       // ponytail: cap a 200 entradas — evita acercarse al límite de 1MB/doc de Firestore
