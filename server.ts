@@ -952,6 +952,35 @@ async function startServer() {
     }
   }
 
+  function normalizePhoneES(raw: string): string {
+    let phone = raw.replace(/\D/g, '');
+    if (phone.startsWith('0034')) phone = phone.slice(4);
+    else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
+    if (phone.length === 9) phone = '34' + phone;
+    return phone;
+  }
+
+  // Canal único de salida por tenant: Baileys (sesión QR del salón) primero,
+  // Meta Cloud API como fallback. Nunca informa éxito sin envío real.
+  async function sendViaTenantChannel(
+    tenantId: string,
+    rawPhone: string,
+    text: string
+  ): Promise<{ sent: boolean; channel: 'baileys' | 'meta' | null; reason?: string }> {
+    const phone = normalizePhoneES(rawPhone);
+    const sock = waSockMap.get(tenantId);
+    if (sock && waStatusMap.get(tenantId) === 'connected') {
+      try {
+        await sock.sendMessage(`${phone}@s.whatsapp.net`, { text });
+        return { sent: true, channel: 'baileys' };
+      } catch (err) {
+        console.error('[WA Baileys] Error enviando, probando Meta:', err);
+      }
+    }
+    if (await sendWhatsAppMessage(phone, text)) return { sent: true, channel: 'meta' };
+    return { sent: false, channel: null, reason: 'no_channel' };
+  }
+
   // ─── Agente: Generar mensaje personalizado con Gemini ────────────────────────
   async function generateAgentOutreach(client: any, tenantName: string, genAI: GoogleGenAI | null): Promise<string> {
     const fallback = `Hola ${client.clientName || client.name}! 👋 Te echamos de menos en ${tenantName}. Han pasado ${client.riskDays} días desde tu última visita. ¿Te apetece reservar un hueco esta semana? Escríbenos y te buscamos el mejor momento. 💇`;
@@ -1107,12 +1136,8 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
         await ref.set(campaign);
 
         if (agentConfig.autoSend) {
-          let phone = client.phoneNumber.replace(/\D/g, '');
-          if (phone.startsWith('0034')) phone = phone.slice(4);
-          else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-          if (phone.length === 9) phone = '34' + phone;
-          const sent = await sendWhatsAppMessage(phone, message);
-          if (sent) await ref.update({ status: 'enviado', sentAt: new Date().toISOString() });
+          const result = await sendViaTenantChannel(tenantId, client.phoneNumber, message);
+          if (result.sent) await ref.update({ status: 'enviado', sentAt: new Date().toISOString() });
         }
 
         queued++;
@@ -1149,14 +1174,9 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
       const campaign = snap.data() as any;
 
-      let phone = campaign.clientPhone.replace(/\D/g, '');
-      if (phone.startsWith('0034')) phone = phone.slice(4);
-      else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-      if (phone.length === 9) phone = '34' + phone;
-
-      const sent = await sendWhatsAppMessage(phone, campaign.message);
-      await ref.update({ status: sent ? 'enviado' : 'pendiente', sentAt: sent ? new Date().toISOString() : null });
-      res.json({ ok: true, sent });
+      const result = await sendViaTenantChannel(tenantId, campaign.clientPhone, campaign.message);
+      await ref.update({ status: result.sent ? 'enviado' : 'pendiente', sentAt: result.sent ? new Date().toISOString() : null });
+      res.json({ ok: true, sent: result.sent, channel: result.channel, reason: result.reason });
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
     }
@@ -1186,22 +1206,15 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       if (!snap.exists) return res.status(404).json({ error: 'Campaña no encontrada.' });
       const campaign = snap.data() as any;
 
-      let phone = campaign.clientPhone.replace(/\D/g, '');
-      if (phone.startsWith('0034')) phone = phone.slice(4);
-      else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-      if (phone.length === 9) phone = '34' + phone;
-
-      const sock = waSockMap.get(tenantId);
-      let sent = false;
-      if (sock && waStatusMap.get(tenantId) === 'connected') {
-        try { await sock.sendMessage(`${phone}@s.whatsapp.net`, { text }); sent = true; } catch {}
+      const result = await sendViaTenantChannel(tenantId, campaign.clientPhone, text);
+      if (!result.sent) {
+        return res.status(502).json({ error: 'No hay canal de WhatsApp conectado. Conecta WhatsApp en el panel del agente.', reason: result.reason });
       }
-      if (!sent) sent = await sendWhatsAppMessage(phone, text);
 
       const newEntry = { role: 'agent', text, timestamp: new Date().toISOString() };
       const log = [...(campaign.conversationLog || []), newEntry];
       await ref.update({ conversationLog: log, status: 'enviado', sentAt: new Date().toISOString() });
-      res.json({ ok: true, sent, entry: newEntry });
+      res.json({ ok: true, sent: true, channel: result.channel, entry: newEntry });
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
     }
@@ -1273,22 +1286,12 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       const snap = await db_.collection(`tenants/${tenantId}/agent_campaigns`)
         .where('status', '==', 'pendiente').get();
 
-      const sock = waSockMap.get(tenantId);
-      const waConnected = waStatusMap.get(tenantId) === 'connected';
       let sent = 0;
 
       for (const doc of snap.docs) {
         const campaign = doc.data() as any;
-        let phone = campaign.clientPhone.replace(/\D/g, '');
-        if (phone.startsWith('0034')) phone = phone.slice(4);
-        else if (phone.startsWith('34') && phone.length === 11) phone = phone.slice(2);
-        if (phone.length === 9) phone = '34' + phone;
-
-        let ok = false;
-        if (waConnected && sock) {
-          try { await sock.sendMessage(`${phone}@s.whatsapp.net`, { text: message }); ok = true; } catch {}
-        }
-        if (!ok) ok = await sendWhatsAppMessage(phone, message);
+        const result = await sendViaTenantChannel(tenantId, campaign.clientPhone, message);
+        if (!result.sent) continue; // sin canal: la campaña sigue pendiente, no se miente
 
         const entry = { role: 'agent', text: message, timestamp: new Date().toISOString() };
         await doc.ref.update({
@@ -1296,7 +1299,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           sentAt: new Date().toISOString(),
           conversationLog: [...(campaign.conversationLog || []), entry],
         });
-        if (ok) sent++;
+        sent++;
       }
 
       res.json({ ok: true, total: snap.size, sent });
