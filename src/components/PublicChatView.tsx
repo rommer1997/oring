@@ -16,7 +16,8 @@ function getOrCreateSessionId(slug: string): string {
   const key = `elena-chat-${slug}`;
   const existing = localStorage.getItem(key);
   if (existing) return existing;
-  const id = `${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // UUID nativo: no adivinable — el sessionId es la única llave del historial
+  const id = crypto.randomUUID();
   localStorage.setItem(key, id);
   return id;
 }
