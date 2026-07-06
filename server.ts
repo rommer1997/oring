@@ -457,6 +457,12 @@ async function startServer() {
   const waSockMap = new Map<string, any>();
   const waPhoneMap = new Map<string, string | null>();
   const waClientsMap = new Map<string, Set<express.Response>>();
+  const waReconnectAttempts = new Map<string, number>();
+
+  // Un throw en un event handler async (Baileys, SSE) no debe tirar el proceso.
+  process.on('unhandledRejection', (reason) => {
+    console.error('[unhandledRejection]', reason);
+  });
 
   // ─── Persistencia de sesiones Baileys en Firestore ──────────────────────────
   // El filesystem es efímero en Render/containers: sin esto, cada redeploy
@@ -699,6 +705,18 @@ async function startServer() {
             tenant.data.bookingNoticeHours ?? 2
           );
           if (!slots.includes(time)) throw new Error("Ese horario ya no está disponible.");
+
+          // calculateAvailableSlots lee las citas FUERA de la transacción; este
+          // transaction.get serializa contra reservas simultáneas del mismo hueco.
+          const clashSnap = await transaction.get(
+            db.collection(`tenants/${tenant.id}/appointments`)
+              .where("staffId", "==", staffId)
+              .where("date", "==", date)
+              .where("time", "==", time)
+          );
+          if (clashSnap.docs.some((d: any) => d.data().status !== "Cancelado")) {
+            throw new Error("Ese horario ya no está disponible.");
+          }
 
           const cleanPhone = String(clientPhone).replace(/[^\d+]/g, "");
           const clientId = `online-${cleanPhone.replace(/[^a-zA-Z0-9_-]/g, "").slice(-12) || Date.now()}`;
@@ -1538,7 +1556,18 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
     try {
       const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
       const db_ = adminRuntime!.admin.firestore();
-      await db_.doc(`tenants/${tenantId}/settings/agent`).set(req.body, { merge: true });
+      // Whitelist de campos + tipos: req.body sin filtrar podía escribir cualquier cosa
+      const b = req.body || {};
+      const cfg: Record<string, any> = {};
+      if (typeof b.enabled === 'boolean') cfg.enabled = b.enabled;
+      if (typeof b.autoSend === 'boolean') cfg.autoSend = b.autoSend;
+      if (typeof b.remindersEnabled === 'boolean') cfg.remindersEnabled = b.remindersEnabled;
+      if (Number.isFinite(b.cooldownDays) && b.cooldownDays >= 1 && b.cooldownDays <= 90) cfg.cooldownDays = b.cooldownDays;
+      if (Number.isFinite(b.maxActivePerDay) && b.maxActivePerDay >= 1 && b.maxActivePerDay <= 100) cfg.maxActivePerDay = b.maxActivePerDay;
+      if (Number.isFinite(b.scanIntervalHours) && b.scanIntervalHours >= 1 && b.scanIntervalHours <= 168) cfg.scanIntervalHours = b.scanIntervalHours;
+      if (['Crítico', 'Alto'].includes(b.minRiskLevel)) cfg.minRiskLevel = b.minRiskLevel;
+      if (Object.keys(cfg).length === 0) return res.status(400).json({ error: 'Sin campos válidos.' });
+      await db_.doc(`tenants/${tenantId}/settings/agent`).set(cfg, { merge: true });
       res.json({ ok: true });
     } catch (err: any) {
       res.status(err.statusCode || 500).json({ error: err.message });
@@ -1713,6 +1742,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       });
 
       sock.ev.on('connection.update', async (update: any) => {
+        try {
         const { connection, lastDisconnect, qr } = update;
         if (qr) {
           waStatusMap.set(tenantId, 'qr');
@@ -1720,6 +1750,7 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           broadcastWAStatus(tenantId);
         }
         if (connection === 'open') {
+          waReconnectAttempts.delete(tenantId);
           waStatusMap.set(tenantId, 'connected');
           waQRMap.set(tenantId, null);
           waPhoneMap.set(tenantId, sock.user?.id?.split(':')[0] || null);
@@ -1732,13 +1763,23 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
           waStatusMap.set(tenantId, shouldReconnect ? 'connecting' : 'disconnected');
           waPhoneMap.set(tenantId, null);
           broadcastWAStatus(tenantId);
-          if (shouldReconnect) setTimeout(() => startBaileys(tenantId), 5000);
+          if (shouldReconnect) {
+            // Backoff exponencial 5s → 10s → 20s… tope 5 min (antes: 5s fijos sin tope)
+            const attempt = (waReconnectAttempts.get(tenantId) || 0) + 1;
+            waReconnectAttempts.set(tenantId, attempt);
+            const delay = Math.min(5000 * 2 ** (attempt - 1), 300_000);
+            setTimeout(() => startBaileys(tenantId), delay);
+          }
           else { waSockMap.delete(tenantId); await deleteWASessionEverywhere(tenantId); }
+        }
+        } catch (err) {
+          console.error(`[WA Baileys] connection.update ${tenantId}:`, err);
         }
       });
 
       // Mensajes entrantes de WhatsApp → agente Gemini
       sock.ev.on('messages.upsert', async ({ messages }: any) => {
+        try {
         for (const msg of messages) {
           if (msg.key.fromMe || !msg.message) continue;
           const from = msg.key.remoteJid?.replace('@s.whatsapp.net', '') || '';
@@ -1791,6 +1832,9 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
           // Responder por WhatsApp
           await sock.sendMessage(`${from}@s.whatsapp.net`, { text: reply });
+        }
+        } catch (err) {
+          console.error(`[WA Baileys] messages.upsert ${tenantId}:`, err);
         }
       });
     } catch (err) {
