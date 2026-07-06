@@ -1,5 +1,10 @@
 # Plan de Acción → Producto al 100%
 
+> **ESTADO (jul 2026): CÓDIGO COMPLETADO.** Pasos 1-8, 10, 12-16 hechos, verificados
+> y mergeados a main. Pendientes solo los externos: Paso 11 🔑 (cuenta Resend),
+> Paso 17 🔑 (salón piloto) y el deploy (ver `ULTIMA-LINEA.md`).
+> ⚠️ `firestore.rules` tiene cambios sin desplegar → `npm run deploy:rules`.
+
 > Ejecuta `INFORME-PRODUCTO-100.md` paso a paso. Un paso = un commit verificable.
 > Regla: no se pasa al siguiente paso sin cumplir su "✓ Verificación".
 > Los pasos marcados 🔑 requieren una acción externa TUYA (cuentas, claves, deploy).
