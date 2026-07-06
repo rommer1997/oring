@@ -1050,6 +1050,28 @@ async function startServer() {
     return { sent: false, channel: null, reason: 'no_channel' };
   }
 
+  // Registra un mensaje en el whatsappLog de la clienta — alimenta las métricas
+  // de respuesta/conversión del Dashboard (antes siempre a 0 en modo real).
+  async function appendClientWhatsAppLog(tenantId: string, clientId: string, sender: 'client' | 'user' | 'ai_auto', text: string) {
+    if (!adminRuntime || !clientId) return;
+    try {
+      const now = new Date();
+      await adminRuntime.admin.firestore().doc(`tenants/${tenantId}/clients/${clientId}`).update({
+        whatsappLog: adminRuntime.admin.firestore.FieldValue.arrayUnion({
+          id: `wa-${now.getTime()}`,
+          sender,
+          text,
+          timestamp: now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }),
+          date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(now),
+          dateLabel: now.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', timeZone: 'Europe/Madrid' }),
+          status: 'enviado',
+        }),
+      });
+    } catch (err) {
+      console.error('[WA log] Error registrando mensaje en clienta:', err);
+    }
+  }
+
   // ─── Agente: Generar mensaje personalizado con Gemini ────────────────────────
   async function generateAgentOutreach(client: any, tenantName: string, genAI: GoogleGenAI | null): Promise<string> {
     const fallback = `Hola ${client.clientName || client.name}! 👋 Te echamos de menos en ${tenantName}. Han pasado ${client.riskDays} días desde tu última visita. ¿Te apetece reservar un hueco esta semana? Escríbenos y te buscamos el mejor momento. 💇`;
@@ -1293,6 +1315,24 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
 
       return { scanned: clientsSnap.size, queued, autoSend: agentConfig.autoSend };
   }
+
+  // ─── POST /api/send-whatsapp — envío directo por el canal del tenant ─────────
+  // Usado por el editor de mensajes: envío real si hay Baileys/Meta; el cliente
+  // cae a wa.me manual si respondemos sent:false.
+  app.post('/api/send-whatsapp', aiLimiter, express.json(), async (req, res) => {
+    try {
+      const { tenantId } = await resolveAuthenticatedTenant(req, adminRuntime);
+      const { phone, text, clientId } = req.body as { phone?: string; text?: string; clientId?: string };
+      if (!phone?.trim() || !text?.trim() || text.length > 4096) {
+        return res.status(400).json({ error: 'phone y text requeridos.' });
+      }
+      const result = await sendViaTenantChannel(tenantId, phone, text);
+      if (result.sent && clientId) await appendClientWhatsAppLog(tenantId, clientId, 'user', text);
+      res.json(result);
+    } catch (err: any) {
+      res.status(err.statusCode || 500).json({ error: err.message });
+    }
+  });
 
   // ─── POST /api/agent/scan ─────────────────────────────────────────────────────
   app.post('/api/agent/scan', apiLimiter, async (req, res) => {
@@ -1621,6 +1661,8 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
       };
 
       await campaignDoc.ref.update(update);
+      await appendClientWhatsAppLog(tenantId, campaign.clientId, 'client', clientText);
+      await appendClientWhatsAppLog(tenantId, campaign.clientId, 'ai_auto', reply);
       await sendWhatsAppMessage(from, reply);
     } catch (err) {
       console.error('[Webhook WA] Error:', err);
@@ -1743,6 +1785,9 @@ Responde en JSON: {"text":"...respuesta...","intent":"booking"|"info"|"continue"
               absenceDetectedText: `IA: Detectado motivo ${absenceReason} → acción sugerida disponible`,
             }),
           });
+
+          await appendClientWhatsAppLog(tenantId, campaign.clientId, 'client', text);
+          await appendClientWhatsAppLog(tenantId, campaign.clientId, 'ai_auto', reply);
 
           // Responder por WhatsApp
           await sock.sendMessage(`${from}@s.whatsapp.net`, { text: reply });
