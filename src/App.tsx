@@ -86,7 +86,7 @@ export default function App() {
   const [globalSearchTerm, setGlobalSearchTerm] = useState<string>('');
   const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
-  const [selectedClientId, setSelectedClientId] = useState<string>('carmen-ruiz');
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState<boolean>(false);
   const [showPaywall, setShowPaywall] = useState<boolean>(false);
@@ -338,7 +338,7 @@ export default function App() {
       ['datos del salón', () => setDoc(doc(db, 'tenants', payload.tenant.id), payload.tenant, { merge: true })],
       ['servicios', () => Promise.all(payload.services.map(s => setDoc(doc(db, 'tenants', payload.tenant.id, 'services', s.id), s)))],
       ['equipo', () => setDoc(doc(db, 'tenants', payload.tenant.id, 'staff_members', payload.staff.id), payload.staff)],
-      ['perfil', () => setDoc(doc(db, 'tenants', payload.tenant.id, 'settings', 'profile'), { tenantId: payload.tenant.id, onboardingCompleted: true, completedAt: now, updatedAt: now })],
+      ['perfil', () => setDoc(doc(db, 'tenants', payload.tenant.id, 'settings', 'profile'), { tenantId: payload.tenant.id, onboardingCompleted: true, completedAt: now, updatedAt: now, dpaAcceptedAt: now })],
       ['cuenta', () => setDoc(doc(db, 'users', firebaseUser.uid), completedUser)],
     ];
     for (const [stepName, run] of steps) {

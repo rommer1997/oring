@@ -260,9 +260,10 @@ service cloud.firestore {
       allow create: if isAccountOwner() && isValidId(tenantId) && isValidTenant(incoming())
         && tenantBillingCleanAtCreate();
       // Billing fields are immutable from the client (Stripe webhooks write them via Admin SDK).
+      // Exception: globalAdmin (consola interna AdminView) may adjust trial/courtesy states.
       allow update: if (isManagerOrAdmin(tenantId) || isGlobalAdmin()) && isValidTenant(incoming())
         && incoming().id == existing().id
-        && tenantBillingUnchanged();
+        && (tenantBillingUnchanged() || isGlobalAdmin());
       allow delete: if false; // Salons can't be deleted entirely from client-sdk
     }
 

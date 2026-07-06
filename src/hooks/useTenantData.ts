@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -277,15 +277,19 @@ export async function handleRecalculateThresholds(
       calculatedReason = `"Frecuencia saludable. Menos de ${mid} días desde la última visita estéticamente programada."`;
     }
 
-    const updatedObj = { ...client, riskLevel: level, aiReason: calculatedReason };
-    if (firebaseUser && !isDemoMode) {
-      setDoc(doc(db, 'tenants', selectedTenantId, 'clients', client.id), updatedObj)
-        .catch((err) => handleFirestoreError(err, OperationType.UPDATE, `tenants/${selectedTenantId}/clients/${client.id}`));
-    }
-    return updatedObj;
+    return { ...client, riskLevel: level, aiReason: calculatedReason };
   });
 
-  if (!firebaseUser || isDemoMode) {
+  if (firebaseUser && !isDemoMode) {
+    // Un solo batch en lugar de N escrituras sueltas (Firestore admite 500/batch)
+    for (let i = 0; i < updatedClients.length; i += 450) {
+      const batch = writeBatch(db);
+      for (const client of updatedClients.slice(i, i + 450)) {
+        batch.set(doc(db, 'tenants', selectedTenantId, 'clients', client.id), client);
+      }
+      batch.commit().catch((err) => handleFirestoreError(err, OperationType.UPDATE, `tenants/${selectedTenantId}/clients (batch)`));
+    }
+  } else {
     setClients(updatedClients);
   }
 }

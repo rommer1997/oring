@@ -237,15 +237,30 @@ export default function MessageEditorView({
   };
 
   // Function to lock and send message (registers and triggers WhatsApp manual window)
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!draftText.trim()) return;
     if (currentClient.marketingOptOut || currentClient.contactConsent === false) {
       onToastMessage('No se puede enviar: la clienta no tiene consentimiento activo.');
       return;
     }
 
-    const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    // 1º: envío real por el canal del salón (Baileys/Meta) si está conectado
+    let sentViaChannel = false;
+    if (getAuthToken) {
+      try {
+        const token = await getAuthToken();
+        if (token) {
+          const r = await fetch(apiUrl('/api/send-whatsapp'), {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: currentClient.phoneNumber, text: draftText, clientId: currentClient.id }),
+          });
+          sentViaChannel = r.ok && (await r.json()).sent === true;
+        }
+      } catch { /* cae al flujo manual */ }
+    }
 
+    const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     const newLogItem: WhatsAppMessage = {
       id: `sent-${Date.now()}`,
       sender: 'user',
@@ -255,9 +270,15 @@ export default function MessageEditorView({
       status: 'enviado'
     };
 
-    // Update global state logger
+    if (sentViaChannel) {
+      onToastMessage(`✓ Enviado a ${currentClient.name} por WhatsApp.`);
+      onNavigate('client-profile');
+      return; // el servidor ya registró el mensaje en el log de la clienta
+    }
+
+    // 2º: flujo manual wa.me — la dueña debe pulsar enviar en WhatsApp
     onUpdateClientLog(currentClient.id, newLogItem);
-    
+
     // Normalizar teléfono para wa.me: solo dígitos, prefijo 34 si es número ES de 9 dígitos
     let phoneClean = currentClient.phoneNumber.replace(/\D/g, '');
     if (phoneClean.startsWith('0034')) phoneClean = phoneClean.slice(4);
@@ -267,11 +288,9 @@ export default function MessageEditorView({
     }
 
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(draftText)}`;
-    
-    // Explicitly navigate/open manual chat safely
     window.open(whatsappUrl, '_blank');
-    
-    onToastMessage(`¡Registrado y abriendo chat para ${currentClient.name}! 🚀`);
+
+    onToastMessage(`Abriendo WhatsApp para ${currentClient.name} — recuerda pulsar Enviar allí. 📲`);
     onNavigate('client-profile');
   };
 
