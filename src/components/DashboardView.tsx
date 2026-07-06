@@ -323,7 +323,19 @@ export default function DashboardView({
         });
         const urgentClient = sortedClients[0];
 
-        if (!urgentClient) return null;
+        if (!urgentClient) return (
+          <div className="mb-10 bg-surface-container-lowest border border-dashed border-outline-variant/50 rounded-3xl p-8 text-center">
+            <span className="material-symbols-outlined text-3xl text-primary/40 mb-2">group_add</span>
+            <p className="font-serif text-lg font-bold text-primary mb-1">Aún no hay clientas</p>
+            <p className="text-sm text-on-surface-variant mb-4 max-w-md mx-auto">Importa tu lista desde Excel (CSV) o añade la primera ficha, y Elena empezará a avisarte de quién necesita mimo.</p>
+            <button
+              onClick={() => onNavigate('settings')}
+              className="bg-primary text-on-primary text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-all cursor-pointer"
+            >
+              Importar clientas (CSV)
+            </button>
+          </div>
+        );
 
         return (
           <div className="mb-10 bg-gradient-to-br from-[#faf6f0] to-[#fcfaf7] border border-[#bfa982]/32 rounded-3xl p-8 shadow-[rgba(74,44,64,0.01)_0px_8px_24px] flex flex-col md:flex-row items-center gap-8 text-left transition-all duration-300 hover:shadow-[rgba(74,44,64,0.03)_0px_12px_32px]">
